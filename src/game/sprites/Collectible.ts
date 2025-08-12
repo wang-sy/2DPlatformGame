@@ -7,6 +7,8 @@ import { Scene } from 'phaser';
  * - score: (int) Points awarded when collected
  * - must_collect: (bool) Whether this item is required for level completion
  * - type: (string) Category for grouping items (e.g., "coin", "key", "gem", "powerup", etc.)
+ * - rotate: (bool) Whether the item should rotate continuously
+ * - particle_color: (string) Hex color for particle effects (e.g., "#FFD700")
  * 
  * If no type is specified, defaults to "misc"
  */
@@ -16,6 +18,8 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
     private collected: boolean = false;
     private score: number = 0;
     private mustCollect: boolean = false;
+    private shouldRotate: boolean = false;
+    private particleColor: number = 0xFFFFFF;
     private properties: any = {};
 
     constructor(scene: Scene, collectibleObject: Phaser.Types.Tilemaps.TiledObject) {
@@ -69,6 +73,10 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
                                 this.mustCollect = prop.value;
                             } else if (prop.name === 'type') {
                                 this.collectibleType = prop.value;
+                            } else if (prop.name === 'rotate') {
+                                this.shouldRotate = prop.value;
+                            } else if (prop.name === 'particle_color') {
+                                this.particleColor = parseInt(prop.value.replace('#', '0x'));
                             }
                         }
                     }
@@ -88,6 +96,10 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
                     this.mustCollect = prop.value;
                 } else if (prop.name === 'type') {
                     this.collectibleType = prop.value;
+                } else if (prop.name === 'rotate') {
+                    this.shouldRotate = prop.value;
+                } else if (prop.name === 'particle_color') {
+                    this.particleColor = parseInt(prop.value.replace('#', '0x'));
                 }
             }
         }
@@ -104,8 +116,8 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
             repeat: -1
         });
         
-        // Rotation animation for coins
-        if (this.collectibleName.includes('coin')) {
+        // Rotation animation if configured
+        if (this.shouldRotate) {
             this.scene.tweens.add({
                 targets: this,
                 angle: 360,
@@ -147,9 +159,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
             }
         });
         
-        // Particle effect - use name for visual effects, not type
-        const particleColor = this.collectibleName.includes('coin') ? 0xFFD700 : 
-                             this.collectibleName.includes('key') ? 0x00FF00 : 0xFFFFFF;
+        // Particle effect - use configured color
         
         for (let i = 0; i < 8; i++) {
             this.scene.time.delayedCall(i * 30, () => {
@@ -157,7 +167,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
                     this.x + Phaser.Math.Between(-20, 20),
                     this.y + Phaser.Math.Between(-20, 20),
                     3,
-                    particleColor
+                    this.particleColor
                 );
                 
                 this.scene.tweens.add({

@@ -1,334 +1,271 @@
-# Code Structure Documentation
+# Code Structure and Design Philosophy
 
-## ⚠️ Important Notice
+This document outlines the architecture and design principles of the game's codebase.
 
-**Please prioritize customizing the game by modifying `tilemap.json` rather than modifying source code!**
+## Table of Contents
+- [Core Design Principles](#core-design-principles)
+- [Collectible System Architecture](#collectible-system-architecture)
+- [Manager Pattern](#manager-pattern)
+- [Scene Management](#scene-management)
+- [Configuration-Driven Design](#configuration-driven-design)
 
-This game framework is designed to be **data-driven**, where almost all game content can be implemented through configuration files:
-- ✅ Level design → Modify tilemap.json
-- ✅ Add new assets → Register in tilemap.json
-- ✅ Adjust difficulty → Configure properties
-- ❌ Modify core code → Only when necessary
+## Core Design Principles
 
-## 📁 Source Code Structure
+### 1. Configuration Over Code
+The game prioritizes configuration-based customization over code modifications. Game designers can modify behavior through tilemap properties without touching TypeScript code.
 
-```
-src/
-├── main.ts                 # Application entry point
-└── game/
-    ├── main.ts            # Phaser game configuration
-    ├── scenes/            # Game scenes
-    │   ├── Boot.ts        # Boot scene
-    │   ├── Preloader.ts   # Asset loading scene ⚡
-    │   ├── MainMenu.ts    # Main menu scene
-    │   ├── Game.ts        # Core game scene ⚡
-    │   ├── GameOver.ts    # Game over scene
-    │   └── Victory.ts     # Victory scene
-    ├── sprites/           # Game sprite objects
-    │   ├── Player.ts      # Player character ⚡
-    │   ├── StaticHazard.ts # Static hazards
-    │   └── Goal.ts        # Goal objectives
-    └── ui/               # UI components
-        └── HealthUI.ts    # Health display
-```
+### 2. Separation of Concerns
+- **Sprites**: Handle rendering and animations
+- **Managers**: Handle game logic and state
+- **Scenes**: Orchestrate gameplay and transitions
+- **UI Components**: Handle display-only elements
 
-⚡ = Core files, modify with caution
+### 3. Type Safety
+TypeScript is used throughout to provide compile-time safety and better IDE support.
 
-## 🎮 Core System Overview
+## Collectible System Architecture
 
-### 1. Automatic Asset Loading System (`Preloader.ts`)
+The collectible system demonstrates the configuration-driven approach perfectly.
 
-**Function**: Automatically parses tilemap.json and loads all assets
+### Design Goals
+1. **Zero-code extensibility**: New collectible types can be added without modifying code
+2. **Visual customization**: All effects are configurable through properties
+3. **Type categorization**: Automatic grouping for display purposes
+4. **Flexible scoring**: Each item can have different point values
 
+### Key Components
+
+#### 1. Collectible Sprite (`src/game/sprites/Collectible.ts`)
 ```typescript
-// The system automatically identifies and loads:
-// - Regular images → this.load.image()
-// - Sprite atlases → this.load.atlas() (requires atlas property)
-```
-
-**Extension Recommendations**:
-- ✅ Add new tilesets in tilemap
-- ❌ Don't hardcode asset paths
-
-### 2. Object Creation System (`Game.ts`)
-
-**Function**: Automatically creates game objects based on the type field in tilemap
-
-```typescript
-private createObject(obj) {
-    switch (obj.type) {
-        case "player":    // Create player
-        case "hazard":    // Create hazards
-        case "goal":      // Create goals
-    }
+class Collectible extends Phaser.Physics.Arcade.Sprite {
+    private collectibleName: string;     // Texture/sprite name
+    private collectibleType: string;     // Category for grouping
+    private score: number;               // Points awarded
+    private mustCollect: boolean;        // Required for completion
+    private shouldRotate: boolean;       // Visual effect flag
+    private particleColor: number;       // Particle effect color
 }
 ```
 
-**Extending New Object Types**:
+**Design Decisions:**
+- Properties are extracted from tilemap data, not hardcoded
+- Visual effects (rotation, particles) are configurable, not based on item name
+- The sprite is presentation-focused; logic is handled elsewhere
+
+#### 2. CollectedItemsManager (`src/game/managers/CollectedItemsManager.ts`)
 ```typescript
-// 1. Add new case in switch
-case "moving_platform":
-    this.createMovingPlatformFromTilemap(obj);
-    return
-
-// 2. Create corresponding class file
-// sprites/MovingPlatform.ts
-
-// 3. Use in tilemap
-{
-    "type": "moving_platform",
-    "properties": [...]
+class CollectedItemsManager {
+    private items: Map<string, CollectedItemData>;
+    private totalScore: number;
+    private mustCollectItems: Set<string>;
+    private collectedMustHaveItems: Set<string>;
 }
 ```
 
-### 3. Collision Detection System (`Game.ts`)
+**Design Decisions:**
+- Centralized state management for all collected items
+- Tracks both individual items and aggregated data
+- Provides grouped data for the victory screen
+- Validates completion requirements
 
-**Function**: Unified management of all collision events
+#### 3. Property Extraction Flow
+```
+Tilemap (JSON) → TiledObject → Collectible.extractProperties() → Game State
+```
+
+The system reads properties in this priority:
+1. Tileset tile properties (shared defaults)
+2. Object instance properties (overrides)
+
+This allows for both shared defaults and per-instance customization.
+
+### Configuration Properties
+
+Properties are read from the tilemap and control behavior:
 
 ```typescript
-private createOverleapEvents() {
-    // Player vs hazards
-    this.physics.add.overlap(player, hazards, callback)
-    // Player vs goals
-    this.physics.add.overlap(player, goals, callback)
+// Gameplay properties
+score: number          // Points awarded
+must_collect: boolean  // Required for level completion
+type: string          // Category for grouping
+
+// Visual properties
+rotate: boolean       // Continuous rotation animation
+particle_color: string // Hex color for particle effects
+```
+
+### Adding New Properties
+
+To add a new configurable property:
+
+1. **Update Collectible class:**
+```typescript
+private newProperty: type = defaultValue;
+
+// In extractProperties():
+else if (prop.name === 'new_property') {
+    this.newProperty = prop.value;
 }
 ```
 
-**Adding New Collision Types**:
+2. **Use the property:**
 ```typescript
-// Add new collision group
-if (this.player && this.newGroup) {
-    this.physics.add.overlap(
-        this.player,
-        this.newGroup,
-        this.handleNewCollision,
-        undefined,
-        this
-    );
+if (this.newProperty) {
+    // Apply the effect
 }
 ```
 
-## 🔧 Common Extension Patterns
+3. **Document in TILEMAP_GUIDE.md**
 
-### Adding New Game Elements
+## Manager Pattern
 
-**Recommended Process**:
+The game uses manager classes to centralize state and logic:
 
-1. **Create Sprite Class** (`sprites/NewElement.ts`)
+### CollectedItemsManager
+- **Purpose**: Track all collected items and scores
+- **Responsibilities**:
+  - Item collection tracking
+  - Score calculation
+  - Requirement validation
+  - Data aggregation for UI
+
+### Benefits
+1. **Single source of truth**: All collection data in one place
+2. **Reusability**: Can be used across different scenes
+3. **Testability**: Logic separated from presentation
+4. **Persistence ready**: Easy to save/load state
+
+## Scene Management
+
+### Game Scene
+The main gameplay scene orchestrates:
+- Object creation from tilemap
+- Collision detection
+- State updates via managers
+- UI updates
+
+**Key Design**: The Game scene doesn't determine item types or effects; it reads them from configuration.
+
+### Victory Scene
+Displays collected items grouped by type:
+- Receives data from CollectedItemsManager
+- Groups items by type automatically
+- Shows count badges for multiple items
+- No hardcoded item types
+
+## Configuration-Driven Design
+
+### Benefits
+1. **Designer-friendly**: Non-programmers can add content
+2. **Rapid iteration**: No recompilation for content changes
+3. **Mod support**: External tilemaps can add new items
+4. **Maintainability**: Less code to maintain
+
+### Implementation Strategy
+
+#### 1. Property-Based Behavior
+Instead of:
 ```typescript
-export class NewElement extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene: Scene, elementObject: Phaser.Types.Tilemaps.TiledObject) {
-        // Read configuration from tilemap
-        const properties = elementObject.properties as any;
-        // Initialization logic
-    }
+if (itemName.includes('coin')) {
+    // Rotate the coin
 }
 ```
 
-2. **Register in Game.ts**
+Use:
 ```typescript
-case "new_element":
-    this.createNewElementFromTilemap(obj);
-    return
-```
-
-3. **Use in tilemap.json**
-```json
-{
-    "type": "new_element",
-    "name": "element_name",
-    "properties": [...]
+if (this.shouldRotate) {
+    // Apply rotation
 }
 ```
 
-### Modifying Existing Behavior
-
-**Priority Order**:
-1. 🥇 Configure through properties
-2. 🥈 Extend classes rather than modify
-3. 🥉 Only modify core code as a last resort
-
-**Example: Adjusting Hazard Damage**
-```json
-// ✅ Good practice: Configure in tilemap
-"properties": [
-    {"name": "damage", "value": 2}
-]
-
-// ❌ Avoid: Hardcode in StaticHazard.ts
-this.damage = 2; // Don't do this
+#### 2. Generic Type System
+Instead of hardcoded types:
+```typescript
+if (name.includes('coin')) type = 'coin';
+else if (name.includes('key')) type = 'key';
 ```
 
-## 📝 File Responsibilities
-
-### Scenes
-
-| File | Responsibility | Modifiable |
-|-----|------|-----------|
-| Boot.ts | Load initial assets | ⚠️ Caution |
-| Preloader.ts | Auto-load tilemap assets | ⚠️ Caution |
-| MainMenu.ts | Main menu interface | ✅ Yes |
-| Game.ts | Core game logic | ⚠️ Extend only |
-| GameOver.ts | Game over interface | ✅ Yes |
-| Victory.ts | Victory interface | ✅ Yes |
-
-### Sprites
-
-| File | Responsibility | Modifiable |
-|-----|------|-----------|
-| Player.ts | Player control, animation, skills | ⚠️ Caution |
-| StaticHazard.ts | Static hazard base class | 🔄 Extensible |
-| Goal.ts | Goal objective logic | 🔄 Extensible |
-
-### UI (Interface)
-
-| File | Responsibility | Modifiable |
-|-----|------|-----------|
-| HealthUI.ts | Health display | ✅ Yes |
-
-## 🎯 Best Practices
-
-### DO ✅
-
-1. **Data-Driven Design**
-   - Place configuration in tilemap.json
-   - Use properties to pass parameters
-   - Use type field to distinguish behavior
-
-2. **Generic Design**
-   - Create base classes for extension
-   - Use interfaces to define standards
-   - Keep code reusable
-
-3. **Extend Rather Than Modify**
-   ```typescript
-   // Good practice: Extend base class
-   class FireHazard extends StaticHazard {
-       // Add fire effects
-   }
-   ```
-
-### DON'T ❌
-
-1. **Hardcode Values**
-   ```typescript
-   // Avoid
-   const damage = 10; // Should read from tilemap
-   ```
-
-2. **Directly Modify Core Loop**
-   ```typescript
-   // Avoid modifying Game.update()
-   // Use event system instead
-   ```
-
-3. **Break Data Flow**
-   ```typescript
-   // Avoid
-   this.player.health = 999; // Should use method calls
-   ```
-
-## 🚀 Quick Start for New Features
-
-### Example: Adding Moving Platform
-
-1. **Create Class File**
+Read from configuration:
 ```typescript
-// sprites/MovingPlatform.ts
-export class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
-    private speed: number;
-    private distance: number;
-    
-    constructor(scene, platformObject) {
-        super(scene, platformObject.x, platformObject.y, 'platform');
-        const props = platformObject.properties;
-        this.speed = props?.speed || 100;
-        this.distance = props?.distance || 200;
-    }
-    
-    update() {
-        // Movement logic
-    }
+const type = collectible.getType(); // From tilemap property
+```
+
+#### 3. Data-Driven Visuals
+All visual effects are controlled by data:
+- Animation types (rotation, floating, pulsing)
+- Particle colors
+- Scale and size
+- Sound effects (future enhancement)
+
+### Future Enhancements
+
+The configuration system can be extended with:
+
+1. **Animation Properties**:
+   - `float_speed`: Control floating animation speed
+   - `pulse_intensity`: Control pulsing strength
+   - `rotation_speed`: Variable rotation speeds
+
+2. **Sound Properties**:
+   - `collect_sound`: Sound effect file name
+   - `volume`: Sound volume
+
+3. **Gameplay Properties**:
+   - `respawn_time`: For respawning collectibles
+   - `expiry_time`: For time-limited items
+   - `chain_bonus`: Bonus for collecting in sequence
+
+4. **Visual Properties**:
+   - `glow_color`: Ambient glow effect
+   - `trail_effect`: Motion trail
+   - `pickup_animation`: Custom collection animation
+
+All these can be added without breaking existing content!
+
+## Best Practices
+
+### 1. Property Naming
+- Use snake_case for tilemap properties
+- Use camelCase for TypeScript variables
+- Be descriptive: `particle_color` not just `color`
+
+### 2. Default Values
+Always provide sensible defaults:
+```typescript
+private particleColor: number = 0xFFFFFF; // White default
+```
+
+### 3. Type Safety
+Use TypeScript types for property values:
+```typescript
+interface CollectedItemData {
+    name: string;
+    type: string;
+    count: number;
+    score: number;
 }
 ```
 
-2. **Register in Game.ts**
-```typescript
-case "moving_platform":
-    const platform = new MovingPlatform(this, obj);
-    this.platforms.add(platform);
-    return
-```
+### 4. Documentation
+- Document all configurable properties
+- Provide examples in TILEMAP_GUIDE.md
+- Use JSDoc comments in code
 
-3. **Use in tilemap**
-```json
-{
-    "type": "moving_platform",
-    "name": "platform",
-    "properties": [
-        {"name": "speed", "value": 100},
-        {"name": "distance", "value": 200}
-    ]
+### 5. Validation
+Validate property values when reading:
+```typescript
+if (prop.name === 'particle_color') {
+    // Ensure it's a valid hex color
+    this.particleColor = parseInt(prop.value.replace('#', '0x'));
 }
 ```
 
-## 📚 Extension Guide
+## Conclusion
 
-### Adding New Scenes
-1. Create `scenes/NewScene.ts`
-2. Register in `game/main.ts`
-3. Use `this.scene.start('NewScene')` to switch
+The codebase follows a configuration-driven architecture that:
+- Minimizes code changes for content additions
+- Separates concerns effectively
+- Provides clear extension points
+- Maintains type safety
 
-### Adding New UI Elements
-1. Create `ui/NewUI.ts`
-2. Instantiate in required scenes
-3. Use `setScrollFactor(0)` to fix position
-
-### Adding New Physics Groups
-1. Create group in Game.ts
-2. Add collision detection
-3. Configure objects in tilemap
-
-## ⚡ Performance Recommendations
-
-1. **Use Object Pools**: For frequently created/destroyed objects
-2. **Use StaticGroup**: For non-moving objects
-3. **Limit Update Frequency**: Non-critical logic can run at lower frequency
-4. **Optimize Collision Detection**: Use spatial partitioning
-
-## 🔍 Debugging Tips
-
-1. **Enable Physics Debug**
-```typescript
-// game/main.ts
-physics: {
-    arcade: {
-        debug: true  // Show collision boundaries
-    }
-}
-```
-
-2. **View Tilemap Data**
-```typescript
-console.log(this.map.layers);
-console.log(this.map.objects);
-```
-
-3. **Monitor Performance**
-```typescript
-this.game.config.fps.target = 60;
-this.game.config.fps.min = 30;
-```
-
----
-
-## 📌 Summary
-
-**Core Principles**:
-1. 📄 **Configuration First** - Use tilemap instead of code changes when possible
-2. 🔄 **Extension First** - Extend rather than modify original files
-3. 🎯 **Generic First** - Design generic solutions rather than special cases
-
-**Remember**: The power of this framework lies in its **data-driven** design. By fully utilizing the configuration capabilities of tilemap.json, you can create rich and diverse game content without touching a single line of code!
-
-For deep customization, please follow the extension patterns above to maintain code cleanliness and maintainability.
+This approach enables rapid content creation while keeping the codebase maintainable and extensible.

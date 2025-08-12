@@ -275,6 +275,16 @@
                  "name":"type",
                  "type":"string",
                  "value":"coin"
+                },
+                {
+                 "name":"rotate",
+                 "type":"bool",
+                 "value":true
+                },
+                {
+                 "name":"particle_color",
+                 "type":"string",
+                 "value":"#FFD700"
                 }]
         }]
     },
@@ -302,6 +312,16 @@
                  "name":"type",
                  "type":"string",
                  "value":"key"
+                },
+                {
+                 "name":"rotate",
+                 "type":"bool",
+                 "value":false
+                },
+                {
+                 "name":"particle_color",
+                 "type":"string",
+                 "value":"#00FF00"
                 }]
         }]
     }

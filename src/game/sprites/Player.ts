@@ -21,6 +21,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private maxChargeTime: number = 1000;
     private minChargeTime: number = 200;
     private chargeJumpMultiplier: number = 2;
+    
+    // Health and damage
+    private health: number = 3;
+    private maxHealth: number = 3;
+    private isInvulnerable: boolean = false;
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -41,9 +46,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         let xScale = displayWidth / firstFrame.width
         let yScale = displayHeight / firstFrame.height
-
-        console.log("Scale", xScale, yScale)
-        console.log("wh", firstFrame.width, firstFrame.height)
         
         this.setScale(xScale, yScale);
         this.setSize(displayWidth * 0.8, displayHeight * 0.8);
@@ -268,5 +270,61 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.play('idle');
             this.currentAnimation = 'idle';
         });
+    }
+
+    takeDamage(damage: number): void {
+        if (this.isInvulnerable) {
+            return;
+        }
+        
+        this.health -= damage;
+        this.isInvulnerable = true;
+        this.lastDamageTime = this.scene.time.now;
+        
+        this.play('hit');
+        this.currentAnimation = 'hit';
+        
+        const knockbackX = this.flipX ? 200 : -200;
+        this.setVelocity(knockbackX, -300);
+        
+        this.scene.tweens.add({
+            targets: this,
+            alpha: { from: 1, to: 0.3 },
+            duration: 100,
+            repeat: 7,
+            yoyo: true,
+            onComplete: () => {
+                this.alpha = 1;
+                this.isInvulnerable = false;
+            }
+        });
+        
+        if (this.health <= 0) {
+            this.handleDeath();
+        }
+    }
+
+    private handleDeath(): void {
+        this.setTint(0xff0000);
+        this.setVelocity(0, -400);
+        this.body?.setEnable(false);
+        
+        this.scene.time.delayedCall(1000, () => {
+            // \u8c03\u7528Game\u573a\u666f\u7684restartGame\u65b9\u6cd5
+            const gameScene = this.scene as any;
+            if (gameScene.restartGame) {
+                gameScene.restartGame();
+            } else {
+                this.scene.scene.restart();
+            }
+        });
+    }
+
+    getHealth(): number {
+        return this.health;
+    }
+
+    getMaxHealth(): number {
+        return this.maxHealth;
     }
 }

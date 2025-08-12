@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { Player } from '../sprites/Player';
+import { StaticHazard } from '../sprites/StaticHazard';
 
 export class Game extends Scene
 {
@@ -10,6 +11,8 @@ export class Game extends Scene
     tilesets: Phaser.Tilemaps.Tileset[];
     layers: Phaser.Tilemaps.TilemapLayer[];
     player: Player;
+    hazards: Phaser.Physics.Arcade.StaticGroup;
+    restartKey: Phaser.Input.Keyboard.Key;
 
     constructor ()
     {
@@ -44,6 +47,12 @@ export class Game extends Scene
         })
 
         this.createObjectsFromTilemap()
+
+        // 创建碰撞事件.
+        this.createOverleapEvents();
+        
+        // 设置重启快捷键 (R键)
+        this.restartKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     }
 
     private createObjectsFromTilemap() {
@@ -60,6 +69,9 @@ export class Game extends Scene
         switch (obj.type) {
             case "player":
                 this.createPlayerFromTilemap(obj);
+                return
+            case "hazard":
+                this.createHazardFromTilemap(obj);
                 return
             default:
                 console.log("unknown object type", obj.type);
@@ -90,9 +102,55 @@ export class Game extends Scene
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     }
 
+    private createHazardFromTilemap(hazardObject: Phaser.Types.Tilemaps.TiledObject) {
+        if (!this.hazards) {
+            this.hazards = this.physics.add.staticGroup();
+        }
+        
+        const hazard = new StaticHazard(this, hazardObject);
+        this.hazards.add(hazard);
+    }
+
+    private createOverleapEvents() {
+        // 设置玩家与hazards的overlap检测
+        if (this.player && this.hazards) {
+            this.physics.add.overlap(
+                this.player, 
+                this.hazards, 
+                this.handlePlayerHazardCollision, 
+                undefined, 
+                this
+            );
+        }
+    }
+
+    private handlePlayerHazardCollision(player: any, hazard: any) {
+        const hazardInstance = hazard as StaticHazard;
+        const playerInstance = player as Player;
+        
+        playerInstance.takeDamage(hazardInstance.getDamage());
+    }
+
     update() {
         if (this.player) {
             this.player.update();
         }
+        
+        // 检查重启键
+        if (this.restartKey && Phaser.Input.Keyboard.JustDown(this.restartKey)) {
+            this.restartGame();
+        }
+    }
+    
+    restartGame() {
+        // 清理场景
+        this.physics.world.pause();
+        
+        // 淡出效果
+        this.cameras.main.fadeOut(250, 0, 0, 0);
+        
+        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            this.scene.restart();
+        });
     }
 }

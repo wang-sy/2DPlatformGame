@@ -88,10 +88,8 @@ export class Preloader extends Scene
                 // 将 imageUri 的文件扩展名替换为 .json
                 let atlasJsonUri = imageUri.replace(/(\.[^/.]+)$/, '.json');
                 this.load.atlas(name, imageUri, atlasJsonUri);
-                console.log("load atlas ", tileset, name, imageUri, atlasJsonUri)
             } else {
                 this.load.image(name, imageUri);
-                console.log("load image ", tileset, name, imageUri)
             }
         })
     }

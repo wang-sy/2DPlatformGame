@@ -1,10 +1,14 @@
 import { Scene } from 'phaser';
+import { AnimationManager } from '../managers/AnimationManager';
 
 export class Preloader extends Scene
 {
+    private animationManager: AnimationManager;
+    
     constructor ()
     {
         super('Preloader');
+        this.animationManager = AnimationManager.getInstance();
     }
 
     init ()
@@ -88,6 +92,10 @@ export class Preloader extends Scene
                 // Replace the file extension of imageUri with .json
                 let atlasJsonUri = imageUri.replace(/(\.[^/.]+)$/, '.json');
                 this.load.atlas(name, imageUri, atlasJsonUri);
+                
+                // Load animation configuration if it exists
+                let animationConfigUri = imageUri.replace(/(\.[^/.]+)$/, '_animators.json');
+                this.load.json(`${name}_animations`, animationConfigUri);
             } else {
                 this.load.image(name, imageUri);
                 console.log("load image", name, imageUri)
@@ -97,7 +105,37 @@ export class Preloader extends Scene
 
     create ()
     {
+        // Initialize AnimationManager with this scene
+        this.animationManager.init(this);
+        
+        // Process all loaded animation configurations
+        this.processAnimationConfigs();
+        
+        // Create all animations
+        this.animationManager.createAllAnimations();
+        
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');
+    }
+    
+    private processAnimationConfigs(): void {
+        // Get all loaded atlas names from cache
+        const textureKeys = this.textures.getTextureKeys();
+        
+        for (const key of textureKeys) {
+            // Check if this is an atlas (has frames)
+            const texture = this.textures.get(key);
+            if (texture && texture.frameTotal > 1) {
+                // Check if we have animation config for this atlas
+                const animConfigKey = `${key}_animations`;
+                if (this.cache.json.exists(animConfigKey)) {
+                    const animConfig = this.cache.json.get(animConfigKey);
+                    if (animConfig) {
+                        // Load using legacy format
+                        this.animationManager.loadLegacyAnimationConfig(animConfig);
+                    }
+                }
+            }
+        }
     }
 }

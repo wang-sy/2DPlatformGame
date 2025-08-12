@@ -4,6 +4,7 @@ This guide explains how to configure game objects in Tiled tilemap editor for th
 
 ## Table of Contents
 - [Collectible Items](#collectible-items)
+- [Enemies](#enemies)
 - [Player](#player)
 - [Hazards](#hazards)
 - [Goals](#goals)
@@ -96,6 +97,97 @@ Items with `must_collect: true` create a level completion requirement:
 - Players cannot complete the level without collecting all must-collect items
 - When reaching the goal without required items, a visual warning shows the missing items
 - The victory screen displays all collected must-collect items
+
+## Enemies
+
+Enemies are hostile entities with various movement patterns and behaviors.
+
+### Object Type
+Set the object type to `enemy` in Tiled.
+
+### Configurable Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `damage` | int | 1 | Damage dealt to player on contact |
+| `move_method` | string | "static" | Movement pattern (see below) |
+| `move_speed` | int | 100 | Movement speed in pixels per second |
+| `jump_power` | int | 400 | Jump strength for jumping enemies |
+| `patrol_distance` | int | 200 | Distance to patrol back and forth |
+| `detection_range` | int | 300 | Range to detect player (for follow mode) |
+| `jump_interval` | int | 2000 | Time between jumps in milliseconds |
+| `atlas` | bool | false | Whether the enemy has animation atlas |
+
+### Movement Methods
+
+#### 1. `static`
+Enemy stays in place, no movement.
+
+#### 2. `patrol`
+Enemy moves back and forth horizontally within patrol distance.
+
+#### 3. `jump`
+Enemy jumps periodically in random directions.
+
+#### 4. `patrol_jump`
+Enemy patrols while jumping periodically.
+
+#### 5. `follow`
+Enemy follows the player when within detection range.
+
+#### 6. `follow_jump`
+Enemy follows the player and jumps when player is above.
+
+### Examples
+
+#### Jumping Frog
+```json
+{
+  "type": "enemy",
+  "name": "frog",
+  "properties": [
+    { "name": "damage", "type": "int", "value": 1 },
+    { "name": "move_method", "type": "string", "value": "jump" },
+    { "name": "jump_power", "type": "int", "value": 500 },
+    { "name": "jump_interval", "type": "int", "value": 1500 },
+    { "name": "atlas", "type": "bool", "value": true }
+  ]
+}
+```
+
+#### Patrolling Guard
+```json
+{
+  "type": "enemy",
+  "name": "guard",
+  "properties": [
+    { "name": "damage", "type": "int", "value": 2 },
+    { "name": "move_method", "type": "string", "value": "patrol" },
+    { "name": "move_speed", "type": "int", "value": 150 },
+    { "name": "patrol_distance", "type": "int", "value": 300 }
+  ]
+}
+```
+
+#### Following Ghost
+```json
+{
+  "type": "enemy",
+  "name": "ghost",
+  "properties": [
+    { "name": "damage", "type": "int", "value": 1 },
+    { "name": "move_method", "type": "string", "value": "follow" },
+    { "name": "move_speed", "type": "int", "value": 80 },
+    { "name": "detection_range", "type": "int", "value": 400 }
+  ]
+}
+```
+
+### Enemy Interactions
+
+- **Defeating Enemies**: Players can defeat enemies by jumping on them from above
+- **Taking Damage**: Contact with enemies from the side or below damages the player
+- **Bounce Effect**: Successfully jumping on an enemy bounces the player upward
 
 ## Player
 

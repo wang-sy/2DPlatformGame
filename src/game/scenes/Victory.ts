@@ -6,7 +6,7 @@ export class Victory extends Scene {
     private totalScore: number = 0;
     private itemsByType: Map<string, CollectedItemData[]> = new Map();
     private totalItemsCollected: number = 0;
-    private uniqueItemsCollected: number = 0;
+    // private uniqueItemsCollected: number = 0;
     
     constructor() {
         super('Victory');
@@ -16,12 +16,12 @@ export class Victory extends Scene {
         totalScore?: number; 
         itemsByType?: Map<string, CollectedItemData[]>;
         totalItemsCollected?: number;
-        uniqueItemsCollected?: number;
+        // uniqueItemsCollected?: number;
     }) {
         this.totalScore = data.totalScore || 0;
         this.itemsByType = data.itemsByType || new Map();
         this.totalItemsCollected = data.totalItemsCollected || 0;
-        this.uniqueItemsCollected = data.uniqueItemsCollected || 0;
+        // this.uniqueItemsCollected = data.uniqueItemsCollected || 0;
     }
 
     create() {
@@ -132,12 +132,12 @@ export class Victory extends Scene {
     private displayCollectedItems(): void {
         const startY = 240;
         const itemSpacing = 90;
-        let currentY = startY;
+        // let currentY = startY;
         let animationDelay = 500;
         
         // Display items grouped by type
         let rowIndex = 0;
-        this.itemsByType.forEach((items, type) => {
+        this.itemsByType.forEach((items, _type) => {
             // Calculate total items of this type
             let totalCount = 0;
             for (const item of items) {

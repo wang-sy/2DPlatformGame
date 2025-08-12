@@ -134,6 +134,18 @@
           "width": 64,
           "x": 1088,
           "y": 960
+        },
+        {
+          "gid": 8,
+          "height": 64,
+          "id": 41,
+          "name": "frog",
+          "rotation": 0,
+          "type": "enemy",
+          "visible": true,
+          "width": 64,
+          "x": 640,
+          "y": 1088
         }
       ],
       "opacity": 1,
@@ -323,6 +335,39 @@
                  "type":"string",
                  "value":"#00FF00"
                 }]
+        }]
+    },
+    {
+      "firstgid": 8,
+      "image": "assets/enemy/frog.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "frog",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64,
+      "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"move_method",
+                 "type":"string",
+                 "value":"move_and_jump"
+                },
+                {
+                 "name":"atlas",
+                 "type":"bool",
+                 "value":true
+                },
+                {
+                  "name": "damage",
+                  "type": "int",
+                  "value": 1
+                }
+            ]
         }]
     }
   ],

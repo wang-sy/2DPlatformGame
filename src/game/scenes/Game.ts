@@ -3,6 +3,7 @@ import { Player } from '../sprites/Player';
 import { StaticHazard } from '../sprites/StaticHazard';
 import { Goal } from '../sprites/Goal';
 import { Collectible } from '../sprites/Collectible';
+import { Enemy } from '../sprites/Enemy';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
 
@@ -18,6 +19,7 @@ export class Game extends Scene
     hazards: Phaser.Physics.Arcade.StaticGroup;
     goals: Phaser.Physics.Arcade.StaticGroup;
     collectibles: Phaser.Physics.Arcade.StaticGroup;
+    enemies: Phaser.Physics.Arcade.Group;
     restartKey: Phaser.Input.Keyboard.Key;
     isVictory: boolean = false;
     healthUI: HealthUI;
@@ -109,6 +111,9 @@ export class Game extends Scene
             case "collectible":
                 this.createCollectibleFromTilemap(obj);
                 return
+            case "enemy":
+                this.createEnemyFromTilemap(obj);
+                return
             default:
                 console.log("unknown object type", obj.type);
         }
@@ -169,6 +174,23 @@ export class Game extends Scene
             this.collectedItemsManager.addMustCollectItem(collectible.getName());
         }
     }
+    
+    private createEnemyFromTilemap(enemyObject: Phaser.Types.Tilemaps.TiledObject) {
+        if (!this.enemies) {
+            this.enemies = this.physics.add.group({
+                classType: Enemy,
+                runChildUpdate: true
+            });
+        }
+        
+        const enemy = new Enemy(this, enemyObject);
+        this.enemies.add(enemy);
+        
+        // Set up collisions with tilemap layers
+        this.layers.forEach(layer => {
+            this.physics.add.collider(enemy, layer);
+        });
+    }
 
     private createOverleapEvents() {
         // Setup player vs hazards overlap detection
@@ -199,6 +221,17 @@ export class Game extends Scene
                 this.player,
                 this.collectibles,
                 this.handlePlayerCollectibleCollision,
+                undefined,
+                this
+            );
+        }
+        
+        // Setup player vs enemies overlap detection
+        if (this.player && this.enemies) {
+            this.physics.add.overlap(
+                this.player,
+                this.enemies,
+                this.handlePlayerEnemyCollision,
                 undefined,
                 this
             );
@@ -413,6 +446,29 @@ export class Game extends Scene
         
         // Update score display
         this.updateScoreDisplay();
+    }
+    
+    private handlePlayerEnemyCollision(player: any, enemy: any) {
+        const enemyInstance = enemy as Enemy;
+        const playerInstance = player as Player;
+        
+        // Check if player is jumping on enemy (player above enemy)
+        if (playerInstance.body?.velocity.y && 
+            playerInstance.body.velocity.y > 0 && 
+            playerInstance.y < enemyInstance.y - 20) {
+            // Player defeats enemy by jumping on it
+            enemyInstance.takeDamage(1);
+            // Bounce player up
+            playerInstance.setVelocityY(-300);
+        } else {
+            // Enemy damages player
+            playerInstance.takeDamage(enemyInstance.getDamage());
+            
+            // Update health UI
+            if (this.healthUI) {
+                this.healthUI.updateHealth(playerInstance.getHealth());
+            }
+        }
     }
     
     private updateScoreDisplay() {

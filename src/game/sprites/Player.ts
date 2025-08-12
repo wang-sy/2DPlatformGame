@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AnimationManager } from '../managers/AnimationManager';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -27,6 +28,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private health: number = 3;
     private maxHealth: number = 3;
     private isInvulnerable: boolean = false;
+    
+    // Animation
+    private animationManager: AnimationManager;
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -37,6 +41,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, key);
 
         this.key = key;
+        this.animationManager = AnimationManager.getInstance();
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -60,76 +65,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         this.cursors = scene.input.keyboard!.createCursorKeys();
         
-        this.createAnimations();
-        
-        this.play('idle');
+        // Play initial animation using AnimationManager
+        this.playAnimation('idle');
     }
 
-    private createAnimations(): void {
-        const scene = this.scene;
-        
-        if (!scene.anims.exists('idle')) {
-            scene.anims.create({
-                key: 'idle',
-                frames: [{ key: this.key, frame: 'idle/frame0000' }],
-                frameRate: 10,
-                repeat: -1
-            });
-        }
-
-        if (!scene.anims.exists('walk')) {
-            scene.anims.create({
-                key: 'walk',
-                frames: scene.anims.generateFrameNames(this.key, {
-                    prefix: 'walk/frame',
-                    start: 0,
-                    end: 1,
-                    zeroPad: 4
-                }),
-                frameRate: 10,
-                repeat: -1
-            });
-        }
-
-        if (!scene.anims.exists('jump')) {
-            scene.anims.create({
-                key: 'jump',
-                frames: [{ key: this.key, frame: 'jump/frame0000' }],
-                frameRate: 10,
-                repeat: 0
-            });
-        }
-
-        if (!scene.anims.exists('climb')) {
-            scene.anims.create({
-                key: 'climb',
-                frames: scene.anims.generateFrameNames(this.key, {
-                    prefix: 'climb/frame',
-                    start: 0,
-                    end: 1,
-                    zeroPad: 4
-                }),
-                frameRate: 10,
-                repeat: -1
-            });
-        }
-
-        if (!scene.anims.exists('duck')) {
-            scene.anims.create({
-                key: 'duck',
-                frames: [{ key: this.key, frame: 'duck/frame0000' }],
-                frameRate: 10,
-                repeat: 0
-            });
-        }
-
-        if (!scene.anims.exists('hit')) {
-            scene.anims.create({
-                key: 'hit',
-                frames: [{ key: this.key, frame: 'hit/frame0000' }],
-                frameRate: 10,
-                repeat: 0
-            });
+    private playAnimation(animName: string): void {
+        const animKey = this.animationManager.getAnimationKey(this.key, animName);
+        if (this.animationManager.hasAnimation(this.key, animName)) {
+            if (this.currentAnimation !== animKey) {
+                this.play(animKey);
+                this.currentAnimation = animKey;
+            }
         }
     }
 
@@ -159,33 +105,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.setVelocityX(-this.moveSpeed);
             this.setFlipX(true);
             
-            if (onGround && this.currentAnimation !== 'walk') {
-                this.play('walk');
-                this.currentAnimation = 'walk';
+            if (onGround) {
+                this.playAnimation('walk');
             }
         } else if (this.cursors.right.isDown) {
             this.setVelocityX(this.moveSpeed);
             this.setFlipX(false);
             
-            if (onGround && this.currentAnimation !== 'walk') {
-                this.play('walk');
-                this.currentAnimation = 'walk';
+            if (onGround) {
+                this.playAnimation('walk');
             }
         } else {
             this.setVelocityX(0);
             
-            if (onGround && !this.cursors.down.isDown && !this.isCharging && this.currentAnimation !== 'idle') {
-                this.play('idle');
-                this.currentAnimation = 'idle';
+            if (onGround && !this.cursors.down.isDown && !this.isCharging) {
+                this.playAnimation('idle');
             }
         }
         
         // Duck
         if (this.cursors.down.isDown && onGround && !this.isCharging) {
-            if (this.currentAnimation !== 'duck') {
-                this.play('duck');
-                this.currentAnimation = 'duck';
-            }
+            this.playAnimation('duck');
         }
         
         // Charge jump (hold space while on ground)
@@ -194,10 +134,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (spaceKey?.isDown && onGround && !this.isCharging) {
             this.isCharging = true;
             this.chargeTime = 0;
-            if (this.currentAnimation !== 'duck') {
-                this.play('duck');
-                this.currentAnimation = 'duck';
-            }
+            this.playAnimation('duck');
         }
         
         if (this.isCharging && spaceKey?.isDown) {
@@ -221,8 +158,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.isCharging = false;
             this.chargeTime = 0;
             this.clearTint();
-            this.play('jump');
-            this.currentAnimation = 'jump';
+            this.playAnimation('jump');
         }
         
         // Normal jump and double jump
@@ -236,42 +172,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityY(-this.jumpSpeed * 0.9);
                 this.wallJumpCooldown = 300;
                 this.jumpCount = 1;
-                this.play('jump');
-                this.currentAnimation = 'jump';
+                this.playAnimation('jump');
             }
             // Normal jump and double jump
             else if (this.jumpCount < this.maxJumps) {
                 const jumpPower = this.jumpCount === 0 ? this.jumpSpeed : this.jumpSpeed * 0.85;
                 this.setVelocityY(-jumpPower);
                 this.jumpCount++;
-                this.play('jump');
-                this.currentAnimation = 'jump';
+                this.playAnimation('jump');
             }
         }
         
         // Wall slide effect
         if (this.isTouchingWall && velocity.y > 0) {
             this.setVelocityY(Math.min(velocity.y, 100));
-            if (this.currentAnimation !== 'climb') {
-                this.play('climb');
-                this.currentAnimation = 'climb';
-            }
+            this.playAnimation('climb');
         }
         
         // Jump animation
-        if (!onGround && !this.isTouchingWall && this.currentAnimation !== 'jump') {
-            this.play('jump');
-            this.currentAnimation = 'jump';
+        if (!onGround && !this.isTouchingWall) {
+            this.playAnimation('jump');
         }
     }
 
     hit(): void {
-        this.play('hit');
-        this.currentAnimation = 'hit';
+        this.playAnimation('hit');
         
         this.scene.time.delayedCall(500, () => {
-            this.play('idle');
-            this.currentAnimation = 'idle';
+            this.playAnimation('idle');
         });
     }
 
@@ -283,8 +211,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.health -= damage;
         this.isInvulnerable = true;
         
-        this.play('hit');
-        this.currentAnimation = 'hit';
+        this.playAnimation('hit');
         
         const knockbackX = this.flipX ? 200 : -200;
         this.setVelocity(knockbackX, -300);

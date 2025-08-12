@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 
 export class Goal extends Phaser.Physics.Arcade.Sprite {
-    private goalType: string;
+    // private goalType: string;
     private collected: boolean = false;
 
     constructor(scene: Scene, goalObject: Phaser.Types.Tilemaps.TiledObject) {
@@ -15,7 +15,7 @@ export class Goal extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this, true);
         
         this.setOrigin(0.5, 0.5);
-        this.goalType = goalObject.name || 'flag';
+        // this.goalType = goalObject.name || 'flag';
         
         this.setSize(40, 56);
         this.setOffset(12, 8);

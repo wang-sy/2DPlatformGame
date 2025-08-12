@@ -62,6 +62,18 @@
           "width": 64,
           "x": 128,
           "y": 1088
+        },
+        {
+          "gid": 5,
+          "height": 64,
+          "id": 37,
+          "name": "flag_green_a",
+          "rotation": 0,
+          "type": "goal",
+          "visible": true,
+          "width": 64,
+          "x": 1472,
+          "y": 64
         }
       ],
       "opacity": 1,
@@ -166,6 +178,18 @@
                  "value":1
                 }]
         }]
+    },
+    {
+      "firstgid": 5,
+      "image": "assets/goal/flag_green_a.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "flag_green_a",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64
     }
   ],
   "tilewidth": 64,

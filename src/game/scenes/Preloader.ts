@@ -90,6 +90,7 @@ export class Preloader extends Scene
                 this.load.atlas(name, imageUri, atlasJsonUri);
             } else {
                 this.load.image(name, imageUri);
+                console.log("load image", name, imageUri)
             }
         })
     }

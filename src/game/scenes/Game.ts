@@ -1,6 +1,8 @@
 import { Scene } from 'phaser';
 import { Player } from '../sprites/Player';
 import { StaticHazard } from '../sprites/StaticHazard';
+import { Goal } from '../sprites/Goal';
+import { HealthUI } from '../ui/HealthUI';
 
 export class Game extends Scene
 {
@@ -12,7 +14,10 @@ export class Game extends Scene
     layers: Phaser.Tilemaps.TilemapLayer[];
     player: Player;
     hazards: Phaser.Physics.Arcade.StaticGroup;
+    goals: Phaser.Physics.Arcade.StaticGroup;
     restartKey: Phaser.Input.Keyboard.Key;
+    isVictory: boolean = false;
+    healthUI: HealthUI;
 
     constructor ()
     {
@@ -53,6 +58,12 @@ export class Game extends Scene
         
         // 设置重启快捷键 (R键)
         this.restartKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        
+        // 创建血量UI
+        this.healthUI = new HealthUI(this, 50, 50);
+        if (this.player) {
+            this.healthUI.updateHealth(this.player.getHealth());
+        }
     }
 
     private createObjectsFromTilemap() {
@@ -72,6 +83,9 @@ export class Game extends Scene
                 return
             case "hazard":
                 this.createHazardFromTilemap(obj);
+                return
+            case "goal":
+                this.createGoalFromTilemap(obj);
                 return
             default:
                 console.log("unknown object type", obj.type);
@@ -110,6 +124,15 @@ export class Game extends Scene
         const hazard = new StaticHazard(this, hazardObject);
         this.hazards.add(hazard);
     }
+    
+    private createGoalFromTilemap(goalObject: Phaser.Types.Tilemaps.TiledObject) {
+        if (!this.goals) {
+            this.goals = this.physics.add.staticGroup();
+        }
+        
+        const goal = new Goal(this, goalObject);
+        this.goals.add(goal);
+    }
 
     private createOverleapEvents() {
         // 设置玩家与hazards的overlap检测
@@ -122,6 +145,17 @@ export class Game extends Scene
                 this
             );
         }
+        
+        // 设置玩家与goals的overlap检测
+        if (this.player && this.goals) {
+            this.physics.add.overlap(
+                this.player,
+                this.goals,
+                this.handlePlayerGoalCollision,
+                undefined,
+                this
+            );
+        }
     }
 
     private handlePlayerHazardCollision(player: any, hazard: any) {
@@ -129,6 +163,25 @@ export class Game extends Scene
         const playerInstance = player as Player;
         
         playerInstance.takeDamage(hazardInstance.getDamage());
+        
+        // 更新血量UI
+        if (this.healthUI) {
+            this.healthUI.updateHealth(playerInstance.getHealth());
+        }
+    }
+    
+    private handlePlayerGoalCollision(player: any, goal: any) {
+        if (this.isVictory) return;
+        
+        const goalInstance = goal as Goal;
+        if (goalInstance.isCollected()) return;
+        
+        goalInstance.collect();
+        this.isVictory = true;
+        
+        this.time.delayedCall(1000, () => {
+            this.victory();
+        });
     }
 
     update() {
@@ -152,6 +205,21 @@ export class Game extends Scene
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
             // 启动GameOver场景
             this.scene.start('GameOver');
+            // 彻底移除并销毁Game场景
+            this.scene.remove('Game');
+        });
+    }
+    
+    victory() {
+        // 暂停物理世界
+        this.physics.world.pause();
+        
+        // 淡出效果
+        this.cameras.main.fadeOut(500, 255, 255, 255);
+        
+        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            // 启动Victory场景
+            this.scene.start('Victory');
             // 彻底移除并销毁Game场景
             this.scene.remove('Game');
         });

@@ -50,6 +50,18 @@
           "width": 64,
           "x": 64,
           "y": 960
+        },
+        {
+          "gid": 4,
+          "height": 64,
+          "id": 38,
+          "name": "spikes",
+          "rotation": 0,
+          "type": "hazard",
+          "visible": true,
+          "width": 64,
+          "x": 128,
+          "y": 960
         }
       ],
       "opacity": 1,
@@ -131,6 +143,28 @@
                  "value":true
                 }
             ]
+        }]
+    },
+    {
+      "firstgid": 4,
+      "image": "assets/hazards/spikes.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "spikes",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64,
+      "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"damage",
+                 "type":"int",
+                 "value":1
+                }]
         }]
     }
   ],

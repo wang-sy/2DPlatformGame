@@ -5,6 +5,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private moveSpeed: number = 200;
     private jumpSpeed: number = 500;
     private currentAnimation: string = '';
+    private key: string = '';
     
     // Double jump
     private jumpCount: number = 0;
@@ -34,6 +35,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         let key = tiledObject.name;
 
         super(scene, x, y, key);
+
+        this.key = key;
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -68,7 +71,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('idle')) {
             scene.anims.create({
                 key: 'idle',
-                frames: [{ key: 'character_purple', frame: 'idle/frame0000' }],
+                frames: [{ key: this.key, frame: 'idle/frame0000' }],
                 frameRate: 10,
                 repeat: -1
             });
@@ -77,7 +80,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('walk')) {
             scene.anims.create({
                 key: 'walk',
-                frames: scene.anims.generateFrameNames('character_purple', {
+                frames: scene.anims.generateFrameNames(this.key, {
                     prefix: 'walk/frame',
                     start: 0,
                     end: 1,
@@ -91,7 +94,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('jump')) {
             scene.anims.create({
                 key: 'jump',
-                frames: [{ key: 'character_purple', frame: 'jump/frame0000' }],
+                frames: [{ key: this.key, frame: 'jump/frame0000' }],
                 frameRate: 10,
                 repeat: 0
             });
@@ -100,7 +103,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('climb')) {
             scene.anims.create({
                 key: 'climb',
-                frames: scene.anims.generateFrameNames('character_purple', {
+                frames: scene.anims.generateFrameNames(this.key, {
                     prefix: 'climb/frame',
                     start: 0,
                     end: 1,
@@ -114,7 +117,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('duck')) {
             scene.anims.create({
                 key: 'duck',
-                frames: [{ key: 'character_purple', frame: 'duck/frame0000' }],
+                frames: [{ key: this.key, frame: 'duck/frame0000' }],
                 frameRate: 10,
                 repeat: 0
             });
@@ -123,7 +126,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!scene.anims.exists('hit')) {
             scene.anims.create({
                 key: 'hit',
-                frames: [{ key: 'character_purple', frame: 'hit/frame0000' }],
+                frames: [{ key: this.key, frame: 'hit/frame0000' }],
                 frameRate: 10,
                 repeat: 0
             });

@@ -1,10 +1,10 @@
-# Tilemap 配置详解
+# Tilemap Configuration Guide
 
-本文档详细说明 tilemap.json 的结构和配置方法。
+This document explains the structure and configuration of tilemap.json in detail.
 
-## 1. Tilesets（贴图集）
+## 1. Tilesets
 
-### 基本结构
+### Basic Structure
 
 ```json
 {
@@ -22,21 +22,21 @@
 }
 ```
 
-### firstgid 赋值逻辑
+### firstgid Assignment Logic
 
-firstgid（first global ID）是每个tileset的起始ID，必须按顺序递增：
+firstgid (first global ID) is the starting ID for each tileset and must increment sequentially:
 
-- 第1个tileset: `firstgid: 1`
-- 第2个tileset: `firstgid: 2`（如果第1个tileset只有1个tile）
-- 第3个tileset: `firstgid: 3`（如果前面共有2个tiles）
-- 依此类推...
+- 1st tileset: `firstgid: 1`
+- 2nd tileset: `firstgid: 2` (if the 1st tileset has only 1 tile)
+- 3rd tileset: `firstgid: 3` (if there are 2 tiles total before)
+- And so on...
 
-**计算公式**: 
+**Formula**: 
 ```
-下一个firstgid = 当前firstgid + 当前tilecount
+next firstgid = current firstgid + current tilecount
 ```
 
-**示例**:
+**Example**:
 ```json
 [
   {"firstgid": 1, "tilecount": 1, "name": "grass_center"},    // ID: 1
@@ -47,29 +47,29 @@ firstgid（first global ID）是每个tileset的起始ID，必须按顺序递增
 ]
 ```
 
-### Properties 配置
+### Properties Configuration
 
-不同类型的素材需要不同的properties：
+Different types of assets require different properties:
 
-#### 地形瓦片（Terrain Tiles）
-用于构建可碰撞的地面和平台：
+#### Terrain Tiles
+For building collidable ground and platforms:
 ```json
 "tiles": [
   {
-    "id": 0,  // tileset内部的局部ID，总是从0开始
+    "id": 0,  // Local ID within tileset, always starts from 0
     "properties": [
       {
         "name": "collision",
         "type": "bool",
-        "value": true  // 启用碰撞检测，玩家不能穿过
+        "value": true  // Enable collision detection, player cannot pass through
       }
     ]
   }
 ]
 ```
 
-#### 精灵图集（Sprite Atlas）
-需要动画支持的资源（如角色、动态物体等）：
+#### Sprite Atlas
+Resources that need animation support (characters, animated objects, etc.):
 ```json
 "tiles": [
   {
@@ -78,16 +78,16 @@ firstgid（first global ID）是每个tileset的起始ID，必须按顺序递增
       {
         "name": "atlas",
         "type": "bool",
-        "value": true  // 以atlas形式加载，需要对应的.json文件定义动画帧
+        "value": true  // Load as atlas, requires corresponding .json file for animation frames
       }
     ]
   }
 ]
 ```
-**注意**：设置atlas为true时，系统会自动寻找同名的.json文件作为图集配置。例如`character_purple.png`会配套寻找`character_purple.json`。
+**Note**: When atlas is set to true, the system will automatically look for a matching .json file as the atlas configuration. For example, `character_purple.png` will look for `character_purple.json`.
 
-#### 危险物（Hazards）
-会对玩家造成伤害的物体：
+#### Hazards
+Objects that cause damage to the player:
 ```json
 "tiles": [
   {
@@ -96,73 +96,78 @@ firstgid（first global ID）是每个tileset的起始ID，必须按顺序递增
       {
         "name": "damage",
         "type": "int",
-        "value": 1  // 伤害值，碰到扣除的血量
+        "value": 1  // Damage value, health points deducted on contact
       }
     ]
   }
 ]
 ```
 
+#### Decorations
+Pure decorative elements, no properties needed:
+```json
+"tiles": []  // Can be left empty or omitted
+```
 
-### Properties 含义总结
+### Properties Summary
 
-| Property名称 | 类型 | 作用 | 适用对象 |
-|------------|------|------|---------|
-| collision | bool | 是否可碰撞（true=实体） | 地形瓦片 |
-| atlas | bool | 是否以图集形式加载（true=需要.json配置文件） | 任何需要动画的资源 |
-| damage | int | 造成的伤害值 | 危险物 |
+| Property Name | Type | Purpose | Applicable To |
+|--------------|------|---------|---------------|
+| collision | bool | Whether collidable (true=solid) | Terrain tiles |
+| atlas | bool | Whether to load as atlas (true=needs .json config file) | Any resource needing animation |
+| damage | int | Damage dealt | Hazards |
 
-## 2. Tile Layer（瓦片图层）
+## 2. Tile Layer
 
-### 基本结构
+### Basic Structure
 
 ```json
 {
   "type": "tilelayer",
   "name": "Level1",
-  "width": 25,      // 地图宽度（格子数）
-  "height": 19,     // 地图高度（格子数）
+  "width": 25,      // Map width (in tiles)
+  "height": 19,     // Map height (in tiles)
   "x": 0,
   "y": 0,
   "visible": true,
   "opacity": 1,
-  "data": [...]     // 地图数据数组
+  "data": [...]     // Map data array
 }
 ```
 
-### 字段说明
+### Field Descriptions
 
-- **type**: 必须为 "tilelayer"
-- **name**: 图层名称，可自定义
-- **width/height**: 定义地图尺寸（格子数量）
-- **data**: 一维数组，长度必须等于 width × height
+- **type**: Must be "tilelayer"
+- **name**: Layer name, customizable
+- **width/height**: Define map dimensions (number of tiles)
+- **data**: One-dimensional array, length must equal width × height
 
-### 地图定义方法
+### Map Definition Method
 
-data数组按从左到右、从上到下的顺序排列：
+The data array is arranged from left to right, top to bottom:
 
 ```
-位置计算: index = y * width + x
+Position calculation: index = y * width + x
 
-示例（5×3的地图）:
+Example (5×3 map):
 [
-  1,1,1,1,1,  // 第1行 (y=0)
-  0,0,0,0,0,  // 第2行 (y=1)  
-  2,2,2,2,2   // 第3行 (y=2)
+  1,1,1,1,1,  // Row 1 (y=0)
+  0,0,0,0,0,  // Row 2 (y=1)  
+  2,2,2,2,2   // Row 3 (y=2)
 ]
 ```
 
-### ID对应关系
+### ID Correspondence
 
-data数组中的数字对应tilesets的firstgid：
+Numbers in the data array correspond to tileset firstgids:
 
-- `0` = 空（无瓦片）
-- `1` = firstgid为1的tileset（如grass_center）
-- `2` = firstgid为2的tileset（如grass_top）
-- `3` = firstgid为3的tileset（如character）
-- 以此类推...
+- `0` = Empty (no tile)
+- `1` = Tileset with firstgid=1 (e.g., grass_center)
+- `2` = Tileset with firstgid=2 (e.g., grass_top)
+- `3` = Tileset with firstgid=3 (e.g., character)
+- And so on...
 
-**完整示例**:
+**Complete Example**:
 ```json
 {
   "type": "tilelayer",
@@ -170,18 +175,18 @@ data数组中的数字对应tilesets的firstgid：
   "width": 10,
   "height": 5,
   "data": [
-    0,0,0,0,0,0,0,0,0,0,  // 空行
-    0,0,2,2,2,2,0,0,0,0,  // 草地顶部（firstgid=2）
-    0,0,1,1,1,1,0,0,0,0,  // 草地中心（firstgid=1）
-    2,2,2,2,2,2,2,2,2,2,  // 完整地面顶部
-    1,1,1,1,1,1,1,1,1,1   // 完整地面主体
+    0,0,0,0,0,0,0,0,0,0,  // Empty row
+    0,0,2,2,2,2,0,0,0,0,  // Grass top (firstgid=2)
+    0,0,1,1,1,1,0,0,0,0,  // Grass center (firstgid=1)
+    2,2,2,2,2,2,2,2,2,2,  // Full ground top
+    1,1,1,1,1,1,1,1,1,1   // Full ground body
   ]
 }
 ```
 
-## 3. Objects Layer（对象图层）
+## 3. Objects Layer
 
-### 基本结构
+### Basic Structure
 
 ```json
 {
@@ -191,158 +196,164 @@ data数组中的数字对应tilesets的firstgid：
   "opacity": 1,
   "x": 0,
   "y": 0,
-  "objects": [...]  // 对象数组
+  "objects": [...]  // Objects array
 }
 ```
 
-### 对象结构
+### Object Structure
 
-每个对象包含：
+Each object contains:
 ```json
 {
-  "gid": 3,                    // 对应tileset的firstgid
-  "id": 38,                    // 对象的唯一ID（系统生成）
-  "name": "character_purple",  // ⚠️ 必须与tileset的name完全一致！
-  "type": "player",            // 对象类型（决定游戏行为）
+  "gid": 3,                    // Corresponds to tileset's firstgid
+  "id": 38,                    // Object's unique ID (system-generated)
+  "name": "character_purple",  // ⚠️ Must exactly match tileset's name!
+  "type": "player",            // Object type (determines game behavior)
   "visible": true,
   "rotation": 0,
-  "x": 64,                     // X坐标（像素）
-  "y": 960,                    // Y坐标（像素）
-  "width": 64,                 // 宽度（像素）
-  "height": 64                 // 高度（像素）
+  "x": 64,                     // X coordinate (pixels)
+  "y": 960,                    // Y coordinate (pixels)
+  "width": 64,                 // Width (pixels)
+  "height": 64                 // Height (pixels)
 }
 ```
 
-### ⚠️ 重要：name 字段匹配规则
+### ⚠️ Important: Name Field Matching Rules
 
-**对象的 `name` 必须与对应 tileset 的 `name` 完全一致！**
+**The object's `name` must exactly match the corresponding tileset's `name`!**
 
-这是因为系统通过 name 来查找并加载正确的贴图资源。
+This is because the system uses the name to find and load the correct texture resource.
 
-**正确示例**：
+**Correct Example**:
 ```json
-// tileset 定义
+// tileset definition
 {
   "firstgid": 4,
-  "name": "spikes",  // tileset名称
+  "name": "spikes",  // tileset name
   "image": "assets/hazards/spikes.png"
 }
 
-// object 使用
+// object usage
 {
   "gid": 4,
-  "name": "spikes",  // ✅ 与tileset的name一致
+  "name": "spikes",  // ✅ Matches tileset's name
   "type": "hazard"
 }
 ```
 
-**错误示例**：
+**Incorrect Examples**:
 ```json
-// tileset 定义
+// tileset definition
 {
   "firstgid": 4,
   "name": "spikes",
   "image": "assets/hazards/spikes.png"
 }
 
-// object 使用
+// object usage
 {
   "gid": 4,
-  "name": "spike",   // ❌ 错误！少了s
+  "name": "spike",   // ❌ Wrong! Missing 's'
   "type": "hazard"
 }
 
 {
   "gid": 4,
-  "name": "Spikes",  // ❌ 错误！大小写不一致
+  "name": "Spikes",  // ❌ Wrong! Case mismatch
   "type": "hazard"
 }
 ```
 
-### 支持的对象类型（type）
+### Supported Object Types
 
-系统根据type字段决定对象的行为：
+The system determines object behavior based on the type field:
 
-#### 1. player（玩家）
+#### 1. player
 ```json
 {
   "type": "player",
   "name": "character_purple",
   "x": 100,
   "y": 500,
-  "width": 64,   // 决定角色显示大小
-  "height": 64   // 决定角色显示大小
+  "width": 64,   // Determines character display size
+  "height": 64   // Determines character display size
 }
 ```
-- 游戏主角，受玩家控制
-- 每个关卡只能有一个
-- 拥有生命值、跳跃等能力
+- Game protagonist, controlled by player
+- Only one allowed per level
+- Has health, jumping abilities, etc.
 
-#### 2. hazard（危险物）
+#### 2. hazard
 ```json
 {
   "type": "hazard",
   "name": "spikes",
   "x": 200,
   "y": 500,
-  "width": 64,   // 决定危险区域大小
-  "height": 64   // 决定危险区域大小
+  "width": 64,   // Determines hazard area size
+  "height": 64   // Determines hazard area size
 }
 ```
-- 静态危险物，碰触造成伤害
-- 可放置多个
-- 伤害值由tileset的properties定义
+- Static hazards that cause damage on contact
+- Multiple can be placed
+- Damage value defined by tileset's properties
 
-#### 3. goal（目标）
+#### 3. goal
 ```json
 {
   "type": "goal",
   "name": "flag_green_a",
   "x": 1400,
   "y": 100,
-  "width": 64,   // 决定触发区域大小
-  "height": 64   // 决定触发区域大小
+  "width": 64,   // Determines trigger area size
+  "height": 64   // Determines trigger area size
 }
 ```
-- 关卡终点，触碰后通关
-- 通常为旗帜或传送门
-- 建议每关只有一个
+- Level endpoint, triggers victory on contact
+- Usually a flag or portal
+- Recommended one per level
 
-### width和height的作用
+### Width and Height Effects
 
-width和height影响对象的多个方面：
+Width and height affect multiple aspects of objects:
 
-1. **视觉显示**
-   - 决定贴图的缩放比例
-   - 原图64×64，设置width:128会放大2倍
+1. **Visual Display**
+   - Determines texture scaling
+   - Original 64×64, setting width:128 scales 2x
 
-2. **碰撞检测**
-   - 影响碰撞体积的初始大小
-   - 实际碰撞体积可能会在代码中调整
+2. **Collision Detection**
+   - Affects initial collision volume size
+   - Actual collision volume may be adjusted in code
 
-3. **交互范围**
-   - 对于goal，决定触发通关的范围
-   - 对于hazard，决定造成伤害的范围
+3. **Interaction Range**
+   - For goals, determines victory trigger range
+   - For hazards, determines damage range
 
-**示例：不同尺寸的配置**
+**Example: Different Size Configurations**
 ```json
 "objects": [
   {
     "type": "hazard",
     "name": "spikes_small",
-    "width": 32,   // 小型尖刺
+    "width": 32,   // Small spikes
     "height": 32
+  },
+  {
+    "type": "hazard", 
+    "name": "spikes_large",
+    "width": 128,  // Large spikes
+    "height": 64
   },
   {
     "type": "goal",
     "name": "flag",
-    "width": 64,   // 标准尺寸旗帜
-    "height": 96   // 高度略大，更容易触碰
+    "width": 64,   // Standard size flag
+    "height": 96   // Slightly taller, easier to touch
   }
 ]
 ```
 
-## 完整配置示例
+## Complete Configuration Example
 
 ```json
 {

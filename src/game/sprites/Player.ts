@@ -310,7 +310,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.body?.setEnable(false);
         
         this.scene.time.delayedCall(1000, () => {
-            // \u8c03\u7528Game\u573a\u666f\u7684restartGame\u65b9\u6cd5
+            // Call Game scene's restartGame method
             const gameScene = this.scene as any;
             if (gameScene.restartGame) {
                 gameScene.restartGame();

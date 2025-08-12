@@ -27,14 +27,14 @@ export class GameOver extends Scene
         });
         this.gameover_text.setOrigin(0.5);
         
-        const restartText = this.add.text(512, 420, '点击重新开始', {
+        const restartText = this.add.text(512, 420, 'Click to Restart', {
             fontFamily: 'Arial', fontSize: 24, color: '#ffffff',
             stroke: '#000000', strokeThickness: 4,
             align: 'center'
         });
         restartText.setOrigin(0.5);
         
-        const menuText = this.add.text(512, 480, '按 ESC 返回主菜单', {
+        const menuText = this.add.text(512, 480, 'Press ESC to Return to Main Menu', {
             fontFamily: 'Arial', fontSize: 20, color: '#aaaaaa',
             stroke: '#000000', strokeThickness: 3,
             align: 'center'
@@ -42,13 +42,13 @@ export class GameOver extends Scene
         menuText.setOrigin(0.5);
 
         this.input.once('pointerdown', () => {
-            // 重新添加并启动全新的Game场景
+            // Re-add and start a fresh Game scene
             this.scene.add('Game', Game, false);
             this.scene.start('Game');
             this.scene.stop('GameOver');
         });
         
-        // ESC键返回主菜单
+        // ESC key to return to main menu
         const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         escKey?.once('down', () => {
             this.scene.start('MainMenu');

@@ -1,102 +1,102 @@
-# 代码结构文档
+# Code Structure Documentation
 
-## ⚠️ 重要提示
+## ⚠️ Important Notice
 
-**请优先通过修改 `tilemap.json` 来定制游戏，而非修改源代码！**
+**Please prioritize customizing the game by modifying `tilemap.json` rather than modifying source code!**
 
-本游戏框架设计为**数据驱动**，几乎所有游戏内容都可以通过配置文件实现：
-- ✅ 关卡设计 → 修改 tilemap.json
-- ✅ 添加新素材 → 在 tilemap.json 中注册
-- ✅ 调整难度 → 配置 properties
-- ❌ 修改核心代码 → 仅在必要时进行
+This game framework is designed to be **data-driven**, where almost all game content can be implemented through configuration files:
+- ✅ Level design → Modify tilemap.json
+- ✅ Add new assets → Register in tilemap.json
+- ✅ Adjust difficulty → Configure properties
+- ❌ Modify core code → Only when necessary
 
-## 📁 源代码结构
+## 📁 Source Code Structure
 
 ```
 src/
-├── main.ts                 # 应用入口
+├── main.ts                 # Application entry point
 └── game/
-    ├── main.ts            # Phaser游戏配置
-    ├── scenes/            # 游戏场景
-    │   ├── Boot.ts        # 启动场景
-    │   ├── Preloader.ts   # 资源加载场景 ⚡
-    │   ├── MainMenu.ts    # 主菜单场景
-    │   ├── Game.ts        # 核心游戏场景 ⚡
-    │   ├── GameOver.ts    # 游戏结束场景
-    │   └── Victory.ts     # 通关场景
-    ├── sprites/           # 游戏精灵对象
-    │   ├── Player.ts      # 玩家角色 ⚡
-    │   ├── StaticHazard.ts # 静态危险物
-    │   └── Goal.ts        # 目标点
-    └── ui/               # UI组件
-        └── HealthUI.ts    # 血量显示
+    ├── main.ts            # Phaser game configuration
+    ├── scenes/            # Game scenes
+    │   ├── Boot.ts        # Boot scene
+    │   ├── Preloader.ts   # Asset loading scene ⚡
+    │   ├── MainMenu.ts    # Main menu scene
+    │   ├── Game.ts        # Core game scene ⚡
+    │   ├── GameOver.ts    # Game over scene
+    │   └── Victory.ts     # Victory scene
+    ├── sprites/           # Game sprite objects
+    │   ├── Player.ts      # Player character ⚡
+    │   ├── StaticHazard.ts # Static hazards
+    │   └── Goal.ts        # Goal objectives
+    └── ui/               # UI components
+        └── HealthUI.ts    # Health display
 ```
 
-⚡ = 核心文件，修改需谨慎
+⚡ = Core files, modify with caution
 
-## 🎮 核心系统说明
+## 🎮 Core System Overview
 
-### 1. 资源自动加载系统 (`Preloader.ts`)
+### 1. Automatic Asset Loading System (`Preloader.ts`)
 
-**功能**: 自动解析 tilemap.json 并加载所有资源
+**Function**: Automatically parses tilemap.json and loads all assets
 
 ```typescript
-// 系统会自动识别并加载：
-// - 普通图片 → this.load.image()
-// - 精灵图集 → this.load.atlas() (需要atlas属性)
+// The system automatically identifies and loads:
+// - Regular images → this.load.image()
+// - Sprite atlases → this.load.atlas() (requires atlas property)
 ```
 
-**扩展建议**：
-- ✅ 在 tilemap 中添加新的 tileset
-- ❌ 不要硬编码资源路径
+**Extension Recommendations**:
+- ✅ Add new tilesets in tilemap
+- ❌ Don't hardcode asset paths
 
-### 2. 对象创建系统 (`Game.ts`)
+### 2. Object Creation System (`Game.ts`)
 
-**功能**: 根据 tilemap 中的 type 字段自动创建游戏对象
+**Function**: Automatically creates game objects based on the type field in tilemap
 
 ```typescript
 private createObject(obj) {
     switch (obj.type) {
-        case "player":    // 创建玩家
-        case "hazard":    // 创建危险物
-        case "goal":      // 创建目标
+        case "player":    // Create player
+        case "hazard":    // Create hazards
+        case "goal":      // Create goals
     }
 }
 ```
 
-**扩展新对象类型**：
+**Extending New Object Types**:
 ```typescript
-// 1. 在 switch 中添加新 case
+// 1. Add new case in switch
 case "moving_platform":
     this.createMovingPlatformFromTilemap(obj);
     return
 
-// 2. 创建对应的类文件
+// 2. Create corresponding class file
 // sprites/MovingPlatform.ts
 
-// 3. 在 tilemap 中使用
+// 3. Use in tilemap
 {
     "type": "moving_platform",
     "properties": [...]
 }
 ```
 
-### 3. 碰撞检测系统 (`Game.ts`)
+### 3. Collision Detection System (`Game.ts`)
 
-**功能**: 统一管理所有碰撞事件
+**Function**: Unified management of all collision events
 
 ```typescript
 private createOverleapEvents() {
-    // 玩家 vs 危险物
+    // Player vs hazards
     this.physics.add.overlap(player, hazards, callback)
-    // 玩家 vs 目标
+    // Player vs goals
     this.physics.add.overlap(player, goals, callback)
 }
 ```
 
-**添加新碰撞类型**：
+**Adding New Collision Types**:
 ```typescript
-// 添加新的碰撞组
+// Add new collision group
 if (this.player && this.newGroup) {
     this.physics.add.overlap(
         this.player,
@@ -108,31 +108,31 @@ if (this.player && this.newGroup) {
 }
 ```
 
-## 🔧 通用扩展模式
+## 🔧 Common Extension Patterns
 
-### 添加新的游戏元素
+### Adding New Game Elements
 
-**推荐流程**：
+**Recommended Process**:
 
-1. **创建精灵类** (`sprites/NewElement.ts`)
+1. **Create Sprite Class** (`sprites/NewElement.ts`)
 ```typescript
 export class NewElement extends Phaser.Physics.Arcade.Sprite {
     constructor(scene: Scene, elementObject: Phaser.Types.Tilemaps.TiledObject) {
-        // 从 tilemap 读取配置
+        // Read configuration from tilemap
         const properties = elementObject.properties as any;
-        // 初始化逻辑
+        // Initialization logic
     }
 }
 ```
 
-2. **在 Game.ts 中注册**
+2. **Register in Game.ts**
 ```typescript
 case "new_element":
     this.createNewElementFromTilemap(obj);
     return
 ```
 
-3. **在 tilemap.json 中使用**
+3. **Use in tilemap.json**
 ```json
 {
     "type": "new_element",
@@ -141,98 +141,98 @@ case "new_element":
 }
 ```
 
-### 修改现有行为
+### Modifying Existing Behavior
 
-**优先级**：
-1. 🥇 通过 properties 配置
-2. 🥈 扩展类而非修改
-3. 🥉 最后才考虑修改核心代码
+**Priority Order**:
+1. 🥇 Configure through properties
+2. 🥈 Extend classes rather than modify
+3. 🥉 Only modify core code as a last resort
 
-**示例：调整危险物伤害**
+**Example: Adjusting Hazard Damage**
 ```json
-// ✅ 好的做法：在 tilemap 中配置
+// ✅ Good practice: Configure in tilemap
 "properties": [
     {"name": "damage", "value": 2}
 ]
 
-// ❌ 避免：硬编码在 StaticHazard.ts 中
-this.damage = 2; // 不要这样做
+// ❌ Avoid: Hardcode in StaticHazard.ts
+this.damage = 2; // Don't do this
 ```
 
-## 📝 各文件职责
+## 📝 File Responsibilities
 
-### Scenes（场景）
+### Scenes
 
-| 文件 | 职责 | 是否可修改 |
+| File | Responsibility | Modifiable |
 |-----|------|-----------|
-| Boot.ts | 加载初始资源 | ⚠️ 谨慎 |
-| Preloader.ts | 自动加载 tilemap 资源 | ⚠️ 谨慎 |
-| MainMenu.ts | 主菜单界面 | ✅ 可以 |
-| Game.ts | 核心游戏逻辑 | ⚠️ 仅扩展 |
-| GameOver.ts | 失败界面 | ✅ 可以 |
-| Victory.ts | 胜利界面 | ✅ 可以 |
+| Boot.ts | Load initial assets | ⚠️ Caution |
+| Preloader.ts | Auto-load tilemap assets | ⚠️ Caution |
+| MainMenu.ts | Main menu interface | ✅ Yes |
+| Game.ts | Core game logic | ⚠️ Extend only |
+| GameOver.ts | Game over interface | ✅ Yes |
+| Victory.ts | Victory interface | ✅ Yes |
 
-### Sprites（精灵）
+### Sprites
 
-| 文件 | 职责 | 是否可修改 |
+| File | Responsibility | Modifiable |
 |-----|------|-----------|
-| Player.ts | 玩家控制、动画、技能 | ⚠️ 谨慎 |
-| StaticHazard.ts | 静态危险物基类 | 🔄 可扩展 |
-| Goal.ts | 通关目标逻辑 | 🔄 可扩展 |
+| Player.ts | Player control, animation, skills | ⚠️ Caution |
+| StaticHazard.ts | Static hazard base class | 🔄 Extensible |
+| Goal.ts | Goal objective logic | 🔄 Extensible |
 
-### UI（界面）
+### UI (Interface)
 
-| 文件 | 职责 | 是否可修改 |
+| File | Responsibility | Modifiable |
 |-----|------|-----------|
-| HealthUI.ts | 血量显示 | ✅ 可以 |
+| HealthUI.ts | Health display | ✅ Yes |
 
-## 🎯 最佳实践
+## 🎯 Best Practices
 
 ### DO ✅
 
-1. **数据驱动设计**
-   - 将配置放在 tilemap.json
-   - 使用 properties 传递参数
-   - 通过 type 字段区分行为
+1. **Data-Driven Design**
+   - Place configuration in tilemap.json
+   - Use properties to pass parameters
+   - Use type field to distinguish behavior
 
-2. **通用化设计**
-   - 创建基类供扩展
-   - 使用接口定义规范
-   - 保持代码可复用
+2. **Generic Design**
+   - Create base classes for extension
+   - Use interfaces to define standards
+   - Keep code reusable
 
-3. **扩展而非修改**
+3. **Extend Rather Than Modify**
    ```typescript
-   // 好的做法：扩展基类
+   // Good practice: Extend base class
    class FireHazard extends StaticHazard {
-       // 添加火焰特效
+       // Add fire effects
    }
    ```
 
 ### DON'T ❌
 
-1. **硬编码数值**
+1. **Hardcode Values**
    ```typescript
-   // 避免
-   const damage = 10; // 应从 tilemap 读取
+   // Avoid
+   const damage = 10; // Should read from tilemap
    ```
 
-2. **直接修改核心循环**
+2. **Directly Modify Core Loop**
    ```typescript
-   // 避免修改 Game.update()
-   // 使用事件系统代替
+   // Avoid modifying Game.update()
+   // Use event system instead
    ```
 
-3. **破坏数据流**
+3. **Break Data Flow**
    ```typescript
-   // 避免
-   this.player.health = 999; // 应通过方法调用
+   // Avoid
+   this.player.health = 999; // Should use method calls
    ```
 
-## 🚀 快速开始新功能
+## 🚀 Quick Start for New Features
 
-### 示例：添加移动平台
+### Example: Adding Moving Platform
 
-1. **创建类文件**
+1. **Create Class File**
 ```typescript
 // sprites/MovingPlatform.ts
 export class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
@@ -247,12 +247,12 @@ export class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
     }
     
     update() {
-        // 移动逻辑
+        // Movement logic
     }
 }
 ```
 
-2. **注册到 Game.ts**
+2. **Register in Game.ts**
 ```typescript
 case "moving_platform":
     const platform = new MovingPlatform(this, obj);
@@ -260,7 +260,7 @@ case "moving_platform":
     return
 ```
 
-3. **在 tilemap 中使用**
+3. **Use in tilemap**
 ```json
 {
     "type": "moving_platform",
@@ -272,49 +272,49 @@ case "moving_platform":
 }
 ```
 
-## 📚 扩展指南
+## 📚 Extension Guide
 
-### 添加新场景
-1. 创建 `scenes/NewScene.ts`
-2. 在 `game/main.ts` 中注册
-3. 使用 `this.scene.start('NewScene')` 切换
+### Adding New Scenes
+1. Create `scenes/NewScene.ts`
+2. Register in `game/main.ts`
+3. Use `this.scene.start('NewScene')` to switch
 
-### 添加新UI元素
-1. 创建 `ui/NewUI.ts`
-2. 在需要的场景中实例化
-3. 使用 `setScrollFactor(0)` 固定位置
+### Adding New UI Elements
+1. Create `ui/NewUI.ts`
+2. Instantiate in required scenes
+3. Use `setScrollFactor(0)` to fix position
 
-### 添加新的物理组
-1. 在 Game.ts 中创建组
-2. 添加碰撞检测
-3. 在 tilemap 中配置对象
+### Adding New Physics Groups
+1. Create group in Game.ts
+2. Add collision detection
+3. Configure objects in tilemap
 
-## ⚡ 性能建议
+## ⚡ Performance Recommendations
 
-1. **使用对象池**：频繁创建/销毁的对象
-2. **使用 StaticGroup**：不移动的对象
-3. **限制更新频率**：非关键逻辑可降频
-4. **优化碰撞检测**：使用空间分区
+1. **Use Object Pools**: For frequently created/destroyed objects
+2. **Use StaticGroup**: For non-moving objects
+3. **Limit Update Frequency**: Non-critical logic can run at lower frequency
+4. **Optimize Collision Detection**: Use spatial partitioning
 
-## 🔍 调试技巧
+## 🔍 Debugging Tips
 
-1. **开启物理调试**
+1. **Enable Physics Debug**
 ```typescript
 // game/main.ts
 physics: {
     arcade: {
-        debug: true  // 显示碰撞边界
+        debug: true  // Show collision boundaries
     }
 }
 ```
 
-2. **查看 tilemap 数据**
+2. **View Tilemap Data**
 ```typescript
 console.log(this.map.layers);
 console.log(this.map.objects);
 ```
 
-3. **监控性能**
+3. **Monitor Performance**
 ```typescript
 this.game.config.fps.target = 60;
 this.game.config.fps.min = 30;
@@ -322,13 +322,13 @@ this.game.config.fps.min = 30;
 
 ---
 
-## 📌 总结
+## 📌 Summary
 
-**核心原则**：
-1. 📄 **配置优先** - 能用 tilemap 解决的不改代码
-2. 🔄 **扩展优先** - 能扩展的不修改原文件
-3. 🎯 **通用优先** - 设计通用方案而非特例
+**Core Principles**:
+1. 📄 **Configuration First** - Use tilemap instead of code changes when possible
+2. 🔄 **Extension First** - Extend rather than modify original files
+3. 🎯 **Generic First** - Design generic solutions rather than special cases
 
-**记住**：这个框架的强大之处在于其**数据驱动**的设计。充分利用 tilemap.json 的配置能力，你可以创建丰富多样的游戏内容，而无需触碰一行代码！
+**Remember**: The power of this framework lies in its **data-driven** design. By fully utilizing the configuration capabilities of tilemap.json, you can create rich and diverse game content without touching a single line of code!
 
-如需深度定制，请遵循上述扩展模式，保持代码的整洁性和可维护性。
+For deep customization, please follow the extension patterns above to maintain code cleanliness and maintainability.

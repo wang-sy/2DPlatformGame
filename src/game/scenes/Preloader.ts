@@ -38,7 +38,7 @@ export class Preloader extends Scene
         // Download tilemap.
         this.load.text('tilemap_json_raw', 'assets/tilemap/scenes/tilemap.json');
         
-        // 监听text文件加载完成，然后在preload阶段加载其他资源
+        // Listen for text file loading completion, then load other resources during preload phase
         this.load.once('filecomplete-text-tilemap_json_raw', () => {
             this.loadAllAssets();
         });
@@ -51,7 +51,7 @@ export class Preloader extends Scene
         try {
             tilemapJsonObj = JSON.parse(tilemapJsonRaw);
         } catch (e) {
-            console.error('解析 tilemap_json_raw 失败:', e);
+            console.error('Failed to parse tilemap_json_raw:', e);
         }
 
         let tilesets = tilemapJsonObj["tilesets"];
@@ -85,7 +85,7 @@ export class Preloader extends Scene
             }
 
             if (isAtlas) {
-                // 将 imageUri 的文件扩展名替换为 .json
+                // Replace the file extension of imageUri with .json
                 let atlasJsonUri = imageUri.replace(/(\.[^/.]+)$/, '.json');
                 this.load.atlas(name, imageUri, atlasJsonUri);
             } else {

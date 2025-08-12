@@ -12,8 +12,8 @@ export class Victory extends Scene {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
         
-        // \u80dc\u5229\u6807\u9898
-        const victoryText = this.add.text(centerX, centerY - 100, '\u901a\u5173\u6210\u529f\uff01', {
+        // Victory title
+        const victoryText = this.add.text(centerX, centerY - 100, 'Level Complete!', {
             fontFamily: 'Arial Black',
             fontSize: 72,
             color: '#ffffff',
@@ -22,7 +22,7 @@ export class Victory extends Scene {
         });
         victoryText.setOrigin(0.5);
         
-        // \u52a8\u753b\u6548\u679c
+        // Animation effect
         this.tweens.add({
             targets: victoryText,
             scale: { from: 0, to: 1 },
@@ -30,8 +30,8 @@ export class Victory extends Scene {
             ease: 'Back.easeOut'
         });
         
-        // \u7ee7\u7eed\u6e38\u620f\u63d0\u793a
-        const continueText = this.add.text(centerX, centerY + 50, '\u70b9\u51fb\u7ee7\u7eed', {
+        // Continue game prompt
+        const continueText = this.add.text(centerX, centerY + 50, 'Click to Continue', {
             fontFamily: 'Arial',
             fontSize: 32,
             color: '#ffffff',
@@ -48,7 +48,7 @@ export class Victory extends Scene {
                 duration: 500
             });
             
-            // \u95ea\u70c1\u6548\u679c
+            // Blinking effect
             this.tweens.add({
                 targets: continueText,
                 alpha: { from: 1, to: 0.5 },
@@ -58,8 +58,8 @@ export class Victory extends Scene {
             });
         });
         
-        // \u8fd4\u56de\u4e3b\u83dc\u5355\u63d0\u793a
-        const menuText = this.add.text(centerX, centerY + 120, '\u6309 ESC \u8fd4\u56de\u4e3b\u83dc\u5355', {
+        // Return to main menu prompt
+        const menuText = this.add.text(centerX, centerY + 120, 'Press ESC to Return to Main Menu', {
             fontFamily: 'Arial',
             fontSize: 20,
             color: '#aaaaaa',
@@ -68,18 +68,18 @@ export class Victory extends Scene {
         });
         menuText.setOrigin(0.5);
         
-        // \u521b\u5efa\u661f\u661f\u7c92\u5b50\u6548\u679c
+        // Create star particle effect
         this.createStarParticles();
         
-        // \u70b9\u51fb\u7ee7\u7eed\u6e38\u620f
+        // Click to continue game
         this.input.once('pointerdown', () => {
-            // \u91cd\u65b0\u6dfb\u52a0\u5e76\u542f\u52a8\u5168\u65b0\u7684Game\u573a\u666f
+            // Re-add and start a fresh Game scene
             this.scene.add('Game', Game, false);
             this.scene.start('Game');
             this.scene.stop('Victory');
         });
         
-        // ESC\u952e\u8fd4\u56de\u4e3b\u83dc\u5355
+        // ESC key to return to main menu
         const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         escKey?.once('down', () => {
             this.scene.start('MainMenu');

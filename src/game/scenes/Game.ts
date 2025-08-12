@@ -53,13 +53,13 @@ export class Game extends Scene
 
         this.createObjectsFromTilemap()
 
-        // 创建碰撞事件.
+        // Create collision events
         this.createOverleapEvents();
         
-        // 设置重启快捷键 (R键)
+        // Setup restart key (R key)
         this.restartKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
         
-        // 创建血量UI
+        // Create health UI
         this.healthUI = new HealthUI(this, 50, 50);
         if (this.player) {
             this.healthUI.updateHealth(this.player.getHealth());
@@ -135,7 +135,7 @@ export class Game extends Scene
     }
 
     private createOverleapEvents() {
-        // 设置玩家与hazards的overlap检测
+        // Setup player vs hazards overlap detection
         if (this.player && this.hazards) {
             this.physics.add.overlap(
                 this.player, 
@@ -146,7 +146,7 @@ export class Game extends Scene
             );
         }
         
-        // 设置玩家与goals的overlap检测
+        // Setup player vs goals overlap detection
         if (this.player && this.goals) {
             this.physics.add.overlap(
                 this.player,
@@ -164,7 +164,7 @@ export class Game extends Scene
         
         playerInstance.takeDamage(hazardInstance.getDamage());
         
-        // 更新血量UI
+        // Update health UI
         if (this.healthUI) {
             this.healthUI.updateHealth(playerInstance.getHealth());
         }
@@ -189,38 +189,38 @@ export class Game extends Scene
             this.player.update();
         }
         
-        // 检查重启键
+        // Check restart key
         if (this.restartKey && Phaser.Input.Keyboard.JustDown(this.restartKey)) {
             this.restartGame();
         }
     }
     
     restartGame() {
-        // 暂停物理世界
+        // Pause physics world
         this.physics.world.pause();
         
-        // 淡出效果
+        // Fade out effect
         this.cameras.main.fadeOut(250, 0, 0, 0);
         
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            // 启动GameOver场景
+            // Start GameOver scene
             this.scene.start('GameOver');
-            // 彻底移除并销毁Game场景
+            // Completely remove and destroy Game scene
             this.scene.remove('Game');
         });
     }
     
     victory() {
-        // 暂停物理世界
+        // Pause physics world
         this.physics.world.pause();
         
-        // 淡出效果
+        // Fade out effect
         this.cameras.main.fadeOut(500, 255, 255, 255);
         
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            // 启动Victory场景
+            // Start Victory scene
             this.scene.start('Victory');
-            // 彻底移除并销毁Game场景
+            // Completely remove and destroy Game scene
             this.scene.remove('Game');
         });
     }

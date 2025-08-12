@@ -45,7 +45,7 @@ export class HealthUI {
             graphics.lineStyle(2, 0x666666, 1);
         }
         
-        // \u7ed8\u5236\u5fc3\u5f62
+        // Draw heart shape
         const size = this.heartSize;
         const halfSize = size / 2;
         const quarterSize = size / 4;
@@ -53,17 +53,17 @@ export class HealthUI {
         graphics.beginPath();
         graphics.moveTo(x, y + quarterSize);
         
-        // \u5de6\u4e0a\u534a\u5706
+        // Upper left semicircle
         graphics.arc(x - quarterSize, y - quarterSize, quarterSize, Math.PI, 0, false);
         
-        // \u53f3\u4e0a\u534a\u5706
+        // Upper right semicircle
         graphics.arc(x + quarterSize, y - quarterSize, quarterSize, Math.PI, 0, false);
         
-        // \u53f3\u4fa7\u66f2\u7ebf\u5230\u5e95\u90e8
+        // Right side curve to bottom
         graphics.lineTo(x + halfSize, y);
         graphics.lineTo(x, y + halfSize);
         
-        // \u5de6\u4fa7\u66f2\u7ebf\u5230\u5e95\u90e8
+        // Left side curve to bottom
         graphics.lineTo(x - halfSize, y);
         
         graphics.closePath();
@@ -78,17 +78,17 @@ export class HealthUI {
         const oldHealth = this.currentHealth;
         this.currentHealth = health;
         
-        // \u66f4\u65b0\u5fc3\u5f62\u663e\u793a
+        // Update heart display
         for (let i = 0; i < this.maxHealth; i++) {
             const heart = this.hearts[i];
             const heartX = this.x + (i * this.heartSpacing);
             const heartY = this.y;
             
             if (i < health) {
-                // \u6ee1\u8840\u7684\u5fc3
+                // Full health heart
                 this.drawHeart(heart, heartX, heartY, true);
                 
-                // \u5982\u679c\u662f\u523a\u6062\u590d\u7684\u8840\u91cf\uff0c\u6dfb\u52a0\u52a8\u753b
+                // If this is newly recovered health, add animation
                 if (oldHealth < health && i === health - 1) {
                     this.scene.tweens.add({
                         targets: heart,
@@ -100,10 +100,10 @@ export class HealthUI {
                     });
                 }
             } else {
-                // \u7a7a\u8840\u7684\u5fc3
+                // Empty health heart
                 this.drawHeart(heart, heartX, heartY, false);
                 
-                // \u5982\u679c\u662f\u523a\u5931\u53bb\u7684\u8840\u91cf\uff0c\u6dfb\u52a0\u788e\u88c2\u52a8\u753b
+                // If this is newly lost health, add break animation
                 if (oldHealth > health && i === health) {
                     this.createHeartBreakEffect(heartX, heartY);
                     
@@ -126,7 +126,7 @@ export class HealthUI {
     }
 
     private createHeartBreakEffect(x: number, y: number): void {
-        // \u521b\u5efa\u788e\u7247\u6548\u679c
+        // Create fragment effect
         for (let i = 0; i < 6; i++) {
             const particle = this.scene.add.graphics();
             particle.fillStyle(0xff0000, 1);
@@ -154,15 +154,15 @@ export class HealthUI {
     }
 
     setMaxHealth(maxHealth: number): void {
-        // \u6e05\u9664\u65e7\u7684\u5fc3\u5f62
+        // Clear old hearts
         this.hearts.forEach(heart => heart.destroy());
         this.hearts = [];
         
-        // \u8bbe\u7f6e\u65b0\u7684\u6700\u5927\u8840\u91cf
+        // Set new maximum health
         this.maxHealth = maxHealth;
         this.currentHealth = maxHealth;
         
-        // \u91cd\u65b0\u521b\u5efa\u5fc3\u5f62
+        // Recreate hearts
         this.createHearts();
     }
 

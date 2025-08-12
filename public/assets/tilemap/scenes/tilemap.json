@@ -33,6 +33,30 @@
       "width": 25,
       "x": 0,
       "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 5,
+      "name": "Objects",
+      "objects": [
+        {
+          "gid": 3,
+          "height": 64,
+          "id": 38,
+          "name": "character_purple",
+          "rotation": 0,
+          "type": "player",
+          "visible": true,
+          "width": 64,
+          "x": 64,
+          "y": 960
+        }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
     }
   ],
   "nextlayerid": 6,
@@ -84,6 +108,29 @@
                  "type":"bool",
                  "value":true
                 }]
+        }]
+    },
+    {
+      "firstgid": 3,
+      "image": "assets/player/character_purple.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "character_purple",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64,
+      "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"atlas",
+                 "type":"bool",
+                 "value":true
+                }
+            ]
         }]
     }
   ],

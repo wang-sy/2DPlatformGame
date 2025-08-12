@@ -1,9 +1,27 @@
 import { Scene } from 'phaser';
 import { Game } from './Game';
+import { CollectedItemData } from '../managers/CollectedItemsManager';
 
 export class Victory extends Scene {
+    private totalScore: number = 0;
+    private itemsByType: Map<string, CollectedItemData[]> = new Map();
+    private totalItemsCollected: number = 0;
+    private uniqueItemsCollected: number = 0;
+    
     constructor() {
         super('Victory');
+    }
+    
+    init(data: { 
+        totalScore?: number; 
+        itemsByType?: Map<string, CollectedItemData[]>;
+        totalItemsCollected?: number;
+        uniqueItemsCollected?: number;
+    }) {
+        this.totalScore = data.totalScore || 0;
+        this.itemsByType = data.itemsByType || new Map();
+        this.totalItemsCollected = data.totalItemsCollected || 0;
+        this.uniqueItemsCollected = data.uniqueItemsCollected || 0;
     }
 
     create() {
@@ -13,9 +31,9 @@ export class Victory extends Scene {
         const centerY = this.cameras.main.height / 2;
         
         // Victory title
-        const victoryText = this.add.text(centerX, centerY - 100, 'Level Complete!', {
+        const victoryText = this.add.text(centerX, 80, 'You Win!', {
             fontFamily: 'Arial Black',
-            fontSize: 72,
+            fontSize: 64,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 8
@@ -30,10 +48,34 @@ export class Victory extends Scene {
             ease: 'Back.easeOut'
         });
         
+        // Display total score
+        const scoreText = this.add.text(centerX, 160, `Total Score: ${this.totalScore}`, {
+            fontFamily: 'Arial Black',
+            fontSize: 42,
+            color: '#FFD700',
+            stroke: '#000000',
+            strokeThickness: 6
+        });
+        scoreText.setOrigin(0.5);
+        scoreText.setAlpha(0);
+        
+        this.time.delayedCall(300, () => {
+            this.tweens.add({
+                targets: scoreText,
+                alpha: 1,
+                scale: { from: 0.5, to: 1 },
+                duration: 500,
+                ease: 'Back.easeOut'
+            });
+        });
+        
+        // Display collected items by type
+        this.displayCollectedItems();
+        
         // Continue game prompt
-        const continueText = this.add.text(centerX, centerY + 50, 'Click to Continue', {
+        const continueText = this.add.text(centerX, centerY + 200, 'Click to Continue', {
             fontFamily: 'Arial',
-            fontSize: 32,
+            fontSize: 28,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 4
@@ -41,7 +83,7 @@ export class Victory extends Scene {
         continueText.setOrigin(0.5);
         continueText.setAlpha(0);
         
-        this.time.delayedCall(800, () => {
+        this.time.delayedCall(1500, () => {
             this.tweens.add({
                 targets: continueText,
                 alpha: 1,
@@ -59,9 +101,9 @@ export class Victory extends Scene {
         });
         
         // Return to main menu prompt
-        const menuText = this.add.text(centerX, centerY + 120, 'Press ESC to Return to Main Menu', {
+        const menuText = this.add.text(centerX, centerY + 250, 'Press ESC to Return to Main Menu', {
             fontFamily: 'Arial',
-            fontSize: 20,
+            fontSize: 18,
             color: '#aaaaaa',
             stroke: '#000000',
             strokeThickness: 3
@@ -87,21 +129,145 @@ export class Victory extends Scene {
         });
     }
     
+    private displayCollectedItems(): void {
+        const startY = 240;
+        const itemSpacing = 90;
+        let currentY = startY;
+        let animationDelay = 500;
+        
+        // Display items grouped by type
+        let rowIndex = 0;
+        this.itemsByType.forEach((items, type) => {
+            // Calculate total items of this type
+            let totalCount = 0;
+            for (const item of items) {
+                totalCount += item.count;
+            }
+            
+            // Skip if no items collected
+            if (totalCount === 0) return;
+            
+            const actualY = startY + (rowIndex * itemSpacing);
+            
+            // Display items for this type
+            this.time.delayedCall(animationDelay + rowIndex * 200, () => {
+                const centerX = this.cameras.main.width / 2;
+                
+                // Display each unique item in this type
+                const itemWidth = 90;
+                const startX = centerX - ((items.length - 1) * itemWidth) / 2;
+                
+                items.forEach((item, index) => {
+                    const itemX = startX + index * itemWidth;
+                    
+                    // Item image
+                    const itemImage = this.add.image(itemX, actualY, item.name);
+                    itemImage.setScale(0);
+                    itemImage.setDepth(10);
+                    
+                    // Count badge positioned relative to the image
+                    const countBg = this.add.circle(itemX + 25, actualY - 25, 16, 0x000000, 0.9);
+                    const countText = this.add.text(itemX + 25, actualY - 25, `${item.count}`, {
+                        fontSize: '20px',
+                        color: '#ffffff',
+                        fontFamily: 'Arial Black',
+                        stroke: '#000000',
+                        strokeThickness: 2
+                    });
+                    countText.setOrigin(0.5);
+                    countBg.setAlpha(0);
+                    countText.setAlpha(0);
+                    countBg.setDepth(11);
+                    countText.setDepth(12);
+                    
+                    // Animate item appearance
+                    this.tweens.add({
+                        targets: itemImage,
+                        scale: 1.3,
+                        duration: 400,
+                        ease: 'Back.easeOut',
+                        delay: index * 100
+                    });
+                    
+                    // Animate count badge
+                    this.time.delayedCall(100 + index * 100, () => {
+                        this.tweens.add({
+                            targets: [countBg, countText],
+                            alpha: 1,
+                            scale: { from: 0.5, to: 1 },
+                            duration: 300,
+                            ease: 'Back.easeOut'
+                        });
+                    });
+                    
+                    // Add floating animation with offset to prevent sync
+                    this.tweens.add({
+                        targets: itemImage,
+                        y: actualY - 8,
+                        duration: 1500 + index * 100,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut',
+                        delay: 500 + index * 50
+                    });
+                    
+                    // Also animate the count badge with the item
+                    this.tweens.add({
+                        targets: [countBg, countText],
+                        y: [actualY - 25, actualY - 33],
+                        duration: 1500 + index * 100,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut',
+                        delay: 600 + index * 50
+                    });
+                });
+            });
+            
+            rowIndex++;
+        });
+        
+        // If no items collected, show a message
+        if (this.itemsByType.size === 0 || this.totalItemsCollected === 0) {
+            const noItemsText = this.add.text(
+                this.cameras.main.width / 2, 
+                startY,
+                'No items collected',
+                {
+                    fontSize: '24px',
+                    color: '#aaaaaa',
+                    fontFamily: 'Arial'
+                }
+            );
+            noItemsText.setOrigin(0.5);
+            noItemsText.setAlpha(0);
+            
+            this.time.delayedCall(500, () => {
+                this.tweens.add({
+                    targets: noItemsText,
+                    alpha: 1,
+                    duration: 500
+                });
+            });
+        }
+    }
+    
     private createStarParticles(): void {
         const colors = [0xffff00, 0xffffff, 0xffcc00];
         
-        for (let i = 0; i < 20; i++) {
-            this.time.delayedCall(i * 100, () => {
+        for (let i = 0; i < 15; i++) {
+            this.time.delayedCall(i * 150, () => {
                 const x = Phaser.Math.Between(100, this.cameras.main.width - 100);
-                const y = Phaser.Math.Between(100, this.cameras.main.height - 100);
+                const y = Phaser.Math.Between(50, this.cameras.main.height - 50);
                 const color = Phaser.Utils.Array.GetRandom(colors);
                 
                 const star = this.add.star(x, y, 5, 3, 6, color);
                 star.setScale(0);
+                star.setDepth(-1);
                 
                 this.tweens.add({
                     targets: star,
-                    scale: { from: 0, to: 1 },
+                    scale: { from: 0, to: 0.8 },
                     rotation: { from: 0, to: Math.PI * 2 },
                     duration: 1000,
                     ease: 'Power2'

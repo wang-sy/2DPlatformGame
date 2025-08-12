@@ -74,6 +74,66 @@
           "width": 64,
           "x": 1472,
           "y": 64
+        },
+        {
+          "gid": 6,
+          "height": 64,
+          "id": 37,
+          "name": "coin_gold",
+          "rotation": 0,
+          "type": "collectible",
+          "visible": true,
+          "width": 64,
+          "x": 576,
+          "y": 640
+        },
+        {
+          "gid": 7,
+          "height": 64,
+          "id": 37,
+          "name": "hud_key_green",
+          "rotation": 0,
+          "type": "collectible",
+          "visible": true,
+          "width": 64,
+          "x": 896,
+          "y": 448
+        },
+        {
+          "gid": 6,
+          "height": 64,
+          "id": 38,
+          "name": "coin_gold",
+          "rotation": 0,
+          "type": "collectible",
+          "visible": true,
+          "width": 64,
+          "x": 320,
+          "y": 448
+        },
+        {
+          "gid": 6,
+          "height": 64,
+          "id": 39,
+          "name": "coin_gold",
+          "rotation": 0,
+          "type": "collectible",
+          "visible": true,
+          "width": 64,
+          "x": 768,
+          "y": 704
+        },
+        {
+          "gid": 6,
+          "height": 64,
+          "id": 40,
+          "name": "coin_gold",
+          "rotation": 0,
+          "type": "collectible",
+          "visible": true,
+          "width": 64,
+          "x": 1088,
+          "y": 960
         }
       ],
       "opacity": 1,
@@ -190,6 +250,60 @@
       "tilecount": 1,
       "tileheight": 64,
       "tilewidth": 64
+    },
+    {
+      "firstgid": 6,
+      "image": "assets/collectible/coin_gold.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "coin_gold",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64,
+      "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"score",
+                 "type":"int",
+                 "value":100
+                },
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"coin"
+                }]
+        }]
+    },
+    {
+      "firstgid": 7,
+      "image": "assets/collectible/hud_key_green.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "hud_key_green",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64,
+      "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"must_collect",
+                 "type":"bool",
+                 "value":true
+                },
+                {
+                 "name":"type",
+                 "type":"string",
+                 "value":"key"
+                }]
+        }]
     }
   ],
   "tilewidth": 64,

@@ -282,7 +282,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         this.health -= damage;
         this.isInvulnerable = true;
-        this.lastDamageTime = this.scene.time.now;
         
         this.play('hit');
         this.currentAnimation = 'hit';
@@ -310,7 +309,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private handleDeath(): void {
         this.setTint(0xff0000);
         this.setVelocity(0, -400);
-        this.body?.setEnable(false);
+        this.body!.enable = false;
         
         this.scene.time.delayedCall(1000, () => {
             // Call Game scene's restartGame method

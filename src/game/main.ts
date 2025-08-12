@@ -17,7 +17,6 @@ const config: Phaser.Types.Core.GameConfig = {
         Boot,
         Preloader,
         MainMenu,
-        MainGame,
         GameOver
     ],
     physics: {

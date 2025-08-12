@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { Game } from './Game';
 
 export class GameOver extends Scene
 {
@@ -14,22 +15,44 @@ export class GameOver extends Scene
     create ()
     {
         this.camera = this.cameras.main
-        this.camera.setBackgroundColor(0xff0000);
+        this.camera.setBackgroundColor(0x2c2c2c);
 
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.5);
 
-        this.gameover_text = this.add.text(512, 384, 'Game Over', {
-            fontFamily: 'Arial Black', fontSize: 64, color: '#ffffff',
+        this.gameover_text = this.add.text(512, 320, 'Game Over', {
+            fontFamily: 'Arial Black', fontSize: 64, color: '#ff4444',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
         });
         this.gameover_text.setOrigin(0.5);
+        
+        const restartText = this.add.text(512, 420, '点击重新开始', {
+            fontFamily: 'Arial', fontSize: 24, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        });
+        restartText.setOrigin(0.5);
+        
+        const menuText = this.add.text(512, 480, '按 ESC 返回主菜单', {
+            fontFamily: 'Arial', fontSize: 20, color: '#aaaaaa',
+            stroke: '#000000', strokeThickness: 3,
+            align: 'center'
+        });
+        menuText.setOrigin(0.5);
 
         this.input.once('pointerdown', () => {
-
+            // 重新添加并启动全新的Game场景
+            this.scene.add('Game', Game, false);
+            this.scene.start('Game');
+            this.scene.stop('GameOver');
+        });
+        
+        // ESC键返回主菜单
+        const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        escKey?.once('down', () => {
             this.scene.start('MainMenu');
-
+            this.scene.stop('GameOver');
         });
     }
 }

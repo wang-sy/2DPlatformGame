@@ -143,14 +143,17 @@ export class Game extends Scene
     }
     
     restartGame() {
-        // 清理场景
+        // 暂停物理世界
         this.physics.world.pause();
         
         // 淡出效果
         this.cameras.main.fadeOut(250, 0, 0, 0);
         
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            this.scene.restart();
+            // 启动GameOver场景
+            this.scene.start('GameOver');
+            // 彻底移除并销毁Game场景
+            this.scene.remove('Game');
         });
     }
 }

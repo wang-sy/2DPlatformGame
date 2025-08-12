@@ -1,4 +1,5 @@
 import { Scene, GameObjects } from 'phaser';
+import { Game } from './Game';
 
 export class MainMenu extends Scene
 {
@@ -24,9 +25,9 @@ export class MainMenu extends Scene
         }).setOrigin(0.5);
 
         this.input.once('pointerdown', () => {
-
+            // 重新添加并启动全新的Game场景
+            this.scene.add('Game', Game, false);
             this.scene.start('Game');
-
         });
     }
 }

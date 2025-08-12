@@ -21,11 +21,11 @@
             "padding_size": 4
         },
         {
-            "name": "walk",
-            "filename_prefix": "walk/frame",
+            "name": "rest",
+            "filename_prefix": "rest/frame",
             "frame_range": {
                 "from": 0,
-                "to": 1
+                "to": 0
             },
             "padding_size": 4
         }

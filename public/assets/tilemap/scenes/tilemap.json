@@ -366,6 +366,11 @@
                   "name": "damage",
                   "type": "int",
                   "value": 1
+                },
+                {
+                  "name": "death_particle_color",
+                  "type": "string",
+                  "value": "#00ff00"
                 }
             ]
         }]

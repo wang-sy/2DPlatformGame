@@ -6,12 +6,20 @@ import { AnimationManager } from '../managers/AnimationManager';
  * 
  * Properties that can be configured in Tiled tilemap editor:
  * - damage: (int) Damage dealt to player on contact
- * - move_method: (string) Movement pattern: "patrol", "jump", "static", "follow", "patrol_jump"
+ * - move_method: (string) Movement pattern:
+ *   - "static": No movement
+ *   - "patrol": Walk back and forth on ground
+ *   - "jump": Jump in place without moving
+ *   - "move_and_jump": Move forward by jumping (like a frog)
+ *   - "patrol_jump": Walk and occasionally jump
+ *   - "follow": Follow player when in range
+ *   - "follow_jump": Follow player and jump when needed
  * - move_speed: (int) Movement speed (default: 100)
  * - jump_power: (int) Jump strength (default: 400)
  * - patrol_distance: (int) Distance to patrol in pixels (default: 200)
  * - detection_range: (int) Range to detect player for follow mode (default: 300)
  * - jump_interval: (int) Time between jumps in milliseconds (default: 2000)
+ * - death_particle_color: (string/hex) Color of death particles (default: "#ff0000")
  */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private enemyName: string;
@@ -22,6 +30,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private patrolDistance: number = 200;
     private detectionRange: number = 300;
     private jumpInterval: number = 2000;
+    private deathParticleColor: number = 0xff0000;  // Default red
     
     // Movement state
     private startX: number;
@@ -128,6 +137,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 'atlas':
                 this.hasAtlas = value;
                 break;
+            case 'death_particle_color':
+                // Convert hex string to number if needed
+                if (typeof value === 'string') {
+                    this.deathParticleColor = parseInt(value.replace('#', '0x'));
+                } else {
+                    this.deathParticleColor = value;
+                }
+                break;
         }
     }
     
@@ -140,6 +157,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.playAnimation('walk');
                 break;
             case 'jump':
+                this.playAnimation('idle');
+                break;
+            case 'move_and_jump':
                 this.playAnimation('idle');
                 break;
             case 'patrol_jump':
@@ -157,8 +177,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private playAnimation(animType: string): void {
         if (!this.hasAtlas) return;
         
-        const animKey = this.animationManager.getAnimationKey(this.enemyName, animType);
-        if (this.animationManager.hasAnimation(this.enemyName, animType) && this.currentAnimation !== animKey) {
+        // Handle fallback animations for enemies that don't have all animations
+        let fallbackAnim = animType;
+        
+        // If walk animation doesn't exist, fall back to idle
+        if (animType === 'walk' && !this.animationManager.hasAnimation(this.enemyName, 'walk')) {
+            fallbackAnim = 'idle';
+        }
+        
+        const animKey = this.animationManager.getAnimationKey(this.enemyName, fallbackAnim);
+        if (this.animationManager.hasAnimation(this.enemyName, fallbackAnim) && this.currentAnimation !== animKey) {
             this.play(animKey);
             this.currentAnimation = animKey;
         }
@@ -181,6 +209,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 break;
             case 'jump':
                 this.updateJump(time);
+                break;
+            case 'move_and_jump':
+                this.updateMoveAndJump(time);
                 break;
             case 'patrol_jump':
                 this.updatePatrolJump(time);
@@ -228,16 +259,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     
     private updateJump(time: number): void {
+        // Jump in place - no horizontal movement
         if (this.isGrounded && time - this.lastJumpTime > this.jumpInterval) {
-            // Random jump direction
-            const jumpDirection = Phaser.Math.Between(-1, 1);
-            this.setVelocity(jumpDirection * this.moveSpeed * 0.5, -this.jumpPower);
+            this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
             this.playAnimation('jump');
-            
-            if (jumpDirection !== 0) {
-                this.direction = jumpDirection;
-            }
         } else if (this.isGrounded) {
             this.setVelocityX(0);
             this.playAnimation('idle');
@@ -245,13 +271,33 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     
     private updatePatrolJump(time: number): void {
+        // Walk and occasionally jump
         this.updatePatrol();
         
-        // Add periodic jumps
+        // Add periodic jumps while walking
         if (this.isGrounded && time - this.lastJumpTime > this.jumpInterval) {
             this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
             this.playAnimation('jump');
+        }
+    }
+    
+    private updateMoveAndJump(time: number): void {
+        // Move forward by jumping (like a frog)
+        if (this.isGrounded && time - this.lastJumpTime > this.jumpInterval) {
+            // Check patrol boundaries
+            if (Math.abs(this.x - this.startX) >= this.patrolDistance / 2) {
+                this.direction *= -1;
+            }
+            
+            // Jump forward in current direction
+            this.setVelocity(this.moveSpeed * this.direction, -this.jumpPower);
+            this.lastJumpTime = time;
+            this.playAnimation('jump');
+        } else if (this.isGrounded) {
+            // Stop horizontal movement when on ground (waiting to jump)
+            this.setVelocityX(0);
+            this.playAnimation('idle');
         }
     }
     
@@ -298,12 +344,184 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     
     takeDamage(_damage: number): void {
-        // Implement enemy damage/death logic here if needed
-        // For now, just destroy the enemy
-        this.destroy();
+        // Create death effects before destroying the enemy
+        this.createDeathEffects();
+        
+        // Disable physics body immediately
+        if (this.body) {
+            this.body.enable = false;
+        }
+        
+        // Death animation: scale up, fade out, and rotate
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            alpha: 0,
+            rotation: Math.PI * 2,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                this.destroy();
+            }
+        });
+        
+        // Flash effect
+        this.scene.tweens.add({
+            targets: this,
+            tint: { from: 0xffffff, to: 0xff0000 },
+            duration: 100,
+            yoyo: true,
+            repeat: 2
+        });
+    }
+    
+    private createDeathEffects(): void {
+        // Create particle explosion effect
+        // Use configured color as base, create variations
+        const baseColor = this.deathParticleColor;
+        const particleColors = [
+            baseColor,
+            this.lightenColor(baseColor, 0.3),
+            this.darkenColor(baseColor, 0.3),
+            0xffff00  // Always add some yellow for impact
+        ];
+        const particleCount = 12;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = Phaser.Math.Between(100, 300);
+            const size = Phaser.Math.Between(2, 6);
+            const color = Phaser.Utils.Array.GetRandom(particleColors);
+            
+            // Create particle
+            const particle = this.scene.add.circle(
+                this.x,
+                this.y,
+                size,
+                color
+            );
+            
+            // Animate particle
+            this.scene.physics.add.existing(particle);
+            const body = particle.body as Phaser.Physics.Arcade.Body;
+            body.setVelocity(
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 100
+            );
+            body.setGravityY(300);
+            body.setBounce(0.5);
+            
+            // Fade out and destroy
+            this.scene.tweens.add({
+                targets: particle,
+                alpha: 0,
+                scale: 0,
+                duration: 1000,
+                ease: 'Power2',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Create star burst effect
+        for (let i = 0; i < 5; i++) {
+            this.scene.time.delayedCall(i * 50, () => {
+                const star = this.scene.add.star(
+                    this.x + Phaser.Math.Between(-20, 20),
+                    this.y + Phaser.Math.Between(-20, 20),
+                    5,
+                    3,
+                    6,
+                    0xffff00
+                );
+                star.setScale(0);
+                
+                this.scene.tweens.add({
+                    targets: star,
+                    scale: { from: 0, to: 1.5 },
+                    alpha: { from: 1, to: 0 },
+                    rotation: Math.PI * 2,
+                    duration: 500,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        star.destroy();
+                    }
+                });
+            });
+        }
+        
+        // Create impact wave effect
+        const wave = this.scene.add.circle(this.x, this.y, 10, 0xffffff, 0.5);
+        
+        this.scene.tweens.add({
+            targets: wave,
+            scale: { from: 1, to: 4 },
+            alpha: { from: 0.5, to: 0 },
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                wave.destroy();
+            }
+        });
+        
+        // Screen shake effect (small)
+        if (this.scene.cameras.main) {
+            this.scene.cameras.main.shake(100, 0.005);
+        }
+        
+        // Create "poof" smoke effect
+        for (let i = 0; i < 8; i++) {
+            const smoke = this.scene.add.circle(
+                this.x + Phaser.Math.Between(-10, 10),
+                this.y + Phaser.Math.Between(-10, 10),
+                Phaser.Math.Between(8, 15),
+                0x888888,
+                0.6
+            );
+            
+            this.scene.tweens.add({
+                targets: smoke,
+                x: smoke.x + Phaser.Math.Between(-30, 30),
+                y: smoke.y - Phaser.Math.Between(10, 40),
+                scale: { from: 1, to: 2 },
+                alpha: { from: 0.6, to: 0 },
+                duration: 600,
+                delay: i * 30,
+                ease: 'Power2',
+                onComplete: () => {
+                    smoke.destroy();
+                }
+            });
+        }
     }
     
     getMoveMethod(): string {
         return this.moveMethod;
+    }
+    
+    private lightenColor(color: number, amount: number): number {
+        const r = (color >> 16) & 0xFF;
+        const g = (color >> 8) & 0xFF;
+        const b = color & 0xFF;
+        
+        const newR = Math.min(255, r + (255 - r) * amount);
+        const newG = Math.min(255, g + (255 - g) * amount);
+        const newB = Math.min(255, b + (255 - b) * amount);
+        
+        return (newR << 16) | (newG << 8) | newB;
+    }
+    
+    private darkenColor(color: number, amount: number): number {
+        const r = (color >> 16) & 0xFF;
+        const g = (color >> 8) & 0xFF;
+        const b = color & 0xFF;
+        
+        const newR = Math.max(0, r * (1 - amount));
+        const newG = Math.max(0, g * (1 - amount));
+        const newB = Math.max(0, b * (1 - amount));
+        
+        return (newR << 16) | (newG << 8) | newB;
     }
 }

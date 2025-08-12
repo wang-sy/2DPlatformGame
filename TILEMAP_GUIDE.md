@@ -117,6 +117,7 @@ Set the object type to `enemy` in Tiled.
 | `detection_range` | int | 300 | Range to detect player (for follow mode) |
 | `jump_interval` | int | 2000 | Time between jumps in milliseconds |
 | `atlas` | bool | false | Whether the enemy has animation atlas |
+| `death_particle_color` | string | "#ff0000" | Color of death effect particles |
 
 ### Movement Methods
 
@@ -124,33 +125,50 @@ Set the object type to `enemy` in Tiled.
 Enemy stays in place, no movement.
 
 #### 2. `patrol`
-Enemy moves back and forth horizontally within patrol distance.
+Enemy walks back and forth horizontally on the ground within patrol distance.
 
 #### 3. `jump`
-Enemy jumps periodically in random directions.
+Enemy jumps in place periodically without horizontal movement.
 
-#### 4. `patrol_jump`
-Enemy patrols while jumping periodically.
+#### 4. `move_and_jump`
+Enemy moves forward by jumping (like a frog's natural movement). The enemy waits between jumps.
 
-#### 5. `follow`
-Enemy follows the player when within detection range.
+#### 5. `patrol_jump`
+Enemy walks continuously and occasionally jumps while walking.
 
-#### 6. `follow_jump`
+#### 6. `follow`
+Enemy follows the player when within detection range by walking.
+
+#### 7. `follow_jump`
 Enemy follows the player and jumps when player is above.
 
 ### Examples
 
-#### Jumping Frog
+#### Jumping Frog (moves by hopping)
 ```json
 {
   "type": "enemy",
   "name": "frog",
   "properties": [
     { "name": "damage", "type": "int", "value": 1 },
-    { "name": "move_method", "type": "string", "value": "jump" },
+    { "name": "move_method", "type": "string", "value": "move_and_jump" },
     { "name": "jump_power", "type": "int", "value": 500 },
     { "name": "jump_interval", "type": "int", "value": 1500 },
     { "name": "atlas", "type": "bool", "value": true }
+  ]
+}
+```
+
+#### Stationary Jumper (jumps in place)
+```json
+{
+  "type": "enemy",
+  "name": "slime",
+  "properties": [
+    { "name": "damage", "type": "int", "value": 1 },
+    { "name": "move_method", "type": "string", "value": "jump" },
+    { "name": "jump_power", "type": "int", "value": 400 },
+    { "name": "jump_interval", "type": "int", "value": 2000 }
   ]
 }
 ```
@@ -188,6 +206,11 @@ Enemy follows the player and jumps when player is above.
 - **Defeating Enemies**: Players can defeat enemies by jumping on them from above
 - **Taking Damage**: Contact with enemies from the side or below damages the player
 - **Bounce Effect**: Successfully jumping on an enemy bounces the player upward
+
+### Animation Notes
+
+- **Animation Fallback**: If an enemy doesn't have a "walk" animation, it will automatically use "idle" instead
+- **Frog Example**: The frog enemy only has "idle" and "jump" animations, perfect for its hopping movement pattern (move_and_jump)
 
 ## Player
 

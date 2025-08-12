@@ -5,6 +5,8 @@ This document outlines the architecture and design principles of the game's code
 ## Table of Contents
 - [Core Design Principles](#core-design-principles)
 - [Collectible System Architecture](#collectible-system-architecture)
+- [Enemy System Architecture](#enemy-system-architecture)
+- [Animation Management System](#animation-management-system)
 - [Manager Pattern](#manager-pattern)
 - [Scene Management](#scene-management)
 - [Configuration-Driven Design](#configuration-driven-design)
@@ -117,6 +119,162 @@ if (this.newProperty) {
 
 3. **Document in TILEMAP_GUIDE.md**
 
+## Enemy System Architecture
+
+The enemy system provides configurable enemy behaviors through tilemap properties.
+
+### Design Goals
+1. **Flexible movement patterns**: Multiple movement behaviors without code changes
+2. **Configurable properties**: Speed, damage, detection range all adjustable
+3. **Animation support**: Integrated with AnimationManager
+4. **Extensible**: Easy to add new movement patterns
+
+### Key Components
+
+#### Enemy Sprite (`src/game/sprites/Enemy.ts`)
+```typescript
+class Enemy extends Phaser.Physics.Arcade.Sprite {
+    private damage: number;          // Damage dealt to player
+    private moveMethod: string;      // Movement pattern
+    private moveSpeed: number;       // Movement speed
+    private jumpPower: number;       // Jump strength
+    private patrolDistance: number;  // Patrol range
+    private detectionRange: number;  // Player detection range
+    private jumpInterval: number;    // Time between jumps
+}
+```
+
+### Movement Patterns
+
+1. **static**: No movement
+2. **patrol**: Move back and forth horizontally
+3. **jump**: Jump randomly at intervals
+4. **patrol_jump**: Patrol with periodic jumps
+5. **follow**: Move towards player when in range
+6. **follow_jump**: Follow player and jump when player is above
+
+### Configuration Properties
+
+```typescript
+// Movement properties
+move_method: string      // Movement pattern
+move_speed: number       // Movement speed (default: 100)
+jump_power: number       // Jump strength (default: 400)
+patrol_distance: number  // Patrol range (default: 200)
+detection_range: number  // Player detection (default: 300)
+jump_interval: number    // Jump timing (default: 2000ms)
+
+// Combat properties
+damage: number          // Damage to player (default: 1)
+
+// Animation properties
+atlas: boolean          // Has animation atlas
+```
+
+## Animation Management System
+
+The AnimationManager provides centralized animation handling for all game sprites.
+
+### Design Goals
+1. **Centralized management**: All animations created in one place
+2. **Configuration-based**: Animations defined in JSON files
+3. **Atlas support**: Efficient texture atlas animations
+4. **Singleton pattern**: Single instance across the game
+5. **Legacy format support**: Compatible with existing animation configs
+
+### Key Components
+
+#### AnimationManager (`src/game/managers/AnimationManager.ts`)
+```typescript
+class AnimationManager {
+    private static instance: AnimationManager;
+    private atlasAnimations: Map<string, AnimationConfig[]>;
+    private createdAnimations: Set<string>;
+    
+    // Core methods
+    init(scene: Phaser.Scene): void
+    loadLegacyAnimationConfig(config: LegacyAnimationFormat): void
+    createAnimationsForAtlas(atlasKey: string): void
+    playAnimation(sprite, atlasKey, animationName): void
+}
+```
+
+### Animation Configuration Format
+
+#### Legacy Format (JSON files)
+```json
+{
+    "name": "atlas_name",
+    "type": "sprite_type",
+    "animations": [
+        {
+            "name": "idle",
+            "filename_prefix": "idle/frame",
+            "frame_range": { "from": 0, "to": 3 },
+            "padding_size": 4
+        }
+    ]
+}
+```
+
+#### Standard Format
+```typescript
+interface AnimationConfig {
+    key: string;           // Animation name
+    prefix?: string;       // Frame prefix
+    start?: number;        // Start frame
+    end?: number;          // End frame
+    frameRate?: number;    // FPS
+    repeat?: number;       // -1 for infinite
+    yoyo?: boolean;        // Reverse playback
+}
+```
+
+### Integration Flow
+
+1. **Preloader Phase**:
+   - Load atlas textures and JSON configs
+   - Initialize AnimationManager
+   - Process all animation configurations
+   - Create all animations
+
+2. **Sprite Creation**:
+   - Sprites get AnimationManager instance
+   - Use `playAnimation()` helper method
+   - Animations are referenced by key
+
+3. **Runtime**:
+   - Sprites call `playAnimation(animName)`
+   - Manager handles animation key resolution
+   - Animations play with configured settings
+
+### Usage Example
+
+```typescript
+// In sprite class
+class Player extends Phaser.Physics.Arcade.Sprite {
+    private animationManager: AnimationManager;
+    
+    constructor(scene, tiledObject) {
+        super(scene, x, y, key);
+        this.animationManager = AnimationManager.getInstance();
+    }
+    
+    private playAnimation(animName: string): void {
+        const animKey = this.animationManager.getAnimationKey(this.key, animName);
+        if (this.animationManager.hasAnimation(this.key, animName)) {
+            this.play(animKey);
+        }
+    }
+    
+    update() {
+        if (walking) {
+            this.playAnimation('walk');
+        }
+    }
+}
+```
+
 ## Manager Pattern
 
 The game uses manager classes to centralize state and logic:
@@ -128,6 +286,14 @@ The game uses manager classes to centralize state and logic:
   - Score calculation
   - Requirement validation
   - Data aggregation for UI
+
+### AnimationManager
+- **Purpose**: Centralize animation creation and management
+- **Responsibilities**:
+  - Load animation configurations
+  - Create Phaser animations from configs
+  - Track animation-to-atlas mappings
+  - Provide helper methods for sprites
 
 ### Benefits
 1. **Single source of truth**: All collection data in one place
@@ -205,20 +371,36 @@ The configuration system can be extended with:
    - `float_speed`: Control floating animation speed
    - `pulse_intensity`: Control pulsing strength
    - `rotation_speed`: Variable rotation speeds
+   - `animation_config`: Custom animation sequences
 
 2. **Sound Properties**:
    - `collect_sound`: Sound effect file name
    - `volume`: Sound volume
+   - `ambient_sound`: Background sound for items
 
 3. **Gameplay Properties**:
    - `respawn_time`: For respawning collectibles
    - `expiry_time`: For time-limited items
    - `chain_bonus`: Bonus for collecting in sequence
+   - `health_restore`: Health restoration amount
 
 4. **Visual Properties**:
    - `glow_color`: Ambient glow effect
    - `trail_effect`: Motion trail
    - `pickup_animation`: Custom collection animation
+   - `shader_effect`: Custom shader effects
+
+5. **Enemy Enhancements**:
+   - `attack_pattern`: Complex attack sequences
+   - `projectile_type`: Ranged attack support
+   - `ai_behavior`: Advanced AI patterns
+   - `team_id`: Faction/team support
+
+6. **Animation System**:
+   - `blend_trees`: Animation blending
+   - `state_machines`: Animation state logic
+   - `events`: Animation event triggers
+   - `layers`: Multi-layer animations
 
 All these can be added without breaking existing content!
 
@@ -260,6 +442,32 @@ if (prop.name === 'particle_color') {
 }
 ```
 
+## System Architecture Summary
+
+### Current Systems
+
+1. **Collectible System**: Fully configurable items with visual effects
+2. **Enemy System**: Multiple movement patterns and behaviors
+3. **Animation System**: Centralized animation management
+4. **Manager Pattern**: State and logic centralization
+5. **Scene Management**: Clean scene transitions and data flow
+
+### Architecture Strengths
+
+1. **Configuration-Driven**: Most game content can be added without code changes
+2. **Type-Safe**: TypeScript ensures compile-time safety
+3. **Modular**: Clear separation between systems
+4. **Extensible**: Easy to add new features
+5. **Maintainable**: Consistent patterns throughout
+
+### Key Design Patterns
+
+- **Singleton**: AnimationManager for global access
+- **Manager Pattern**: Centralized state management
+- **Strategy Pattern**: Enemy movement behaviors
+- **Observer Pattern**: Scene communication
+- **Factory Pattern**: Sprite creation from tilemap
+
 ## Conclusion
 
 The codebase follows a configuration-driven architecture that:
@@ -267,5 +475,6 @@ The codebase follows a configuration-driven architecture that:
 - Separates concerns effectively
 - Provides clear extension points
 - Maintains type safety
+- Scales well with content growth
 
-This approach enables rapid content creation while keeping the codebase maintainable and extensible.
+This approach enables rapid content creation while keeping the codebase maintainable and extensible. The combination of TypeScript, Phaser 3, and configuration-driven design creates a robust foundation for game development.

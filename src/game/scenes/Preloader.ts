@@ -30,16 +30,72 @@ export class Preloader extends Scene
     preload ()
     {
         //  Load the assets for the game - Replace with your own assets
-        this.load.setPath('assets');
+        this.load.image('logo', 'assets/logo.png');
+        
+        // Load tilemap JSON
+        this.load.tilemapTiledJSON('tilemap', 'assets/tilemap/scenes/tilemap.json');
 
-        this.load.image('logo', 'logo.png');
+        // Download tilemap.
+        this.load.text('tilemap_json_raw', 'assets/tilemap/scenes/tilemap.json');
+        
+        // 监听text文件加载完成，然后在preload阶段加载其他资源
+        this.load.once('filecomplete-text-tilemap_json_raw', () => {
+            this.loadAllAssets();
+        });
+    }
+
+    private loadAllAssets() {
+        // parse raw tilemap json.
+        let tilemapJsonRaw = this.cache.text.get('tilemap_json_raw');
+        let tilemapJsonObj = null;
+        try {
+            tilemapJsonObj = JSON.parse(tilemapJsonRaw);
+        } catch (e) {
+            console.error('解析 tilemap_json_raw 失败:', e);
+        }
+
+        let tilesets = tilemapJsonObj["tilesets"];
+        if (!tilesets) {
+            return;
+        }
+
+        tilesets.forEach((tileset: any) => {
+            let isAtlas = false;
+
+            let tiles = tileset["tiles"];
+            if (tiles && tiles.length && tiles.length > 0) {
+                let properties = tiles[0]["properties"];
+                if (properties && properties.length && properties.length > 0) {
+                    properties.forEach((propertie: any) => {
+                        if (propertie.name === "atals" && propertie.value === true) {
+                            isAtlas = true;
+                        }
+                    })
+                }
+            }
+            
+            let imageUri = tileset["image"] as string;
+            if (!imageUri) {
+                return;
+            }
+            
+            let name = tileset["name"] as string;
+            if (!name) {
+                return;
+            }
+
+            if (isAtlas) {
+                // 将 imageUri 的文件扩展名替换为 .json
+                let atlasJsonUri = imageUri.replace(/(\.[^/.]+)$/, '.json');
+                this.load.atlas(name, imageUri, atlasJsonUri);
+            } else {
+                this.load.image(name, imageUri);
+            }
+        })
     }
 
     create ()
     {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');
     }

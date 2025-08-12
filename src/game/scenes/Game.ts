@@ -5,6 +5,9 @@ export class Game extends Scene
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
     msg_text : Phaser.GameObjects.Text;
+    map: Phaser.Tilemaps.Tilemap;
+    tilesets: Phaser.Tilemaps.Tileset[];
+    layers: Phaser.Tilemaps.TilemapLayer[];
 
     constructor ()
     {
@@ -14,17 +17,31 @@ export class Game extends Scene
     create ()
     {
         this.camera = this.cameras.main;
-        this.camera.setBackgroundColor(0x00ff00);
+        this.camera.setBackgroundColor(0x87CEEB);
 
-        this.background = this.add.image(512, 384, 'background');
-        this.background.setAlpha(0.5);
+        // Create the tilemap
+        this.map = this.make.tilemap({ key: 'tilemap' });
 
-        this.msg_text = this.add.text(512, 384, 'Make something fun!\nand share it with us:\nsupport@phaser.io', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
+        // Load tilesets from tilemap config.
+        this.tilesets = [];
+        this.map.tilesets.forEach((tileset: Phaser.Tilemaps.Tileset) => {
+            let addedTileset = this.map.addTilesetImage(tileset.name, tileset.name);
+            if (addedTileset) {
+                this.tilesets.push(addedTileset);
+            }
         });
-        this.msg_text.setOrigin(0.5);
+
+        // find tilemap layer.
+        this.layers = [];
+        this.map.getTileLayerNames().forEach((tileLayerName: string) => {
+            this.map.createLayer(tileLayerName, this.tilesets, 0, 0);
+        })
+
+        // Set camera bounds to match the tilemap
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+
+        // Optional: Center the camera on the tilemap
+        this.cameras.main.centerOn(this.map.widthInPixels / 2, this.map.heightInPixels / 2);
 
         this.input.once('pointerdown', () => {
 

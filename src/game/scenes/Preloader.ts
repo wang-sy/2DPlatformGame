@@ -70,8 +70,8 @@ export class Preloader extends Scene
             if (tiles && tiles.length && tiles.length > 0) {
                 let properties = tiles[0]["properties"];
                 if (properties && properties.length && properties.length > 0) {
-                    properties.forEach((propertie: any) => {
-                        if (propertie.name === "atlas" && propertie.value === true) {
+                    properties.forEach((property: any) => {
+                        if (property.name === "atlas" && property.value === true) {
                             isAtlas = true;
                         }
                     })

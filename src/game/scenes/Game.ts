@@ -58,13 +58,13 @@ export class Game extends Scene
             const layer = this.map.createLayer(tileLayerName, this.tilesets, 0, 0);
             if (layer) {
                 this.layers.push(layer);
-                layer.setCollisionByProperty({ collision: true });
+                layer.setCollisionByProperty({ collides: true });
             }
         })
 
         this.createObjectsFromTilemap()
 
-        // Create collision events
+        // Create collides events
         this.createOverleapEvents();
         
         // Setup restart key (R key)
@@ -127,7 +127,7 @@ export class Game extends Scene
         // Create player
         this.player = new Player(this, playerObject);
 
-        // Set up collisions between player and tilemap layers
+        // Set up collides between player and tilemap layers
         this.layers.forEach(layer => {
             this.physics.add.collider(this.player, layer);
         });
@@ -186,7 +186,7 @@ export class Game extends Scene
         const enemy = new Enemy(this, enemyObject);
         this.enemies.add(enemy);
         
-        // Set up collisions with tilemap layers
+        // Set up collides with tilemap layers
         this.layers.forEach(layer => {
             this.physics.add.collider(enemy, layer);
         });

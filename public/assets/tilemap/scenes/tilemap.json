@@ -178,7 +178,7 @@
          "id":0,
          "properties":[
                 {
-                 "name":"collision",
+                 "name":"collides",
                  "type":"bool",
                  "value":true
                 }]
@@ -200,7 +200,7 @@
          "id":0,
          "properties":[
                 {
-                 "name":"collision",
+                 "name":"collides",
                  "type":"bool",
                  "value":true
                 }]

@@ -56,8 +56,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         let yScale = displayHeight / firstFrame.height
         
         this.setScale(xScale, yScale);
-        this.setSize(displayWidth * 0.8, displayHeight * 0.8);
-        this.setOffset(displayWidth * 0.8, displayHeight * 0.8);
+        // 设置物理碰撞体为原始尺寸的80%
+        this.setSize(firstFrame.width * 0.7, firstFrame.height * 0.7);
+        // 居中偏移量为原始尺寸的10%
+        this.setOffset(firstFrame.width * 0.1, firstFrame.height * 0.1);
         
         this.setCollideWorldBounds(true);
         this.setBounce(0.1);

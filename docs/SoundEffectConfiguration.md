@@ -1,314 +1,377 @@
-# 音效系统配置指南
+# 音效配置指南
 
 ## 概述
 
-本项目的音效系统通过 `SoundEffectPlayer` 单例管理，支持为不同的精灵（Sprite）和动画配置多个音效。音效会在动画播放时自动触发，也可以手动调用播放。
+本项目使用 `SoundEffectPlayer` 管理器来处理游戏中的所有音效。该系统支持：
+- 基于动画自动播放音效
+- 随机音效选择（一个动画可配置多个音效）
+- 延迟加载和预加载策略
+- 全局音量控制
 
 ## 系统架构
 
-### 核心组件
+### SoundEffectPlayer 单例模式
 
-1. **SoundEffectPlayer** - 音效播放器单例
-   - 管理所有音效的加载和播放
-   - 支持随机播放多个音效变体
-   - 提供音量控制功能
+```typescript
+// 获取音效播放器实例
+const soundEffectPlayer = SoundEffectPlayer.getInstance();
 
-2. **配置文件** - `public/assets/audio/sound_effect/config.json`
-   - JSON 格式配置音效映射
-   - 支持多个精灵和动画的音效配置
-
-3. **集成方式**
-   - Player 和 Enemy 类中自动集成
-   - 在动画播放时自动触发对应音效
-
-## 配置文件结构
-
-### 基本格式
-
-```json
-{
-  "精灵名称": {
-    "动画名称": [
-      {
-        "key": "音效唯一标识",
-        "uri": "音效文件路径"
-      }
-    ]
-  }
-}
+// 在 Preloader 场景中初始化
+soundEffectPlayer.init(scene);
+await soundEffectPlayer.loadConfig();
+soundEffectPlayer.preloadSounds();
 ```
 
-### 字段说明
+### 核心功能
 
-- **精灵名称**：对应 Tiled 地图编辑器中的对象名称（如 `main_player`、`enemy`）
-- **动画名称**：对应动画的名称（如 `idle`、`walk`、`jump` 等）
-- **key**：音效的唯一标识符，用于缓存管理
-- **uri**：音效文件的相对路径
+1. **配置加载**：从 JSON 文件读取音效配置
+2. **音效预加载**：在游戏开始前加载所有音效资源
+3. **动画关联**：将音效与精灵图集的动画关联
+4. **随机播放**：从多个音效中随机选择播放
 
-### 完整示例
+## 配置文件格式
+
+创建 `assets/audio/sound_effect/config.json` 文件：
 
 ```json
 {
-  "main_player": {
-    "idle": [
-      {
-        "key": "player_idle_select",
-        "uri": "assets/audio/sound_effect/sfx_select.mp3"
-      }
-    ],
-    "walk": [
-      {
-        "key": "player_walk_1",
-        "uri": "assets/audio/sound_effect/sfx_bump.mp3"
-      },
-      {
-        "key": "player_walk_2",
-        "uri": "assets/audio/sound_effect/sfx_select.mp3"
-      }
-    ],
+  "player": {
     "jump": [
       {
-        "key": "player_jump",
-        "uri": "assets/audio/sound_effect/sfx_jump.mp3"
+        "key": "player_jump_1",
+        "uri": "assets/audio/sound_effect/player/jump_1.mp3"
       },
       {
-        "key": "player_jump_high",
-        "uri": "assets/audio/sound_effect/sfx_jump-high.mp3"
+        "key": "player_jump_2",
+        "uri": "assets/audio/sound_effect/player/jump_2.mp3"
       }
     ],
     "hit": [
       {
-        "key": "player_hurt",
-        "uri": "assets/audio/sound_effect/sfx_hurt.mp3"
+        "key": "player_hit",
+        "uri": "assets/audio/sound_effect/player/hit.mp3"
+      }
+    ],
+    "walk": [
+      {
+        "key": "player_step_1",
+        "uri": "assets/audio/sound_effect/player/step_1.mp3"
+      },
+      {
+        "key": "player_step_2",
+        "uri": "assets/audio/sound_effect/player/step_2.mp3"
       }
     ],
     "die": [
       {
-        "key": "player_die",
-        "uri": "assets/audio/sound_effect/sfx_disappear.mp3"
+        "key": "player_death",
+        "uri": "assets/audio/sound_effect/player/death.mp3"
       }
     ]
   },
   "enemy": {
-    "jump": [],
+    "attack": [
+      {
+        "key": "enemy_attack",
+        "uri": "assets/audio/sound_effect/enemy/attack.mp3"
+      }
+    ],
     "die": [
       {
-        "key": "enemy_die",
-        "uri": "assets/audio/sound_effect/sfx_disappear.mp3"
+        "key": "enemy_defeat",
+        "uri": "assets/audio/sound_effect/enemy/defeat.mp3"
+      }
+    ]
+  },
+  "collectible": {
+    "collect": [
+      {
+        "key": "coin_collect",
+        "uri": "assets/audio/sound_effect/items/coin.mp3"
       }
     ]
   }
 }
 ```
 
-## 音效播放机制
+### 配置说明
 
-### 自动播放
+- **第一层键**：精灵图集名称（如 `player`、`enemy`）- 必须与 Tiled 地图中的对象名称一致
+- **第二层键**：动画名称（如 `jump`、`hit`、`walk`）
+- **音效数组**：每个动画可配置多个音效
+  - `key`：音效的唯一标识符
+  - `uri`：音效文件路径
 
-在 Player 和 Enemy 类中，音效会在以下情况自动播放：
+## 在精灵类中使用
 
-1. **动画切换时**
-   - 当调用 `playAnimation()` 方法切换动画时
-   - 系统会检查是否有对应的音效配置
-   - 如果有配置，自动播放音效
-
-2. **特定动作时**
-   - 跳跃、受击、死亡等特殊动作
-   - 可以额外调用音效播放，实现叠加效果
-
-### 音量控制
-
-不同场景下使用不同的音量设置：
-
-| 角色 | 动作 | 音量 | 说明 |
-|------|------|------|------|
-| Player | 默认动画 | 1.0 | 标准音量 |
-| Player | 跳跃 | 0.7 | 稍微降低避免过响 |
-| Player | 受击/死亡 | 1.0 | 标准音量，需要明显 |
-| Enemy | 默认动画 | 0.4 | 降低音量避免干扰 |
-| Enemy | 跳跃 | 0.3 | 更低音量 |
-| Enemy | 死亡 | 0.6 | 适中音量 |
-
-### 随机音效
-
-当一个动画配置了多个音效时，系统会随机选择一个播放：
-
-```json
-"walk": [
-  { "key": "walk_1", "uri": "sfx_walk1.mp3" },
-  { "key": "walk_2", "uri": "sfx_walk2.mp3" },
-  { "key": "walk_3", "uri": "sfx_walk3.mp3" }
-]
-```
-
-## 代码集成示例
-
-### Player 类集成
+### Player.ts 实现示例
 
 ```typescript
+import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private soundEffectPlayer: SoundEffectPlayer;
+    private key: string = ''; // 从 Tiled 对象获取的精灵名称
     
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
-        // ... 其他初始化代码
+        let key = tiledObject.name; // 使用 Tiled 对象的名称作为键
+        super(scene, x, y, key);
+        
+        this.key = key;
         this.soundEffectPlayer = SoundEffectPlayer.getInstance();
     }
     
     private playAnimation(animName: string): void {
         const animKey = this.animationManager.getAnimationKey(this.key, animName);
-        if (this.animationManager.hasAnimation(this.key, animName)) {
-            if (this.currentAnimation !== animKey) {
-                this.play(animKey);
-                this.currentAnimation = animKey;
-                
-                // 自动播放对应音效
-                if (this.soundEffectPlayer.hasAnimationSound(this.key, animName)) {
-                    this.soundEffectPlayer.playAnimationSound(this.key, animName);
-                }
+        if (this.currentAnimation !== animKey) {
+            this.play(animKey);
+            this.currentAnimation = animKey;
+            
+            // 自动播放对应音效
+            if (this.soundEffectPlayer.hasAnimationSound(this.key, animName)) {
+                this.soundEffectPlayer.playAnimationSound(this.key, animName);
             }
         }
     }
     
-    // 特定动作的额外音效
-    private handleJump(): void {
-        this.playAnimation('jump');
-        // 额外播放跳跃音效，自定义音量
-        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'jump')) {
-            this.soundEffectPlayer.playAnimationSound(this.key, 'jump', 0.7);
+    // 跳跃时的特殊音效处理
+    update(): void {
+        if (justPressedUp && !this.isCharging) {
+            // 播放跳跃音效（音量略低）
+            if (this.soundEffectPlayer.hasAnimationSound(this.key, 'jump')) {
+                this.soundEffectPlayer.playAnimationSound(this.key, 'jump', 0.7);
+            }
+        }
+    }
+    
+    // 受伤音效
+    takeDamage(damage: number): void {
+        this.playAnimation('hit');
+        // 音效已在 playAnimation 中自动播放
+    }
+    
+    // 死亡音效
+    private handleDeath(): void {
+        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'die')) {
+            this.soundEffectPlayer.playAnimationSound(this.key, 'die');
         }
     }
 }
 ```
 
-### Enemy 类集成
+### Enemy.ts 实现示例
 
 ```typescript
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private soundEffectPlayer: SoundEffectPlayer;
+    private enemyName: string;
     
     constructor(scene: Scene, enemyObject: Phaser.Types.Tilemaps.TiledObject) {
-        // ... 其他初始化代码
+        this.enemyName = enemyObject.name || 'enemy';
         this.soundEffectPlayer = SoundEffectPlayer.getInstance();
     }
     
-    private playAnimation(animType: string): void {
-        // ... 动画播放逻辑
-        
-        // 播放音效（Enemy 音量较小）
-        if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, fallbackAnim)) {
-            this.soundEffectPlayer.playAnimationSound(this.enemyName, fallbackAnim, 0.4);
-        }
-    }
-    
-    takeDamage(_damage: number): void {
-        // 优先播放死亡音效，如果没有则播放受击音效
+    takeDamage(damage: number): void {
+        // 播放死亡音效
         if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'die')) {
             this.soundEffectPlayer.playAnimationSound(this.enemyName, 'die', 0.6);
-        } else if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'hit')) {
-            this.soundEffectPlayer.playAnimationSound(this.enemyName, 'hit', 0.6);
         }
-        
-        // ... 死亡效果处理
+        this.destroy();
     }
 }
 ```
 
-## 添加新音效的步骤
+## 音效管理最佳实践
 
-1. **准备音效文件**
-   - 将音效文件（mp3/ogg/wav）放入 `public/assets/audio/sound_effect/` 目录
-   - 建议使用描述性的文件名，如 `sfx_player_attack.mp3`
-
-2. **更新配置文件**
-   - 编辑 `public/assets/audio/sound_effect/config.json`
-   - 在对应的精灵和动画下添加音效配置
-
-3. **测试音效**
-   - 运行游戏，触发对应的动画
-   - 检查控制台日志确认音效加载和播放
-
-## 调试技巧
-
-### 控制台日志
-
-SoundEffectPlayer 会输出详细的调试信息：
+### 1. 文件组织结构
 
 ```
-[SoundEffectPlayer] Loading config from: assets/audio/sound_effect/config.json
-[SoundEffectPlayer] Config loaded successfully
-[SoundEffectPlayer] Mapped main_player_jump -> 2 sound(s)
-[SoundEffectPlayer] Playing sound: player_jump at volume: 0.7
+assets/
+└── audio/
+    ├── bgm-config.json         # BGM 配置文件
+    └── sound_effect/
+        ├── config.json          # 音效配置文件
+        ├── player/             # 玩家音效
+        │   ├── jump_1.mp3
+        │   ├── jump_2.mp3
+        │   ├── hit.mp3
+        │   └── death.mp3
+        ├── enemy/              # 敌人音效
+        │   ├── attack.mp3
+        │   └── defeat.mp3
+        └── items/              # 物品音效
+            ├── coin.mp3
+            └── powerup.mp3
 ```
 
-### 常见问题
+### 2. 命名规范
 
-1. **音效不播放**
-   - 检查配置文件中的精灵名称是否与代码中的 `this.key` 或 `this.enemyName` 匹配
-   - 确认音效文件路径正确
-   - 查看控制台是否有错误信息
+- 音效键名：`{角色类型}_{动作}_{序号}`
+  - 例如：`player_jump_1`、`enemy_attack`
+- 文件名：简洁描述性命名
+  - 例如：`jump_1.mp3`、`hit.mp3`
 
-2. **音效重复播放**
-   - 系统已通过检查 `currentAnimation` 避免重复
-   - 如果仍有问题，检查是否在多处调用了 `playAnimation`
+### 3. 音量控制策略
 
-3. **音量调整**
-   - 使用 `setGlobalVolume()` 调整全局音量
-   - 在播放时传入音量参数进行个别调整
+| 角色类型 | 动作 | 推荐音量 | 说明 |
+|---------|------|---------|------|
+| Player | 默认 | 1.0 | 标准音量 |
+| Player | 跳跃 | 0.7 | 降低避免过响 |
+| Player | 受击/死亡 | 1.0 | 需要明显 |
+| Enemy | 默认 | 0.4 | 避免干扰 |
+| Enemy | 死亡 | 0.6 | 适中音量 |
+| Items | 收集 | 0.8 | 清晰但不刺耳 |
 
-## 最佳实践
+```typescript
+// 播放时指定音量（0.0 - 1.0）
+soundEffectPlayer.playAnimationSound('player', 'jump', 0.5);
 
-1. **音效文件命名**
-   - 使用描述性名称：`sfx_[角色]_[动作].mp3`
-   - 例如：`sfx_player_jump.mp3`、`sfx_enemy_die.mp3`
+// 全局音量控制
+soundEffectPlayer.setGlobalVolume(0.8);
 
-2. **音效变体**
-   - 为常见动作（如行走、攻击）配置多个音效变体
-   - 避免重复感，提升游戏体验
+// 单个音效音量调整
+soundEffectPlayer.setVolume('player_jump_1', 0.6);
+```
 
-3. **音量平衡**
-   - 玩家音效相对较大（0.7-1.0）
-   - 敌人音效相对较小（0.3-0.6）
-   - 环境音效更小（0.2-0.4）
+### 4. 性能优化建议
 
-4. **性能优化**
-   - 音效文件控制在合理大小（建议 < 100KB）
-   - 使用压缩格式（mp3/ogg）
-   - 避免同时播放过多音效
-
-## 扩展功能
-
-### 支持的高级功能
-
-1. **条件播放**
+1. **预加载策略**
    ```typescript
-   if (this.soundEffectPlayer.hasAnimationSound(atlasKey, animName)) {
-       this.soundEffectPlayer.playAnimationSound(atlasKey, animName);
+   // 在 Preloader.ts 中
+   async preload() {
+       // 初始化并加载配置
+       this.soundEffectPlayer.init(this);
+       await this.soundEffectPlayer.loadConfig();
+       
+       // 预加载所有音效
+       this.soundEffectPlayer.preloadSounds();
+   }
+   
+   create() {
+       // 音效加载完成后初始化
+       this.soundEffectPlayer.onSoundsLoaded();
    }
    ```
 
-2. **手动播放特定音效**
+2. **音效复用**
+   - 相似动作可共用音效（如不同敌人的受击音效）
+   - 使用音效池避免重复创建
+
+3. **内存管理**
    ```typescript
-   this.soundEffectPlayer.playSound('specific_sound_key', 0.5);
+   // 场景切换时清理音效
+   destroy(): void {
+       this.soundEffectPlayer.stopAllSounds();
+       this.soundEffectPlayer.clear();
+   }
    ```
 
-3. **停止音效**
-   ```typescript
-   this.soundEffectPlayer.stopSound('sound_key');
-   this.soundEffectPlayer.stopAllSounds();
-   ```
+## 调试功能
 
-4. **音量控制**
-   ```typescript
-   this.soundEffectPlayer.setVolume('sound_key', 0.8);
-   this.soundEffectPlayer.setGlobalVolume(0.5);
-   ```
+### 控制台日志输出
 
-## 总结
+SoundEffectPlayer 提供详细的调试信息：
 
-音效系统通过配置文件和代码集成，实现了灵活且易于维护的音效管理。开发者只需要：
+```
+[SoundEffectPlayer] Initializing with scene: Preloader
+[SoundEffectPlayer] Loading config from: assets/audio/sound_effect/config.json
+[SoundEffectPlayer] Config loaded successfully
+[SoundEffectPlayer] Atlas keys: ['player', 'enemy']
+[SoundEffectPlayer] Mapped player_jump -> 2 sound(s)
+[SoundEffectPlayer] Playing sound: player_jump_1 at volume: 0.5
+```
 
-1. 在配置文件中定义音效映射
-2. 在精灵类中初始化 SoundEffectPlayer
-3. 在合适的时机调用播放方法
+### 常用调试方法
 
-系统会自动处理音效的加载、缓存和播放，支持随机变体和音量控制，大大提升了游戏的听觉体验。
+```typescript
+// 获取已加载的音效列表
+const loadedSounds = soundEffectPlayer.getLoadedSounds();
+console.log('Loaded sounds:', loadedSounds);
+
+// 获取音效配置
+const config = soundEffectPlayer.getSoundConfig();
+console.log('Sound config:', config);
+
+// 检查动画是否有关联音效
+const hasSound = soundEffectPlayer.hasAnimationSound('player', 'jump');
+console.log('Player jump has sound:', hasSound);
+```
+
+## 高级功能
+
+### 1. 条件音效播放
+
+```typescript
+// 根据游戏状态播放不同音效
+if (player.isUnderwater) {
+    soundEffectPlayer.playSound('underwater_jump', 0.6);
+} else {
+    soundEffectPlayer.playAnimationSound('player', 'jump', 0.8);
+}
+```
+
+### 2. 音效链
+
+```typescript
+// 连续播放多个音效
+soundEffectPlayer.playSound('powerup_collect', 0.7);
+scene.time.delayedCall(200, () => {
+    soundEffectPlayer.playSound('powerup_activate', 0.8);
+});
+```
+
+### 3. 随机音效变体
+
+配置多个音效后系统会自动随机选择：
+
+```json
+"walk": [
+    { "key": "step_grass_1", "uri": "step_grass_1.mp3" },
+    { "key": "step_grass_2", "uri": "step_grass_2.mp3" },
+    { "key": "step_grass_3", "uri": "step_grass_3.mp3" }
+]
+```
+
+## 常见问题解决
+
+### Q: 音效没有播放？
+
+检查清单：
+1. 配置文件中的精灵名称是否与 Tiled 对象名称一致
+2. 音效文件路径是否正确（相对于项目根目录）
+3. 控制台是否有加载错误
+4. 浏览器是否静音或需要用户交互才能播放音频
+
+### Q: 音效延迟？
+
+解决方案：
+1. 确保在 Preloader 场景预加载
+2. 使用较小的音频文件（建议 < 100KB）
+3. 使用 MP3 或 OGG 格式
+4. 考虑使用音频精灵图（Audio Sprites）
+
+### Q: 音效重复播放？
+
+系统通过检查 `currentAnimation` 避免重复，如果仍有问题：
+1. 检查是否在多处调用了 `playAnimation`
+2. 确认动画切换逻辑是否正确
+
+### Q: 如何支持多平台？
+
+```javascript
+// 在 Preloader 中提供多种格式
+this.load.audio('jump', [
+    'assets/audio/jump.ogg',
+    'assets/audio/jump.mp3'
+]);
+```
+
+## 集成流程总结
+
+1. **创建配置文件** - 在 `assets/audio/sound_effect/config.json` 定义音效映射
+2. **准备音效资源** - 将音效文件放入对应目录
+3. **初始化系统** - 在 Preloader 场景初始化 SoundEffectPlayer
+4. **精灵集成** - 在精灵类中调用音效播放方法
+5. **测试调试** - 使用控制台日志确认音效正常工作
+
+通过这个系统，你可以轻松管理游戏中的所有音效，实现丰富的听觉体验。

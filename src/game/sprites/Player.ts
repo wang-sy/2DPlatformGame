@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AnimationManager } from '../managers/AnimationManager';
+import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -31,6 +32,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     
     // Animation
     private animationManager: AnimationManager;
+    private soundEffectPlayer: SoundEffectPlayer;
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -42,6 +44,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.key = key;
         this.animationManager = AnimationManager.getInstance();
+        this.soundEffectPlayer = SoundEffectPlayer.getInstance();
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -77,6 +80,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.currentAnimation !== animKey) {
                 this.play(animKey);
                 this.currentAnimation = animKey;
+                
+                // Play sound effect for this animation
+                if (this.soundEffectPlayer.hasAnimationSound(this.key, animName)) {
+                    this.soundEffectPlayer.playAnimationSound(this.key, animName);
+                }
             }
         }
     }
@@ -182,6 +190,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityY(-jumpPower);
                 this.jumpCount++;
                 this.playAnimation('jump');
+                
+                // Play jump sound if available
+                if (this.soundEffectPlayer.hasAnimationSound(this.key, 'jump')) {
+                    this.soundEffectPlayer.playAnimationSound(this.key, 'jump', 0.7);
+                }
             }
         }
         
@@ -199,6 +212,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     hit(): void {
         this.playAnimation('hit');
+        
+        // Play hit sound effect
+        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'hit')) {
+            this.soundEffectPlayer.playAnimationSound(this.key, 'hit');
+        }
         
         this.scene.time.delayedCall(500, () => {
             this.playAnimation('idle');
@@ -239,6 +257,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0xff0000);
         this.setVelocity(0, -400);
         this.body!.enable = false;
+        
+        // Play death sound effect
+        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'die')) {
+            this.soundEffectPlayer.playAnimationSound(this.key, 'die');
+        }
         
         this.scene.time.delayedCall(1000, () => {
             // Call Game scene's restartGame method

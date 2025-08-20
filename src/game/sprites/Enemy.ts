@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { AnimationManager } from '../managers/AnimationManager';
+import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
 
 /**
  * Generic Enemy sprite class
@@ -43,6 +44,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private currentAnimation: string = '';
     private hasAtlas: boolean = false;
     private animationManager: AnimationManager;
+    private soundEffectPlayer: SoundEffectPlayer;
 
     constructor(scene: Scene, enemyObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = enemyObject.x || 0;
@@ -57,6 +59,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setOrigin(0.5, 0.5);
         this.enemyName = enemyObject.name || 'enemy';
         this.animationManager = AnimationManager.getInstance();
+        this.soundEffectPlayer = SoundEffectPlayer.getInstance();
         
         // Store starting position for patrol
         this.startX = this.x;
@@ -189,6 +192,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.animationManager.hasAnimation(this.enemyName, fallbackAnim) && this.currentAnimation !== animKey) {
             this.play(animKey);
             this.currentAnimation = animKey;
+            
+            // Play sound effect for this animation
+            if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, fallbackAnim)) {
+                this.soundEffectPlayer.playAnimationSound(this.enemyName, fallbackAnim, 0.4);
+            }
         }
     }
     
@@ -264,6 +272,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
             this.playAnimation('jump');
+            
+            // Play jump sound
+            if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'jump')) {
+                this.soundEffectPlayer.playAnimationSound(this.enemyName, 'jump', 0.3);
+            }
         } else if (this.isGrounded) {
             this.setVelocityX(0);
             this.playAnimation('idle');
@@ -279,6 +292,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
             this.playAnimation('jump');
+            
+            // Play jump sound
+            if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'jump')) {
+                this.soundEffectPlayer.playAnimationSound(this.enemyName, 'jump', 0.3);
+            }
         }
     }
     
@@ -294,6 +312,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setVelocity(this.moveSpeed * this.direction, -this.jumpPower);
             this.lastJumpTime = time;
             this.playAnimation('jump');
+            
+            // Play jump sound
+            if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'jump')) {
+                this.soundEffectPlayer.playAnimationSound(this.enemyName, 'jump', 0.3);
+            }
         } else if (this.isGrounded) {
             // Stop horizontal movement when on ground (waiting to jump)
             this.setVelocityX(0);
@@ -335,6 +358,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityY(-this.jumpPower);
                 this.lastJumpTime = time;
                 this.playAnimation('jump');
+                
+                // Play jump sound
+                if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'jump')) {
+                    this.soundEffectPlayer.playAnimationSound(this.enemyName, 'jump', 0.3);
+                }
             }
         }
     }
@@ -344,6 +372,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     
     takeDamage(_damage: number): void {
+        // Play death sound effect
+        if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'die')) {
+            this.soundEffectPlayer.playAnimationSound(this.enemyName, 'die', 0.6);
+        } else if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'hit')) {
+            this.soundEffectPlayer.playAnimationSound(this.enemyName, 'hit', 0.6);
+        }
+        
         // Create death effects before destroying the enemy
         this.createDeathEffects();
         

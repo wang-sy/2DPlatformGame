@@ -243,9 +243,9 @@ export class AnimationManager {
      */
     playAnimation(sprite: Phaser.GameObjects.Sprite, atlasKey: string, animationName: string, ignoreIfPlaying: boolean = true): void {
         const animKey = this.getAnimationKey(atlasKey, animationName);
-        
+
         if (!this.createdAnimations.has(animKey)) {
-            console.warn(`Animation not found: ${animKey}`);
+            console.warn(`[AnimationManager] Animation not found: ${animKey}`);
             return;
         }
         

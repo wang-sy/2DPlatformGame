@@ -1,14 +1,17 @@
 import { Scene } from 'phaser';
 import { AnimationManager } from '../managers/AnimationManager';
+import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
 
 export class Preloader extends Scene
 {
     private animationManager: AnimationManager;
+    private soundEffectPlayer: SoundEffectPlayer;
     
     constructor ()
     {
         super('Preloader');
         this.animationManager = AnimationManager.getInstance();
+        this.soundEffectPlayer = SoundEffectPlayer.getInstance();
     }
 
     init ()
@@ -31,7 +34,7 @@ export class Preloader extends Scene
         });
     }
 
-    preload ()
+    async preload ()
     {
         //  Load the assets for the game - Replace with your own assets
         this.load.image('logo', 'assets/logo.png');
@@ -46,6 +49,17 @@ export class Preloader extends Scene
         this.load.once('filecomplete-text-tilemap_json_raw', () => {
             this.loadAllAssets();
         });
+
+        // Initialize SoundEffectPlayer and load config
+        console.log('[Preloader] Initializing SoundEffectPlayer...');
+        this.soundEffectPlayer.init(this);
+        await this.soundEffectPlayer.loadConfig();
+        
+        // Preload all sound effects
+        console.log('[Preloader] Preloading sound effects...');
+        this.soundEffectPlayer.preloadSounds();
+        
+
     }
 
     private loadAllAssets() {
@@ -113,6 +127,11 @@ export class Preloader extends Scene
         
         // Create all animations
         this.animationManager.createAllAnimations();
+        
+        // Initialize loaded sounds after all audio files are loaded
+        console.log('[Preloader] Initializing loaded sounds...');
+        this.soundEffectPlayer.onSoundsLoaded();
+        console.log('[Preloader] Sound effect system ready');
         
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');

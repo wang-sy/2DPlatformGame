@@ -5,6 +5,7 @@ import { MainMenu } from './scenes/MainMenu';
 import { Victory } from './scenes/Victory';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
+import { BGMPlayer } from './managers/BGMPlayer';
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -31,9 +32,12 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const StartGame = (parent: string) => {
-
-    return new Game({ ...config, parent });
-
+    const game = new Game({ ...config, parent });
+    
+    // Initialize BGMPlayer with the game instance
+    BGMPlayer.getInstance().initialize(game);
+    
+    return game;
 }
 
 export default StartGame;

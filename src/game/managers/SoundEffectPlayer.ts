@@ -212,11 +212,23 @@ export class SoundEffectPlayer {
         const animKey = `${atlasKey}_${animationName}`;
         console.log(`[SoundEffectPlayer] Attempting to play sound for animation: ${animKey}`);
         
-        const sounds = this.animationToSounds.get(animKey);
+        let sounds = this.animationToSounds.get(animKey);
         
+        // Try fallback sounds if primary sound doesn't exist
         if (!sounds || sounds.length === 0) {
-            console.log(`[SoundEffectPlayer] No sounds mapped for animation: ${animKey}`);
-            return;
+            // For 'die' sound, try 'hit' as fallback
+            if (animationName === 'die') {
+                const fallbackKey = `${atlasKey}_hit`;
+                sounds = this.animationToSounds.get(fallbackKey);
+                if (sounds && sounds.length > 0) {
+                    console.log(`[SoundEffectPlayer] Using fallback sound 'hit' for 'die' animation`);
+                }
+            }
+            
+            if (!sounds || sounds.length === 0) {
+                console.log(`[SoundEffectPlayer] No sounds mapped for animation: ${animKey}`);
+                return;
+            }
         }
         
         const randomIndex = Math.floor(Math.random() * sounds.length);

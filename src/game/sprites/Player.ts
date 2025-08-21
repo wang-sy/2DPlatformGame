@@ -1,6 +1,4 @@
 import Phaser from 'phaser';
-import { AnimationManager } from '../managers/AnimationManager';
-import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
 import { eventBus, GameEvent } from '../events/EventBus';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -30,10 +28,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private health: number = 3;
     private maxHealth: number = 3;
     private isInvulnerable: boolean = false;
-    
-    // Animation
-    private animationManager: AnimationManager;
-    private soundEffectPlayer: SoundEffectPlayer;
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -44,8 +38,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, key);
 
         this.key = key;
-        this.animationManager = AnimationManager.getInstance();
-        this.soundEffectPlayer = SoundEffectPlayer.getInstance();
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -76,19 +68,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     private playAnimation(animName: string): void {
-        const animKey = this.animationManager.getAnimationKey(this.key, animName);
-        if (this.animationManager.hasAnimation(this.key, animName)) {
-            if (this.currentAnimation !== animKey) {
-                this.play(animKey);
-                this.currentAnimation = animKey;
-                
-                // Emit animation play event
-                eventBus.emit(GameEvent.ANIMATION_PLAY, {
-                    sprite: this,
-                    atlasKey: this.key,
-                    animationName: animName
-                });
-            }
+        const animKey = `${this.key}_${animName}`;
+        if (this.currentAnimation !== animKey) {
+            this.currentAnimation = animKey;
+            
+            // Emit animation play event - the AnimationManager will handle the actual animation
+            eventBus.emit(GameEvent.ANIMATION_PLAY, {
+                sprite: this,
+                atlasKey: this.key,
+                animationName: animName
+            });
         }
     }
 
@@ -258,10 +247,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     hit(): void {
         this.playAnimation('hit');
         
-        // Play hit sound effect
-        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'hit')) {
-            this.soundEffectPlayer.playAnimationSound(this.key, 'hit');
-        }
+        // Play hit sound effect through event
+        eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+            key: `${this.key}_hit`,
+            atlasKey: this.key,
+            animationName: 'hit',
+            volume: 0.5
+        });
         
         this.scene.time.delayedCall(500, () => {
             this.playAnimation('idle');
@@ -315,10 +307,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             player: this
         });
         
-        // Play death sound effect
-        if (this.soundEffectPlayer.hasAnimationSound(this.key, 'die')) {
-            this.soundEffectPlayer.playAnimationSound(this.key, 'die');
-        }
+        // Play death sound effect through event
+        eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+            key: `${this.key}_die`,
+            atlasKey: this.key,
+            animationName: 'die',
+            volume: 0.5
+        });
         
         this.scene.time.delayedCall(1000, () => {
             // Emit game over event

@@ -264,11 +264,22 @@ export class AnimationManager {
      * Play animation on a sprite
      */
     playAnimation(sprite: Phaser.GameObjects.Sprite, atlasKey: string, animationName: string, ignoreIfPlaying: boolean = true): void {
-        const animKey = this.getAnimationKey(atlasKey, animationName);
+        let animKey = this.getAnimationKey(atlasKey, animationName);
+        let fallbackAnim = animationName;
 
+        // Handle fallback animations for sprites that don't have all animations
         if (!this.createdAnimations.has(animKey)) {
-            console.warn(`[AnimationManager] Animation not found: ${animKey}`);
-            return;
+            // If walk animation doesn't exist, fall back to idle
+            if (animationName === 'walk') {
+                fallbackAnim = 'idle';
+                animKey = this.getAnimationKey(atlasKey, fallbackAnim);
+            }
+            
+            // If the fallback animation also doesn't exist, return
+            if (!this.createdAnimations.has(animKey)) {
+                console.warn(`[AnimationManager] Animation not found: ${this.getAnimationKey(atlasKey, animationName)} (and fallback ${animKey} also not found)`);
+                return;
+            }
         }
         
         sprite.play(animKey, ignoreIfPlaying);

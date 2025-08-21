@@ -28,6 +28,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private health: number = 3;
     private maxHealth: number = 3;
     private isInvulnerable: boolean = false;
+    private knockbackTime: number = 0;
     
     // Terrain stuck detection
     private stuckCheckTimer: number = 0;
@@ -104,6 +105,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Update wall jump cooldown
         if (this.wallJumpCooldown > 0) {
             this.wallJumpCooldown -= this.scene.game.loop.delta;
+        }
+        
+        // Update knockback timer
+        if (this.knockbackTime > 0) {
+            this.knockbackTime -= this.scene.game.loop.delta;
+            // During knockback, prevent normal movement
+            if (this.knockbackTime > 0) {
+                return; // Skip normal movement controls during knockback
+            }
         }
         
         // Reset jump count when on ground
@@ -253,7 +263,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    hit(): void {
+    takeDamage(damage: number): void {
+        if (this.isInvulnerable) {
+            return;
+        }
+        
+        this.health -= damage;
+        this.isInvulnerable = true;  // Immediately become invulnerable
+        
+        // Emit player damage event
+        eventBus.emit(GameEvent.PLAYER_DAMAGE, {
+            player: this,
+            damage: damage,
+            health: this.health
+        });
+        
+        // Play hit animation
         this.playAnimation('hit');
         
         // Play hit sound effect through event
@@ -264,31 +289,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             volume: 0.5
         });
         
-        this.scene.time.delayedCall(500, () => {
-            this.playAnimation('idle');
-        });
-    }
-
-    takeDamage(damage: number): void {
-        if (this.isInvulnerable) {
-            return;
+        // Apply knockback based on whether player is on ground
+        const onGround = this.body?.blocked.down || false;
+        
+        if (onGround) {
+            // On ground: push back horizontally
+            const knockbackX = this.flipX ? 100 : -100;
+            this.setVelocityX(knockbackX);
+        } else {
+            // In air: jump straight up
+            this.setVelocityY(-400);
         }
         
-        this.health -= damage;
-        this.isInvulnerable = true;
+        // Set knockback duration (player can't control movement during this time)
+        this.knockbackTime = 400; // 400ms of knockback
         
-        // Emit player damage event
-        eventBus.emit(GameEvent.PLAYER_DAMAGE, {
-            player: this,
-            damage: damage,
-            health: this.health
-        });
-        
-        this.playAnimation('hit');
-        
-        const knockbackX = this.flipX ? 200 : -200;
-        this.setVelocity(knockbackX, -300);
-        
+        // Flash effect for invulnerability
         this.scene.tweens.add({
             targets: this,
             alpha: { from: 1, to: 0.3 },

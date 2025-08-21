@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
+import { Bullet } from './Bullet';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -35,6 +36,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private stuckCheckInterval: number = 100; // Check every 100ms
     private isFloatingUp: boolean = false;
     private floatUpSpeed: number = -200; // Speed to float up when stuck
+    
+    // Shooting
+    private shootKey: Phaser.Input.Keyboard.Key;
+    private canShoot: boolean = true;
+    private shootCooldown: number = 500;
+    private lastShootTime: number = 0;
+    private bullets: Phaser.Physics.Arcade.Group;
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -69,6 +77,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setGravityY(800);
         
         this.cursors = scene.input.keyboard!.createCursorKeys();
+        
+        this.shootKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+        
+        this.bullets = scene.physics.add.group({
+            classType: Bullet,
+            runChildUpdate: true,
+            maxSize: 10
+        });
         
         // Play initial animation using AnimationManager
         this.playAnimation('idle');
@@ -261,6 +277,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!onGround && !this.isTouchingWall) {
             this.playAnimation('jump');
         }
+        
+        // Shooting
+        if (Phaser.Input.Keyboard.JustDown(this.shootKey) && this.canShoot) {
+            this.shoot();
+        }
+    }
+    
+    private shoot(): void {
+        const currentTime = this.scene.time.now;
+        if (currentTime - this.lastShootTime < this.shootCooldown) {
+            return;
+        }
+        
+        this.lastShootTime = currentTime;
+        
+        const direction = this.flipX ? -1 : 1;
+        const bulletX = this.x + (direction * 20);
+        const bulletY = this.y;
+        
+        const bullet = new Bullet(this.scene, bulletX, bulletY, direction);
+        this.bullets.add(bullet);
+        
+        eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+            key: 'player_shoot',
+            volume: 0.3
+        });
+        
+        this.setVelocityX(this.body?.velocity.x! - (direction * 50));
+    }
+    
+    getBullets(): Phaser.Physics.Arcade.Group {
+        return this.bullets;
     }
 
     takeDamage(damage: number): void {

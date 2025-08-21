@@ -4,6 +4,7 @@ import { StaticHazard } from '../sprites/StaticHazard';
 import { Goal } from '../sprites/Goal';
 import { Collectible } from '../sprites/Collectible';
 import { Enemy } from '../sprites/Enemy';
+import { Bullet } from '../sprites/Bullet';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
 import { eventBus, GameEvent } from '../events/EventBus';
@@ -251,6 +252,27 @@ export class Game extends Scene
                 this
             );
         }
+        
+        // Setup bullets vs enemies collision
+        if (this.player && this.enemies) {
+            this.physics.add.overlap(
+                this.player.getBullets(),
+                this.enemies,
+                this.handleBulletEnemyCollision,
+                undefined,
+                this
+            );
+        }
+        
+        // Setup bullets vs tilemap collision
+        if (this.player) {
+            this.layers.forEach(layer => {
+                this.physics.add.collider(
+                    this.player.getBullets(),
+                    layer
+                );
+            });
+        }
     }
 
     private handlePlayerHazardCollision(player: any, hazard: any) {
@@ -484,6 +506,16 @@ export class Game extends Scene
                 this.healthUI.updateHealth(playerInstance.getHealth());
             }
         }
+    }
+    
+    private handleBulletEnemyCollision(bullet: any, enemy: any) {
+        const bulletInstance = bullet as Bullet;
+        const enemyInstance = enemy as Enemy;
+        
+        bulletInstance.hitEnemy();
+        enemyInstance.takeDamage(1);
+        
+        this.cameras.main.shake(50, 0.003);
     }
     
     private updateScoreDisplay() {

@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { Game } from './Game';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 export class GameOver extends Scene
 {
@@ -14,6 +15,11 @@ export class GameOver extends Scene
 
     create ()
     {
+        // Emit scene start event
+        eventBus.emit(GameEvent.SCENE_START, {
+            scene: 'GameOver'
+        });
+        
         this.camera = this.cameras.main
         this.camera.setBackgroundColor(0x2c2c2c);
 
@@ -42,6 +48,12 @@ export class GameOver extends Scene
         menuText.setOrigin(0.5);
 
         this.input.once('pointerdown', () => {
+            // Emit scene change event
+            eventBus.emit(GameEvent.SCENE_CHANGE, {
+                from: 'GameOver',
+                to: 'Game'
+            });
+            
             // Re-add and start a fresh Game scene
             this.scene.add('Game', Game, false);
             this.scene.start('Game');
@@ -51,6 +63,12 @@ export class GameOver extends Scene
         // ESC key to return to main menu
         const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         escKey?.once('down', () => {
+            // Emit scene change event
+            eventBus.emit(GameEvent.SCENE_CHANGE, {
+                from: 'GameOver',
+                to: 'MainMenu'
+            });
+            
             this.scene.start('MainMenu');
             this.scene.stop('GameOver');
         });

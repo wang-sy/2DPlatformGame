@@ -6,6 +6,8 @@ import { Collectible } from '../sprites/Collectible';
 import { Enemy } from '../sprites/Enemy';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
+import { eventBus, GameEvent } from '../events/EventBus';
+import { eventBusDebugger } from '../utils/EventBusDebugger';
 
 export class Game extends Scene
 {
@@ -34,6 +36,19 @@ export class Game extends Scene
 
     create ()
     {
+        // Enable EventBus debugger in development mode
+        if (import.meta.env.DEV) {
+            eventBusDebugger.enable();
+        }
+        
+        // Emit scene start event
+        eventBus.emit(GameEvent.SCENE_START, {
+            scene: 'Game'
+        });
+        
+        // Emit game start event
+        eventBus.emit(GameEvent.GAME_START);
+        
         // Reset collected items manager for new game
         this.collectedItemsManager.reset();
         

@@ -1,3 +1,5 @@
+import { eventBus, GameEvent } from '../events/EventBus';
+
 export interface SoundEffect {
     key: string;
     uri: string;
@@ -33,7 +35,77 @@ export class SoundEffectPlayer {
         this.loadedSounds.clear();
         this.animationToSounds.clear();
         this.configLoaded = false;
+        this.setupEventListeners();
         console.log('[SoundEffectPlayer] Initialization complete');
+    }
+    
+    private setupEventListeners(): void {
+        // Listen for sound effect play events
+        eventBus.on(GameEvent.SOUND_EFFECT_PLAY, (data) => {
+            if (data.atlasKey && data.animationName) {
+                this.playAnimationSound(data.atlasKey, data.animationName, data.volume ?? 0.5);
+            } else {
+                this.playSound(data.key, data.volume ?? 0.5);
+            }
+        });
+        
+        // Listen for sound effect stop events
+        eventBus.on(GameEvent.SOUND_EFFECT_STOP, (data) => {
+            if (data.key) {
+                this.stopSound(data.key);
+            } else {
+                this.stopAllSounds();
+            }
+        });
+        
+        // Listen for volume change events
+        eventBus.on(GameEvent.SOUND_EFFECT_VOLUME_CHANGE, (data) => {
+            this.setGlobalVolume(data.volume);
+        });
+        
+        // Listen for animation play events to automatically play sounds
+        eventBus.on(GameEvent.ANIMATION_PLAY, (data) => {
+            if (this.hasAnimationSound(data.atlasKey, data.animationName)) {
+                this.playAnimationSound(data.atlasKey, data.animationName);
+            }
+        });
+        
+        // Listen for player action events
+        eventBus.on(GameEvent.PLAYER_JUMP, () => {
+            // Emit sound effect event for jump
+            eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+                key: 'jump',
+                volume: 0.5
+            });
+        });
+        
+        eventBus.on(GameEvent.PLAYER_DOUBLE_JUMP, () => {
+            eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+                key: 'double_jump',
+                volume: 0.5
+            });
+        });
+        
+        eventBus.on(GameEvent.PLAYER_WALL_JUMP, () => {
+            eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+                key: 'wall_jump',
+                volume: 0.5
+            });
+        });
+        
+        eventBus.on(GameEvent.PLAYER_DAMAGE, () => {
+            eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+                key: 'damage',
+                volume: 0.7
+            });
+        });
+        
+        eventBus.on(GameEvent.ITEM_COLLECT, () => {
+            eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
+                key: 'collect',
+                volume: 0.6
+            });
+        });
     }
     
     async loadConfig(configPath: string = 'assets/audio/sound_effect/config.json'): Promise<void> {

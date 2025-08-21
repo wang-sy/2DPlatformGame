@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 /**
  * Collectible sprite class
@@ -145,6 +146,13 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
         if (this.collected) return;
         
         this.collected = true;
+        
+        // Emit item collect event
+        eventBus.emit(GameEvent.ITEM_COLLECT, {
+            item: this,
+            type: this.collectibleType,
+            value: this.score
+        });
         
         // Collection animation
         this.scene.tweens.add({

@@ -1,3 +1,5 @@
+import { eventBus, GameEvent } from '../events/EventBus';
+
 /**
  * Animation configuration interface
  */
@@ -73,6 +75,26 @@ export class AnimationManager {
         this.scene = scene;
         this.atlasAnimations.clear();
         this.createdAnimations.clear();
+        this.setupEventListeners();
+    }
+    
+    /**
+     * Setup event listeners for EventBus
+     */
+    private setupEventListeners(): void {
+        // Listen for animation play events
+        eventBus.on(GameEvent.ANIMATION_PLAY, (data) => {
+            if (data.sprite && data.atlasKey && data.animationName) {
+                this.playAnimation(data.sprite, data.atlasKey, data.animationName);
+            }
+        });
+        
+        // Listen for animation stop events
+        eventBus.on(GameEvent.ANIMATION_STOP, (data) => {
+            if (data.sprite) {
+                data.sprite.stop();
+            }
+        });
     }
     
     /**
@@ -250,6 +272,14 @@ export class AnimationManager {
         }
         
         sprite.play(animKey, ignoreIfPlaying);
+        
+        // Emit animation complete event when animation finishes
+        sprite.once('animationcomplete', () => {
+            eventBus.emit(GameEvent.ANIMATION_COMPLETE, {
+                sprite,
+                animationName: animKey
+            });
+        });
     }
     
     /**

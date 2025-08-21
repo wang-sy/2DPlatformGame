@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 export class Goal extends Phaser.Physics.Arcade.Sprite {
     // private goalType: string;
@@ -51,6 +52,11 @@ export class Goal extends Phaser.Physics.Arcade.Sprite {
         if (this.collected) return;
         
         this.collected = true;
+        
+        // Emit goal reached event
+        eventBus.emit(GameEvent.GOAL_REACHED, {
+            player: null // Will be set by the Game scene
+        });
         
         this.scene.tweens.add({
             targets: this,

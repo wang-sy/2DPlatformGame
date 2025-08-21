@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AnimationManager } from '../managers/AnimationManager';
 import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -81,10 +82,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.play(animKey);
                 this.currentAnimation = animKey;
                 
-                // Play sound effect for this animation
-                if (this.soundEffectPlayer.hasAnimationSound(this.key, animName)) {
-                    this.soundEffectPlayer.playAnimationSound(this.key, animName);
-                }
+                // Emit animation play event
+                eventBus.emit(GameEvent.ANIMATION_PLAY, {
+                    sprite: this,
+                    atlasKey: this.key,
+                    animationName: animName
+                });
             }
         }
     }
@@ -118,6 +121,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (onGround) {
                 this.playAnimation('walk');
             }
+            
+            // Emit player move event
+            eventBus.emit(GameEvent.PLAYER_MOVE, {
+                player: this,
+                direction: 'left',
+                velocity: -this.moveSpeed
+            });
         } else if (this.cursors.right.isDown) {
             this.setVelocityX(this.moveSpeed);
             this.setFlipX(false);
@@ -125,11 +135,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (onGround) {
                 this.playAnimation('walk');
             }
+            
+            // Emit player move event
+            eventBus.emit(GameEvent.PLAYER_MOVE, {
+                player: this,
+                direction: 'right',
+                velocity: this.moveSpeed
+            });
         } else {
             this.setVelocityX(0);
             
             if (onGround && !this.cursors.down.isDown && !this.isCharging) {
                 this.playAnimation('idle');
+                
+                // Emit player idle event
+                eventBus.emit(GameEvent.PLAYER_IDLE, {
+                    player: this
+                });
             }
         }
         
@@ -162,8 +184,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.isCharging && spaceKey?.isUp) {
             if (this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
-                this.setVelocityY(-this.jumpSpeed * chargeMultiplier);
+                const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
+                this.setVelocityY(jumpVelocity);
                 this.jumpCount = 1;
+                
+                // Emit charge jump event
+                eventBus.emit(GameEvent.PLAYER_CHARGE_JUMP, {
+                    player: this,
+                    chargeTime: this.chargeTime,
+                    velocity: jumpVelocity
+                });
             }
             this.isCharging = false;
             this.chargeTime = 0;
@@ -183,18 +213,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.wallJumpCooldown = 300;
                 this.jumpCount = 1;
                 this.playAnimation('jump');
+                
+                // Emit wall jump event
+                eventBus.emit(GameEvent.PLAYER_WALL_JUMP, {
+                    player: this,
+                    direction: touchingLeft ? 'right' : 'left'
+                });
             }
             // Normal jump and double jump
             else if (this.jumpCount < this.maxJumps) {
                 const jumpPower = this.jumpCount === 0 ? this.jumpSpeed : this.jumpSpeed * 0.85;
                 this.setVelocityY(-jumpPower);
+                
+                // Emit appropriate jump event
+                if (this.jumpCount === 0) {
+                    eventBus.emit(GameEvent.PLAYER_JUMP, {
+                        player: this,
+                        velocity: -jumpPower
+                    });
+                } else {
+                    eventBus.emit(GameEvent.PLAYER_DOUBLE_JUMP, {
+                        player: this,
+                        jumpCount: this.jumpCount + 1
+                    });
+                }
+                
                 this.jumpCount++;
                 this.playAnimation('jump');
-                
-                // Play jump sound if available
-                if (this.soundEffectPlayer.hasAnimationSound(this.key, 'jump')) {
-                    this.soundEffectPlayer.playAnimationSound(this.key, 'jump', 0.7);
-                }
             }
         }
         
@@ -231,6 +276,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.health -= damage;
         this.isInvulnerable = true;
         
+        // Emit player damage event
+        eventBus.emit(GameEvent.PLAYER_DAMAGE, {
+            player: this,
+            damage: damage,
+            health: this.health
+        });
+        
         this.playAnimation('hit');
         
         const knockbackX = this.flipX ? 200 : -200;
@@ -258,12 +310,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0, -400);
         this.body!.enable = false;
         
+        // Emit player death event
+        eventBus.emit(GameEvent.PLAYER_DEATH, {
+            player: this
+        });
+        
         // Play death sound effect
         if (this.soundEffectPlayer.hasAnimationSound(this.key, 'die')) {
             this.soundEffectPlayer.playAnimationSound(this.key, 'die');
         }
         
         this.scene.time.delayedCall(1000, () => {
+            // Emit game over event
+            eventBus.emit(GameEvent.GAME_OVER, {
+                reason: 'Player died'
+            });
+            
             // Call Game scene's restartGame method
             const gameScene = this.scene as any;
             if (gameScene.restartGame) {

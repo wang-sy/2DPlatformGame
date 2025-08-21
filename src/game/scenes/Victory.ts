@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { Game } from './Game';
 import { CollectedItemData } from '../managers/CollectedItemsManager';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 export class Victory extends Scene {
     private totalScore: number = 0;
@@ -25,6 +26,16 @@ export class Victory extends Scene {
     }
 
     create() {
+        // Emit scene start event
+        eventBus.emit(GameEvent.SCENE_START, {
+            scene: 'Victory'
+        });
+        
+        // Emit game victory event
+        eventBus.emit(GameEvent.GAME_VICTORY, {
+            score: this.totalScore
+        });
+        
         this.cameras.main.setBackgroundColor(0x4a90e2);
         
         const centerX = this.cameras.main.width / 2;
@@ -115,6 +126,12 @@ export class Victory extends Scene {
         
         // Click to continue game
         this.input.once('pointerdown', () => {
+            // Emit scene change event
+            eventBus.emit(GameEvent.SCENE_CHANGE, {
+                from: 'Victory',
+                to: 'Game'
+            });
+            
             // Re-add and start a fresh Game scene
             this.scene.add('Game', Game, false);
             this.scene.start('Game');
@@ -124,6 +141,12 @@ export class Victory extends Scene {
         // ESC key to return to main menu
         const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         escKey?.once('down', () => {
+            // Emit scene change event
+            eventBus.emit(GameEvent.SCENE_CHANGE, {
+                from: 'Victory',
+                to: 'MainMenu'
+            });
+            
             this.scene.start('MainMenu');
             this.scene.stop('Victory');
         });

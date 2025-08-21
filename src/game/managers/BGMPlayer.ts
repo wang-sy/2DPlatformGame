@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 interface BGMConfig {
   scenes: {
@@ -48,7 +49,44 @@ export class BGMPlayer {
   private async init(): Promise<void> {
     await this.loadBGMConfig();
     this.setupSceneListener();
+    this.setupEventListeners();
     this.isInitialized = true;
+  }
+  
+  private setupEventListeners(): void {
+    // Listen for scene change events
+    eventBus.on(GameEvent.SCENE_CHANGE, (data) => {
+      this.onSceneChange(data.to);
+    });
+    
+    // Listen for BGM control events
+    eventBus.on(GameEvent.BGM_PLAY, (data) => {
+      this.playBGM(data.key, data.loop ?? true, data.volume ?? 1.0);
+    });
+    
+    eventBus.on(GameEvent.BGM_STOP, (data) => {
+      if (data.key) {
+        // Stop specific BGM
+        if (this.currentBGM === data.key) {
+          this.stopCurrentBGM();
+        }
+      } else {
+        // Stop all BGM
+        this.stopCurrentBGM();
+      }
+    });
+    
+    eventBus.on(GameEvent.BGM_PAUSE, () => {
+      this.pauseCurrentBGM();
+    });
+    
+    eventBus.on(GameEvent.BGM_RESUME, () => {
+      this.resumeCurrentBGM();
+    });
+    
+    eventBus.on(GameEvent.BGM_VOLUME_CHANGE, (data) => {
+      this.setVolume(data.volume);
+    });
   }
 
   private async preloadAllSounds(): Promise<void> {
@@ -141,10 +179,20 @@ export class BGMPlayer {
     );
 
     if (primaryScene && primaryScene.scene.key !== this.currentScene) {
+      const previousScene = this.currentScene;
       this.currentScene = primaryScene.scene.key;
       this.activeScene = primaryScene;
       console.log(`BGMPlayer: Scene changed to ${this.currentScene}`);
-      this.onSceneChange(this.currentScene);
+      
+      // Emit scene change event
+      if (previousScene) {
+        eventBus.emit(GameEvent.SCENE_CHANGE, {
+          from: previousScene,
+          to: this.currentScene
+        });
+      } else {
+        this.onSceneChange(this.currentScene);
+      }
     }
   }
 

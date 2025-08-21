@@ -1,5 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
 import { Game } from './Game';
+import { eventBus, GameEvent } from '../events/EventBus';
 
 export class MainMenu extends Scene
 {
@@ -24,7 +25,18 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
+        // Emit scene start event
+        eventBus.emit(GameEvent.SCENE_START, {
+            scene: 'MainMenu'
+        });
+
         this.input.once('pointerdown', () => {
+            // Emit scene change event
+            eventBus.emit(GameEvent.SCENE_CHANGE, {
+                from: 'MainMenu',
+                to: 'Game'
+            });
+            
             // Re-add and start a fresh Game scene
             this.scene.add('Game', Game, false);
             this.scene.start('Game');

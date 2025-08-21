@@ -22,7 +22,7 @@ export default defineConfig({
     build: {
         // 增加内存限制和优化选项
         sourcemap: false,
-        chunkSizeWarningLimit: 2000,
+        chunkSizeWarningLimit: 300,
         rollupOptions: {
             output: {
                 manualChunks: {
@@ -30,7 +30,7 @@ export default defineConfig({
                 }
             },
             // 限制最大并行处理数
-            maxParallelFileOps: 2
+            maxParallelFileOps: 1
         },
         // 使用 esbuild 替代 terser，速度更快，内存占用更少
         minify: 'esbuild',

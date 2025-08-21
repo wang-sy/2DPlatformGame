@@ -1,159 +1,177 @@
-# 游戏开发文档中心
+# Game Development Documentation Center
 
-本文档目录包含了 Phaser 3 + TypeScript 游戏项目的完整技术文档，帮助开发者快速理解和扩展项目。
+This documentation directory contains complete technical documentation for the Phaser 3 + TypeScript game project, helping developers quickly understand and extend the project.
 
-## 📚 文档列表
+## 📚 Documentation List
 
-### 1. [代码结构指南](./CODE_STRUCTURE.md)
-全面介绍项目的整体架构和代码组织方式。
+### 1. [Code Structure Guide](./CODE_STRUCTURE.md)
+Comprehensive introduction to the project's overall architecture and code organization.
 
-**主要内容：**
-- 项目目录结构详解
-- 核心架构和初始化流程
-- 场景系统、管理器系统、精灵系统介绍
-- 设计模式应用（单例、工厂、观察者等）
-- 数据流和游戏循环
-- 扩展指南和最佳实践
+**Main Content:**
+- Detailed project directory structure
+- Core architecture and initialization flow
+- Introduction to scene system, manager system, sprite system
+- Design pattern applications (Singleton, Factory, Observer, etc.)
+- Data flow and game loop
+- Extension guide and best practices
 
-**适合阅读场景：**
-- 初次接触项目，需要了解整体架构
-- 添加新功能模块
-- 代码重构和优化
-
----
-
-### 2. [Tilemap 配置指南](./TILEMAP_GUIDE.md)
-详细说明如何使用 Tiled 地图编辑器创建和配置游戏关卡。
-
-**主要内容：**
-- Tiled 地图编辑器配置方法
-- 图块集（Tileset）和图集（Atlas）的区别与使用
-- 对象层配置（玩家、敌人、收集物等）
-- 自动资源加载机制
-- 碰撞检测配置
-- 动画配置文件格式
-
-**适合阅读场景：**
-- 创建新关卡
-- 添加新的游戏对象类型
-- 调整地图碰撞和物理属性
+**Suitable Reading Scenarios:**
+- First time working with the project, need to understand overall architecture
+- Adding new feature modules
+- Code refactoring and optimization
 
 ---
 
-### 3. [音效配置指南](./SoundEffectConfiguration.md)
-介绍游戏音效系统的配置和使用方法。
+### 2. [Tilemap Configuration Guide](./TILEMAP_GUIDE.md)
+Detailed instructions on how to use the Tiled map editor to create and configure game levels.
 
-**主要内容：**
-- SoundEffectPlayer 管理器使用
-- 音效配置文件格式（config.json）
-- 动画-音效自动关联机制
-- 随机音效变体配置
-- 音量控制策略
-- 性能优化建议
+**Main Content:**
+- Tiled map editor configuration methods
+- Differences and usage of Tilesets and Atlases
+- Object layer configuration (player, enemies, collectibles, etc.)
+- Automatic resource loading mechanism
+- Collision detection configuration
+- Animation configuration file format
 
-**适合阅读场景：**
-- 添加新的音效
-- 配置角色动作音效
-- 调整音效播放逻辑
-- 音效相关的 bug 调试
-
----
-
-### 4. [背景音乐配置指南](./BGM_GUIDE.md)
-说明背景音乐系统的配置和管理方式。
-
-**主要内容：**
-- BGMPlayer 单例管理器
-- 场景自动切换 BGM 机制
-- BGM 配置文件格式（bgm-config.json）
-- 预加载和延迟加载策略
-- 音量淡入淡出效果
-- 移动设备优化
-
-**适合阅读场景：**
-- 为新场景添加背景音乐
-- 实现动态音乐切换
-- 处理浏览器自动播放限制
-- BGM 相关的性能优化
+**Suitable Reading Scenarios:**
+- Creating new levels
+- Adding new game object types
+- Adjusting map collision and physics properties
 
 ---
 
-## 🚀 快速开始
+### 3. [Sound Effect Configuration Guide](./SoundEffectConfiguration.md)
+Introduction to the game's sound effect system configuration and usage methods.
 
-### 新手入门路径
-1. 先阅读 [代码结构指南](./CODE_STRUCTURE.md) 了解项目整体架构
-2. 查看 [Tilemap 配置指南](./TILEMAP_GUIDE.md) 学习如何创建关卡
-3. 根据需要配置音效和背景音乐
+**Main Content:**
+- SoundEffectPlayer manager usage
+- Sound effect configuration file format (config.json)
+- Animation-sound automatic association mechanism
+- Random sound variant configuration
+- Volume control strategies
+- Performance optimization suggestions
 
-### 常见任务快速索引
-
-| 任务 | 参考文档 | 章节 |
-|-----|---------|------|
-| 添加新场景 | [代码结构指南](./CODE_STRUCTURE.md) | 扩展指南 > 添加新场景 |
-| 创建新关卡 | [Tilemap 配置指南](./TILEMAP_GUIDE.md) | Tiled 地图编辑器配置 |
-| 添加新敌人类型 | [代码结构指南](./CODE_STRUCTURE.md) | 扩展指南 > 添加新精灵类型 |
-| 配置角色音效 | [音效配置指南](./SoundEffectConfiguration.md) | 配置文件格式 |
-| 设置场景 BGM | [BGM 配置指南](./BGM_GUIDE.md) | 配置文件格式 |
-| 调试物理碰撞 | [Tilemap 配置指南](./TILEMAP_GUIDE.md) | 调试技巧 |
-| 优化性能 | 各文档的"性能优化"章节 | - |
+**Suitable Reading Scenarios:**
+- Adding new sound effects
+- Configuring character action sounds
+- Adjusting sound playback logic
+- Sound-related bug debugging
 
 ---
 
-## 🛠️ 技术栈
+### 4. [Background Music Configuration Guide](./BGM_GUIDE.md)
+Explanation of the background music system configuration and management methods.
 
-- **游戏引擎**: Phaser 3.90.0
-- **开发语言**: TypeScript 5.7.2
-- **构建工具**: Vite 6.3.1
-- **地图编辑器**: Tiled
-- **设计模式**: 单例模式、工厂模式、观察者模式等
+**Main Content:**
+- BGMPlayer singleton manager
+- Automatic BGM switching between scenes
+- BGM configuration file format (bgm-config.json)
+- Preload and lazy load strategies
+- Volume fade in/out effects
+- Mobile device optimization
 
-## 📁 项目结构概览
+**Suitable Reading Scenarios:**
+- Adding background music to new scenes
+- Implementing dynamic music switching
+- Handling browser autoplay restrictions
+- BGM-related performance optimization
+
+---
+
+### 5. [How to Build](./HOW_TO_BUILD.md)
+Quick guide for building the project for production.
+
+**Main Content:**
+- Prerequisites (Node.js, npm)
+- Installation steps
+- Build commands
+- Output directory structure
+
+**Suitable Reading Scenarios:**
+- Deploying the game to production
+- Creating distribution packages
+- Setting up development environment
+- CI/CD pipeline configuration
+
+---
+
+## 🚀 Quick Start
+
+### Beginner Learning Path
+1. First read the [Code Structure Guide](./CODE_STRUCTURE.md) to understand the overall project architecture
+2. Check the [Tilemap Configuration Guide](./TILEMAP_GUIDE.md) to learn how to create levels
+3. Configure sound effects and background music as needed
+
+### Common Tasks Quick Reference
+
+| Task | Reference Document | Section |
+|------|--------------------|---------|
+| Build for production | [How to Build](./HOW_TO_BUILD.md) | Steps |
+| Add new scene | [Code Structure Guide](./CODE_STRUCTURE.md) | Extension Guide > Adding New Scenes |
+| Create new level | [Tilemap Configuration Guide](./TILEMAP_GUIDE.md) | Tiled Map Editor Configuration |
+| Add new enemy type | [Code Structure Guide](./CODE_STRUCTURE.md) | Extension Guide > Adding New Sprite Types |
+| Configure character sounds | [Sound Effect Configuration Guide](./SoundEffectConfiguration.md) | Configuration File Format |
+| Set scene BGM | [BGM Configuration Guide](./BGM_GUIDE.md) | Configuration File Format |
+| Debug physics collision | [Tilemap Configuration Guide](./TILEMAP_GUIDE.md) | Debugging Tips |
+| Optimize performance | "Performance Optimization" sections in each document | - |
+
+---
+
+## 🛠️ Technology Stack
+
+- **Game Engine**: Phaser 3.90.0
+- **Development Language**: TypeScript 5.7.2
+- **Build Tool**: Vite 6.3.1
+- **Map Editor**: Tiled
+- **Design Patterns**: Singleton, Factory, Observer, etc.
+
+## 📁 Project Structure Overview
 
 ```
 src/game/
-├── managers/     # 全局管理器（音效、动画、BGM等）
-├── scenes/       # 游戏场景（Boot、Game、Victory等）
-├── sprites/      # 游戏精灵（Player、Enemy、Collectible等）
-└── ui/          # UI组件（HealthUI等）
+├── managers/     # Global managers (sound, animation, BGM, etc.)
+├── scenes/       # Game scenes (Boot, Game, Victory, etc.)
+├── sprites/      # Game sprites (Player, Enemy, Collectible, etc.)
+└── ui/          # UI components (HealthUI, etc.)
 ```
 
-## 🔧 配置文件位置
+## 🔧 Configuration File Locations
 
-- **Tilemap 配置**: `assets/tilemap/scenes/tilemap.json`
-- **音效配置**: `assets/audio/sound_effect/config.json`
-- **BGM 配置**: `assets/audio/bgm-config.json`
-- **动画配置**: `assets/tilemap/sprites/*_animators.json`
+- **Tilemap Configuration**: `assets/tilemap/scenes/tilemap.json`
+- **Sound Effect Configuration**: `assets/audio/sound_effect/config.json`
+- **BGM Configuration**: `assets/audio/bgm-config.json`
+- **Animation Configuration**: `assets/tilemap/sprites/*_animators.json`
 
-## 💡 开发建议
+## 💡 Development Suggestions
 
-1. **模块化开发**：每个功能使用独立的管理器，通过单例模式全局访问
-2. **配置驱动**：尽量使用 JSON 配置文件而非硬编码
-3. **类型安全**：充分利用 TypeScript 的类型系统
-4. **性能优先**：使用图集、对象池等技术优化性能
-5. **调试友好**：各系统都有详细的控制台日志输出
+1. **Modular Development**: Each feature uses independent managers, accessed globally through singleton pattern
+2. **Configuration-Driven**: Use JSON configuration files instead of hardcoding
+3. **Type Safety**: Fully utilize TypeScript's type system
+4. **Performance First**: Use atlases, object pools, and other techniques to optimize performance
+5. **Debug-Friendly**: All systems have detailed console log output
 
-## 📝 文档维护
+## 📝 Documentation Maintenance
 
-这些文档会随着项目发展持续更新。如果你：
-- 发现文档错误或过时信息
-- 添加了新的系统或功能
-- 优化了现有实现
+These documents will be continuously updated as the project evolves. If you:
+- Find documentation errors or outdated information
+- Add new systems or features
+- Optimize existing implementations
 
-请及时更新相关文档，保持文档与代码同步。
+Please update the relevant documentation promptly to keep documentation synchronized with code.
 
-## 🤝 贡献指南
+## 🤝 Contribution Guide
 
-在添加新功能时，请：
-1. 遵循现有的代码结构和命名规范
-2. 为新系统编写相应的管理器类
-3. 使用配置文件管理可变参数
-4. 添加必要的调试日志
-5. 更新相关文档
+When adding new features, please:
+1. Follow existing code structure and naming conventions
+2. Write corresponding manager classes for new systems
+3. Use configuration files to manage variable parameters
+4. Add necessary debug logs
+5. Update relevant documentation
 
 ---
 
-**最后更新时间**: 2024年1月
+**Last Updated**: January 2024
 
-**文档版本**: 1.0.0
+**Documentation Version**: 1.0.0
 
-**项目版本**: 1.4.0
+**Project Version**: 1.4.0

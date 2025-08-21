@@ -1,69 +1,69 @@
-# 代码结构指南
+# Code Structure Guide
 
-## 项目概述
+## Project Overview
 
-这是一个基于 Phaser 3 和 TypeScript 的游戏项目，使用 Vite 作为构建工具。项目采用面向对象的设计模式，通过管理器模式、单例模式等设计模式实现了模块化和可维护的代码结构。
+This is a game project based on Phaser 3 and TypeScript, using Vite as the build tool. The project adopts object-oriented design patterns, implementing a modular and maintainable code structure through patterns such as Manager and Singleton.
 
-## 目录结构
+## Directory Structure
 
 ```
 template-vite-ts/
 ├── src/
-│   ├── main.ts                    # 应用入口
-│   ├── vite-env.d.ts             # Vite 类型定义
+│   ├── main.ts                    # Application entry point
+│   ├── vite-env.d.ts             # Vite type definitions
 │   └── game/
-│       ├── main.ts                # 游戏配置和初始化
-│       ├── managers/              # 管理器类（单例模式）
+│       ├── main.ts                # Game configuration and initialization
+│       ├── managers/              # Manager classes (Singleton pattern)
 │       │   ├── AnimationManager.ts
 │       │   ├── BGMPlayer.ts
 │       │   ├── CollectedItemsManager.ts
 │       │   └── SoundEffectPlayer.ts
-│       ├── scenes/                # 游戏场景
+│       ├── scenes/                # Game scenes
 │       │   ├── Boot.ts
 │       │   ├── Preloader.ts
 │       │   ├── MainMenu.ts
 │       │   ├── Game.ts
 │       │   ├── Victory.ts
 │       │   └── GameOver.ts
-│       ├── sprites/               # 游戏精灵类
+│       ├── sprites/               # Game sprite classes
 │       │   ├── Player.ts
 │       │   ├── Enemy.ts
 │       │   ├── Collectible.ts
 │       │   ├── StaticHazard.ts
 │       │   └── Goal.ts
-│       └── ui/                    # UI 组件
+│       └── ui/                    # UI components
 │           └── HealthUI.ts
-├── public/                        # 静态资源
+├── public/                        # Static resources
 │   └── assets/
-│       ├── tilemap/              # Tiled 地图文件
-│       ├── audio/                # 音频资源
-│       └── ...                   # 其他资源
-├── vite/                         # Vite 配置
+│       ├── tilemap/              # Tiled map files
+│       ├── audio/                # Audio resources
+│       └── ...                   # Other resources
+├── vite/                         # Vite configuration
 │   ├── config.dev.mjs
 │   └── config.prod.mjs
-└── docs/                         # 文档
+└── docs/                         # Documentation
     ├── SoundEffectConfiguration.md
     ├── TILEMAP_GUIDE.md
     ├── BGM_GUIDE.md
     └── CODE_STRUCTURE.md
 ```
 
-## 核心架构
+## Core Architecture
 
-### 1. 游戏初始化流程
+### 1. Game Initialization Flow
 
 ```
 main.ts → game/main.ts → Boot → Preloader → MainMenu → Game → Victory/GameOver
 ```
 
 #### src/main.ts
-应用的入口点，简单导入游戏主文件：
+Application entry point, simply imports the game main file:
 ```typescript
 import './game/main';
 ```
 
 #### src/game/main.ts
-游戏配置和 Phaser 实例创建：
+Game configuration and Phaser instance creation:
 ```typescript
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -88,12 +88,12 @@ const config: Phaser.Types.Core.GameConfig = {
 export default new Phaser.Game(config);
 ```
 
-### 2. 场景系统
+### 2. Scene System
 
 #### Boot.ts
-- 初始化基础资源
-- 加载启动画面资源
-- 初始化 BGMPlayer
+- Initialize basic resources
+- Load boot screen resources
+- Initialize BGMPlayer
 
 ```typescript
 export class Boot extends Scene {
@@ -102,29 +102,29 @@ export class Boot extends Scene {
     }
 
     preload() {
-        // 加载启动资源
+        // Load boot resources
         this.load.image('background', 'assets/bg.png');
     }
 
     create() {
-        // 初始化 BGMPlayer
+        // Initialize BGMPlayer
         BGMPlayer.getInstance().initialize(this.game);
-        // 跳转到预加载场景
+        // Go to preloader scene
         this.scene.start('Preloader');
     }
 }
 ```
 
 #### Preloader.ts
-- 自动解析和加载 Tilemap 资源
-- 加载图集和动画配置
-- 初始化音效系统
-- 创建所有动画
+- Automatically parse and load Tilemap resources
+- Load atlases and animation configurations
+- Initialize sound effect system
+- Create all animations
 
-关键功能：
-1. **自动资源加载**：解析 tilemap.json，自动加载所有引用的资源
-2. **图集识别**：通过 `atlas` 属性区分图集和普通图片
-3. **动画配置**：自动加载 `_animators.json` 文件
+Key features:
+1. **Automatic resource loading**: Parse tilemap.json, automatically load all referenced resources
+2. **Atlas recognition**: Distinguish atlases from regular images through `atlas` attribute
+3. **Animation configuration**: Automatically load `_animators.json` files
 
 ```typescript
 private loadAllAssets() {
@@ -132,13 +132,13 @@ private loadAllAssets() {
     let tilesets = tilemapJsonObj["tilesets"];
     
     tilesets.forEach((tileset: any) => {
-        // 检查是否为图集
+        // Check if it's an atlas
         if (isAtlas) {
-            // 加载图集和动画配置
+            // Load atlas and animation configuration
             this.load.atlas(name, imageUri, atlasJsonUri);
             this.load.json(`${name}_animations`, animationConfigUri);
         } else {
-            // 加载普通图片
+            // Load regular image
             this.load.image(name, imageUri);
         }
     });
@@ -146,15 +146,15 @@ private loadAllAssets() {
 ```
 
 #### Game.ts
-- 解析 Tilemap 创建游戏世界
-- 管理游戏逻辑和碰撞检测
-- 处理玩家输入和游戏状态
+- Parse Tilemap to create game world
+- Manage game logic and collision detection
+- Handle player input and game state
 
-核心功能：
-1. **Tilemap 解析**：创建图层和对象
-2. **对象工厂**：根据类型创建不同游戏对象
-3. **碰撞管理**：设置物理碰撞和重叠检测
-4. **游戏流程**：处理胜利、失败条件
+Core features:
+1. **Tilemap parsing**: Create layers and objects
+2. **Object factory**: Create different game objects based on type
+3. **Collision management**: Set up physics collisions and overlap detection
+4. **Game flow**: Handle victory and failure conditions
 
 ```typescript
 private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
@@ -173,16 +173,16 @@ private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
 }
 ```
 
-### 3. 管理器系统（Managers）
+### 3. Manager System (Managers)
 
-#### AnimationManager（动画管理器）
-**设计模式**：单例模式
-**职责**：集中管理所有精灵动画的创建和播放
+#### AnimationManager (Animation Manager)
+**Design Pattern**: Singleton Pattern
+**Responsibility**: Centrally manage creation and playback of all sprite animations
 
-核心功能：
-- 加载动画配置（支持新旧格式）
-- 批量创建动画
-- 提供统一的动画播放接口
+Core features:
+- Load animation configurations (supports old and new formats)
+- Batch create animations
+- Provide unified animation playback interface
 
 ```typescript
 export class AnimationManager {
@@ -196,23 +196,23 @@ export class AnimationManager {
         return AnimationManager.instance;
     }
     
-    // 创建动画
+    // Create animations
     createAnimationsForAtlas(atlasKey: string): void
     
-    // 播放动画
+    // Play animation
     playAnimation(sprite: Sprite, atlasKey: string, animationName: string): void
 }
 ```
 
-#### BGMPlayer（背景音乐播放器）
-**设计模式**：单例模式
-**职责**：管理游戏背景音乐的播放
+#### BGMPlayer (Background Music Player)
+**Design Pattern**: Singleton Pattern
+**Responsibility**: Manage game background music playback
 
-核心功能：
-- 自动监听场景切换
-- 基于配置文件播放对应音乐
-- 预加载和延迟加载策略
-- 防止重复播放
+Core features:
+- Automatically monitor scene switching
+- Play corresponding music based on configuration files
+- Preload and lazy load strategies
+- Prevent duplicate playback
 
 ```typescript
 export class BGMPlayer {
@@ -227,15 +227,15 @@ export class BGMPlayer {
 }
 ```
 
-#### SoundEffectPlayer（音效播放器）
-**设计模式**：单例模式
-**职责**：管理游戏音效的播放
+#### SoundEffectPlayer (Sound Effect Player)
+**Design Pattern**: Singleton Pattern
+**Responsibility**: Manage game sound effect playback
 
-核心功能：
-- 动画-音效自动关联
-- 随机音效选择
-- 音效预加载管理
-- 全局音量控制
+Core features:
+- Animation-sound automatic association
+- Random sound effect selection
+- Sound effect preload management
+- Global volume control
 
 ```typescript
 export class SoundEffectPlayer {
@@ -249,15 +249,15 @@ export class SoundEffectPlayer {
 }
 ```
 
-#### CollectedItemsManager（收集物管理器）
-**设计模式**：普通类（每个 Game 场景实例化）
-**职责**：跟踪玩家收集的物品
+#### CollectedItemsManager (Collected Items Manager)
+**Design Pattern**: Regular class (instantiated per Game scene)
+**Responsibility**: Track items collected by player
 
-核心功能：
-- 记录收集的物品
-- 计算总分
-- 跟踪必须收集的物品
-- 生成统计数据
+Core features:
+- Record collected items
+- Calculate total score
+- Track must-collect items
+- Generate statistics
 
 ```typescript
 export class CollectedItemsManager {
@@ -271,48 +271,48 @@ export class CollectedItemsManager {
 }
 ```
 
-### 4. 精灵系统（Sprites）
+### 4. Sprite System (Sprites)
 
-#### Player（玩家类）
-**继承**：`Phaser.Physics.Arcade.Sprite`
-**特性**：
-- 多种移动能力（双跳、墙跳、蓄力跳）
-- 动画状态管理
-- 生命值系统
-- 音效集成
+#### Player (Player Class)
+**Inheritance**: `Phaser.Physics.Arcade.Sprite`
+**Features**:
+- Multiple movement abilities (double jump, wall jump, charge jump)
+- Animation state management
+- Health system
+- Sound effect integration
 
-核心机制：
+Core mechanics:
 ```typescript
 export class Player extends Phaser.Physics.Arcade.Sprite {
-    // 移动能力
+    // Movement abilities
     private jumpCount: number = 0;
     private maxJumps: number = 2;
     private isTouchingWall: boolean = false;
     private isCharging: boolean = false;
     
-    // 状态管理
+    // State management
     private health: number = 3;
     private isInvulnerable: boolean = false;
     
-    // 动画和音效
+    // Animation and sound
     private animationManager: AnimationManager;
     private soundEffectPlayer: SoundEffectPlayer;
     
     update(): void {
-        // 处理输入
-        // 更新动画
-        // 播放音效
+        // Handle input
+        // Update animation
+        // Play sound effects
     }
 }
 ```
 
-#### Enemy（敌人类）
-**继承**：`Phaser.Physics.Arcade.Sprite`
-**特性**：
-- 巡逻 AI
-- 可配置属性（速度、范围、伤害）
-- 动画系统
-- 被击败机制
+#### Enemy (Enemy Class)
+**Inheritance**: `Phaser.Physics.Arcade.Sprite`
+**Features**:
+- Patrol AI
+- Configurable properties (speed, range, damage)
+- Animation system
+- Defeat mechanism
 
 ```typescript
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -321,24 +321,24 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private patrolBehavior: 'horizontal' | 'vertical' | 'static';
     
     constructor(scene: Scene, enemyObject: Phaser.Types.Tilemaps.TiledObject) {
-        // 从 Tiled 对象读取属性
+        // Read properties from Tiled object
         const properties = enemyObject.properties;
         this.moveSpeed = properties.moveSpeed || 50;
         this.moveRange = properties.moveRange || 100;
     }
     
     update(): void {
-        // 执行巡逻逻辑
+        // Execute patrol logic
     }
 }
 ```
 
-#### Collectible（收集物类）
-**继承**：`Phaser.Physics.Arcade.Sprite`
-**特性**：
-- 收集效果（缩放、旋转、淡出）
-- 分数系统
-- 必须收集标记
+#### Collectible (Collectible Class)
+**Inheritance**: `Phaser.Physics.Arcade.Sprite`
+**Features**:
+- Collection effects (scale, rotate, fade out)
+- Score system
+- Must-collect marker
 
 ```typescript
 export class Collectible extends Phaser.Physics.Arcade.Sprite {
@@ -347,44 +347,44 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
     private mustCollect: boolean;
     
     collect(): void {
-        // 播放收集动画
-        // 标记为已收集
-        // 销毁对象
+        // Play collection animation
+        // Mark as collected
+        // Destroy object
     }
 }
 ```
 
-### 5. UI 系统
+### 5. UI System
 
-#### HealthUI（生命值 UI）
-显示玩家生命值的 UI 组件：
+#### HealthUI (Health UI)
+UI component displaying player health:
 
 ```typescript
 export class HealthUI extends Phaser.GameObjects.Container {
     private hearts: Phaser.GameObjects.Image[] = [];
     
     updateHealth(currentHealth: number): void {
-        // 更新心形图标显示
-        // 添加动画效果
+        // Update heart icon display
+        // Add animation effects
     }
 }
 ```
 
-## 设计模式
+## Design Patterns
 
-### 1. 单例模式（Singleton）
-用于全局管理器：
+### 1. Singleton Pattern
+Used for global managers:
 - AnimationManager
 - BGMPlayer
 - SoundEffectPlayer
 
-优点：
-- 全局访问点
-- 避免重复实例化
-- 状态共享
+Advantages:
+- Global access point
+- Avoid duplicate instantiation
+- State sharing
 
-### 2. 工厂模式（Factory）
-Game.ts 中的对象创建：
+### 2. Factory Pattern
+Object creation in Game.ts:
 
 ```typescript
 private createObject(obj: TiledObject) {
@@ -396,18 +396,18 @@ private createObject(obj: TiledObject) {
 }
 ```
 
-### 3. 观察者模式（Observer）
-场景事件系统：
+### 3. Observer Pattern
+Scene event system:
 
 ```typescript
-// BGMPlayer 监听场景变化
+// BGMPlayer listens for scene changes
 this.game.events.on('step', () => {
     this.checkSceneChange();
 });
 ```
 
-### 4. 策略模式（Strategy）
-敌人的不同巡逻行为：
+### 4. Strategy Pattern
+Different patrol behaviors for enemies:
 
 ```typescript
 switch (this.patrolBehavior) {
@@ -420,55 +420,55 @@ switch (this.patrolBehavior) {
 }
 ```
 
-## 数据流
+## Data Flow
 
-### 1. 配置驱动
-所有主要系统都通过 JSON 配置文件驱动：
+### 1. Configuration-Driven
+All major systems are driven by JSON configuration files:
 
 ```
-tilemap.json → 地图和对象配置
-bgm-config.json → 背景音乐配置
-sound_effect/config.json → 音效配置
-*_animators.json → 动画配置
+tilemap.json → Map and object configuration
+bgm-config.json → Background music configuration
+sound_effect/config.json → Sound effect configuration
+*_animators.json → Animation configuration
 ```
 
-### 2. 资源加载流程
+### 2. Resource Loading Flow
 
 ```
 Preloader.preload()
     ↓
-解析 tilemap.json
+Parse tilemap.json
     ↓
-识别资源类型（图集/图片）
+Identify resource types (atlas/image)
     ↓
-加载对应资源
+Load corresponding resources
     ↓
 Preloader.create()
     ↓
-创建动画
+Create animations
     ↓
-初始化音效
+Initialize sound effects
 ```
 
-### 3. 游戏循环
+### 3. Game Loop
 
 ```
 Game.update()
     ↓
-Player.update() → 处理输入
+Player.update() → Handle input
     ↓
-Enemy.update() → AI 逻辑
+Enemy.update() → AI logic
     ↓
-碰撞检测
+Collision detection
     ↓
-UI 更新
+UI update
 ```
 
-## 扩展指南
+## Extension Guide
 
-### 添加新场景
+### Adding New Scenes
 
-1. 创建场景类：
+1. Create scene class:
 ```typescript
 // src/game/scenes/NewScene.ts
 export class NewScene extends Scene {
@@ -482,13 +482,13 @@ export class NewScene extends Scene {
 }
 ```
 
-2. 注册场景：
+2. Register scene:
 ```typescript
 // src/game/main.ts
 scene: [..., NewScene]
 ```
 
-3. 配置 BGM（可选）：
+3. Configure BGM (optional):
 ```json
 // bgm-config.json
 "scenes": {
@@ -498,20 +498,20 @@ scene: [..., NewScene]
 }
 ```
 
-### 添加新精灵类型
+### Adding New Sprite Types
 
-1. 创建精灵类：
+1. Create sprite class:
 ```typescript
 // src/game/sprites/NewSprite.ts
 export class NewSprite extends Phaser.Physics.Arcade.Sprite {
     constructor(scene: Scene, obj: TiledObject) {
         super(scene, obj.x, obj.y, obj.name);
-        // 初始化
+        // Initialize
     }
 }
 ```
 
-2. 在 Game.ts 中注册：
+2. Register in Game.ts:
 ```typescript
 private createObject(obj: TiledObject) {
     switch (obj.type) {
@@ -521,9 +521,9 @@ private createObject(obj: TiledObject) {
 }
 ```
 
-### 添加新管理器
+### Adding New Managers
 
-1. 创建管理器类：
+1. Create manager class:
 ```typescript
 // src/game/managers/NewManager.ts
 export class NewManager {
@@ -538,46 +538,46 @@ export class NewManager {
 }
 ```
 
-2. 在需要的地方初始化：
+2. Initialize where needed:
 ```typescript
-// Preloader.ts 或 Boot.ts
+// Preloader.ts or Boot.ts
 NewManager.getInstance().init(this);
 ```
 
-## 最佳实践
+## Best Practices
 
-### 1. 类型安全
-始终使用 TypeScript 的类型系统：
+### 1. Type Safety
+Always use TypeScript's type system:
 
 ```typescript
-// 好的做法
+// Good practice
 private health: number = 100;
 private moveSpeed: number;
 
-// 避免
-private health = 100; // any 类型
+// Avoid
+private health = 100; // any type
 ```
 
-### 2. 资源管理
-- 在 Preloader 中集中加载资源
-- 使用配置文件管理资源路径
-- 场景切换时清理不需要的资源
+### 2. Resource Management
+- Centralize resource loading in Preloader
+- Use configuration files to manage resource paths
+- Clean up unnecessary resources on scene transitions
 
-### 3. 性能优化
-- 使用对象池管理频繁创建/销毁的对象
-- 合理设置物理碰撞体大小
-- 使用图集减少 Draw Calls
+### 3. Performance Optimization
+- Use object pools for frequently created/destroyed objects
+- Set physics collision body sizes appropriately
+- Use atlases to reduce Draw Calls
 
-### 4. 代码组织
-- 每个类一个文件
-- 相关功能放在同一目录
-- 使用清晰的命名规范
+### 4. Code Organization
+- One class per file
+- Related functionality in the same directory
+- Use clear naming conventions
 
-## 调试技巧
+## Debugging Tips
 
-### 1. 物理调试
+### 1. Physics Debugging
 ```typescript
-// 在 Game config 中启用
+// Enable in Game config
 physics: {
     arcade: {
         debug: true
@@ -585,30 +585,30 @@ physics: {
 }
 ```
 
-### 2. 控制台日志
-各管理器都有详细的日志输出：
+### 2. Console Logging
+All managers have detailed log output:
 ```typescript
 console.log('[SoundEffectPlayer]', message);
 console.log('BGMPlayer:', message);
 ```
 
-### 3. 场景调试
+### 3. Scene Debugging
 ```typescript
-// 获取当前活动场景
+// Get current active scenes
 const activeScenes = this.game.scene.getScenes(true);
 console.log('Active scenes:', activeScenes);
 ```
 
-## 常见模式示例
+## Common Pattern Examples
 
-### 延迟执行
+### Delayed Execution
 ```typescript
 this.time.delayedCall(1000, () => {
-    // 1秒后执行
+    // Execute after 1 second
 });
 ```
 
-### 补间动画
+### Tween Animation
 ```typescript
 this.tweens.add({
     targets: sprite,
@@ -618,19 +618,19 @@ this.tweens.add({
 });
 ```
 
-### 事件监听
+### Event Listening
 ```typescript
 this.input.on('pointerdown', (pointer) => {
-    // 处理点击
+    // Handle click
 });
 ```
 
-## 总结
+## Summary
 
-项目采用了清晰的分层架构：
-1. **场景层**：管理游戏流程
-2. **管理器层**：提供全局服务
-3. **精灵层**：实现游戏实体
-4. **UI 层**：处理用户界面
+The project adopts a clear layered architecture:
+1. **Scene Layer**: Manages game flow
+2. **Manager Layer**: Provides global services
+3. **Sprite Layer**: Implements game entities
+4. **UI Layer**: Handles user interface
 
-通过配置驱动、单例管理器、工厂模式等设计，实现了高度模块化和可扩展的代码结构。每个组件职责明确，便于维护和扩展。
+Through configuration-driven design, singleton managers, factory patterns, and other design patterns, a highly modular and extensible code structure is achieved. Each component has clear responsibilities, making it easy to maintain and extend.

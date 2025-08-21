@@ -1,36 +1,36 @@
-# 背景音乐（BGM）配置指南
+# Background Music (BGM) Configuration Guide
 
-## 概述
+## Overview
 
-本项目使用 `BGMPlayer` 单例管理器来处理游戏中的背景音乐。该系统支持：
-- 场景自动切换 BGM
-- 预加载和延迟加载策略
-- 音量控制和淡入淡出
-- 循环播放配置
-- 场景持续播放（不重复启动）
+This project uses the `BGMPlayer` singleton manager to handle background music in the game. The system supports:
+- Automatic BGM switching between scenes
+- Preload and lazy load strategies
+- Volume control and fade in/out
+- Loop configuration
+- Scene persistence (prevents duplicate playback)
 
-## 系统架构
+## System Architecture
 
-### BGMPlayer 单例模式
+### BGMPlayer Singleton Pattern
 
 ```typescript
-// 获取 BGM 播放器实例
+// Get BGM player instance
 const bgmPlayer = BGMPlayer.getInstance();
 
-// 在游戏启动时初始化（通常在 Boot 或 MainMenu 场景）
+// Initialize on game startup (usually in Boot or MainMenu scene)
 bgmPlayer.initialize(game);
 ```
 
-### 核心功能
+### Core Features
 
-1. **自动场景监听** - 监听场景切换自动更换 BGM
-2. **配置驱动** - 通过 JSON 配置文件定义场景音乐
-3. **智能加载** - 支持预加载和按需加载
-4. **状态管理** - 跟踪当前播放状态避免重复
+1. **Automatic Scene Monitoring** - Listens for scene changes to automatically switch BGM
+2. **Configuration-Driven** - Define scene music through JSON configuration files
+3. **Smart Loading** - Supports preloading and on-demand loading
+4. **State Management** - Tracks current playback state to avoid duplicates
 
-## 配置文件格式
+## Configuration File Format
 
-创建 `/assets/audio/bgm-config.json` 文件：
+Create `/assets/audio/bgm-config.json` file:
 
 ```json
 {
@@ -81,35 +81,35 @@ bgmPlayer.initialize(game);
 }
 ```
 
-### 配置说明
+### Configuration Details
 
-#### scenes 配置
-- **场景名称**：必须与 Phaser 场景的 key 完全一致
-- **bgm**：引用 bgmList 中定义的音乐键
-- **loop**：是否循环播放（默认 true）
-- **volume**：音量大小 0.0-1.0（默认 1.0）
+#### Scenes Configuration
+- **Scene Name**: Must exactly match the Phaser scene key
+- **bgm**: References music key defined in bgmList
+- **loop**: Whether to loop playback (default: true)
+- **volume**: Volume level 0.0-1.0 (default: 1.0)
 
-#### bgmList 配置
-- **音乐键**：BGM 的唯一标识符
-- **url**：音乐文件路径（相对于项目根目录）
-- **preload**：是否在初始化时预加载（默认 false）
+#### BGMList Configuration
+- **Music Key**: Unique identifier for BGM
+- **url**: Music file path (relative to project root)
+- **preload**: Whether to preload on initialization (default: false)
 
-## 集成方式
+## Integration Methods
 
-### 1. 初始化 BGMPlayer
+### 1. Initialize BGMPlayer
 
-在游戏的入口点或第一个场景中初始化：
+Initialize at game entry point or first scene:
 
 ```typescript
-// 在 main.ts 或 Boot.ts 中
+// In main.ts or Boot.ts
 import { BGMPlayer } from './game/managers/BGMPlayer';
 
 const config: Phaser.Types.Core.GameConfig = {
-    // ... 其他配置
+    // ... other config
     scene: [Boot, Preloader, MainMenu, Game, Victory, GameOver],
     callbacks: {
         postBoot: (game) => {
-            // 游戏启动后初始化 BGMPlayer
+            // Initialize BGMPlayer after game boot
             BGMPlayer.getInstance().initialize(game);
         }
     }
@@ -118,30 +118,30 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config);
 ```
 
-或者在第一个场景中初始化：
+Or initialize in the first scene:
 
 ```typescript
-// Boot.ts 或 MainMenu.ts
+// Boot.ts or MainMenu.ts
 export class Boot extends Scene {
     create() {
-        // 初始化 BGMPlayer
+        // Initialize BGMPlayer
         BGMPlayer.getInstance().initialize(this.game);
         
-        // 继续其他初始化
+        // Continue with other initialization
         this.scene.start('Preloader');
     }
 }
 ```
 
-### 2. 场景自动切换
+### 2. Automatic Scene Switching
 
-BGMPlayer 会自动监听以下场景并切换音乐：
+BGMPlayer automatically monitors and switches music for these scenes:
 - MainMenu
-- Game  
+- Game
 - Victory
 - GameOver
 
-系统实现原理：
+Implementation principle:
 
 ```typescript
 private checkSceneChange(): void {
@@ -157,40 +157,40 @@ private checkSceneChange(): void {
 }
 ```
 
-### 3. 手动控制
+### 3. Manual Control
 
-除了自动切换，也可以手动控制 BGM：
+Besides automatic switching, you can manually control BGM:
 
 ```typescript
 const bgmPlayer = BGMPlayer.getInstance();
 
-// 手动切换到指定场景的 BGM
+// Manually switch to specific scene BGM
 bgmPlayer.changeScene('BossScene');
 
-// 暂停当前 BGM
+// Pause current BGM
 bgmPlayer.pauseCurrentBGM();
 
-// 恢复播放
+// Resume playback
 bgmPlayer.resumeCurrentBGM();
 
-// 停止所有 BGM
+// Stop all BGM
 bgmPlayer.stopAll();
 
-// 调整音量（0.0 - 1.0）
+// Adjust volume (0.0 - 1.0)
 bgmPlayer.setVolume(0.3);
 
-// 获取当前播放的 BGM
+// Get currently playing BGM
 const currentBGM = bgmPlayer.getCurrentBGM();
 
-// 获取当前场景
+// Get current scene
 const currentScene = bgmPlayer.getCurrentScene();
 ```
 
-## 高级功能
+## Advanced Features
 
-### 1. 动态 BGM 切换
+### 1. Dynamic BGM Switching
 
-在游戏过程中根据状态切换 BGM：
+Switch BGM based on game state during gameplay:
 
 ```typescript
 // Game.ts
@@ -202,21 +202,21 @@ export class Game extends Scene {
     }
     
     enterBossArea() {
-        // 手动切换到 Boss 战斗音乐
+        // Manually switch to boss battle music
         this.bgmPlayer.changeScene('BossBattle');
     }
     
     exitBossArea() {
-        // 切换回普通关卡音乐
+        // Switch back to normal level music
         this.bgmPlayer.changeScene('Game');
     }
 }
 ```
 
-### 2. 音量淡入淡出
+### 2. Volume Fade In/Out
 
 ```typescript
-// 创建淡出效果
+// Create fade out effect
 fadeOutBGM(duration: number = 1000) {
     const bgmPlayer = BGMPlayer.getInstance();
     
@@ -234,7 +234,7 @@ fadeOutBGM(duration: number = 1000) {
     });
 }
 
-// 创建淡入效果
+// Create fade in effect
 fadeInBGM(sceneName: string, duration: number = 1000) {
     const bgmPlayer = BGMPlayer.getInstance();
     bgmPlayer.setVolume(0);
@@ -252,9 +252,9 @@ fadeInBGM(sceneName: string, duration: number = 1000) {
 }
 ```
 
-### 3. 条件 BGM 配置
+### 3. Conditional BGM Configuration
 
-根据游戏进度或玩家状态播放不同 BGM：
+Play different BGM based on game progress or player state:
 
 ```json
 {
@@ -272,89 +272,89 @@ fadeInBGM(sceneName: string, duration: number = 1000) {
 ```
 
 ```typescript
-// 在游戏中切换备选 BGM
+// Switch to alternate BGM in game
 class Game extends Scene {
     switchToUnderwaterMusic() {
-        // 需要扩展 BGMPlayer 支持此功能
+        // Requires extending BGMPlayer to support this feature
         this.bgmPlayer.playAlternate('underwater');
     }
 }
 ```
 
-## 文件组织结构
+## File Organization Structure
 
 ```
 assets/
 └── audio/
-    ├── bgm-config.json         # BGM 配置文件
-    ├── bgm/                    # 背景音乐文件
+    ├── bgm-config.json         # BGM configuration file
+    ├── bgm/                    # Background music files
     │   ├── menu_theme.mp3
     │   ├── level_music.mp3
     │   ├── boss_battle.mp3
     │   ├── victory.mp3
     │   └── game_over.mp3
-    └── sound_effect/           # 音效文件目录
+    └── sound_effect/           # Sound effect files directory
         └── ...
 ```
 
-## 最佳实践
+## Best Practices
 
-### 1. 音乐文件优化
+### 1. Music File Optimization
 
-- **格式选择**：使用 MP3 或 OGG 格式
-- **比特率**：128kbps 通常足够
-- **文件大小**：控制在 1-3MB 以内
-- **循环点**：确保循环音乐有平滑的循环点
+- **Format Selection**: Use MP3 or OGG format
+- **Bitrate**: 128kbps is usually sufficient
+- **File Size**: Keep within 1-3MB
+- **Loop Points**: Ensure looping music has smooth loop points
 
-### 2. 预加载策略
+### 2. Preload Strategy
 
 ```json
 {
   "bgmList": {
     "menu_theme": {
       "url": "/assets/audio/bgm/menu_theme.mp3",
-      "preload": true  // 常用音乐预加载
+      "preload": true  // Preload frequently used music
     },
     "secret_level": {
       "url": "/assets/audio/bgm/secret.mp3",
-      "preload": false // 特殊音乐延迟加载
+      "preload": false // Lazy load special music
     }
   }
 }
 ```
 
-### 3. 音量平衡
+### 3. Volume Balance
 
-| 场景类型 | 推荐音量 | 说明 |
-|---------|---------|------|
-| 主菜单 | 0.6-0.7 | 较高音量吸引注意 |
-| 游戏关卡 | 0.4-0.5 | 适中音量不干扰游戏 |
-| Boss 战斗 | 0.6-0.7 | 提高紧张感 |
-| 胜利 | 0.7-0.8 | 庆祝性质可以响亮 |
-| 游戏结束 | 0.4-0.5 | 安静的结束音乐 |
+| Scene Type | Recommended Volume | Description |
+|------------|-------------------|-------------|
+| Main Menu | 0.6-0.7 | Higher volume to attract attention |
+| Game Level | 0.4-0.5 | Moderate volume to not interfere with gameplay |
+| Boss Battle | 0.6-0.7 | Increase tension |
+| Victory | 0.7-0.8 | Celebratory music can be louder |
+| Game Over | 0.4-0.5 | Quiet ending music |
 
-### 4. 场景过渡处理
+### 4. Scene Transition Handling
 
 ```typescript
-// 平滑的场景过渡
+// Smooth scene transitions
 class Game extends Scene {
     victory() {
-        // 淡出当前 BGM
+        // Fade out current BGM
         this.cameras.main.fadeOut(500);
         
         this.time.delayedCall(500, () => {
-            // BGMPlayer 会自动处理场景切换
+            // BGMPlayer will automatically handle scene switching
             this.scene.start('Victory');
         });
     }
 }
 ```
 
-## 调试功能
+## Debug Features
 
-### 控制台日志
+### Console Logging
 
-BGMPlayer 提供详细的调试信息：
+BGMPlayer provides detailed debug information:
 
 ```
 BGMPlayer: BGM config loaded successfully
@@ -364,55 +364,55 @@ BGMPlayer: Playing BGM: menu_theme
 BGMPlayer: Stopped BGM: menu_theme
 ```
 
-### 调试方法
+### Debug Methods
 
 ```typescript
-// 在浏览器控制台中调试
+// Debug in browser console
 const bgm = BGMPlayer.getInstance();
 
-// 查看当前状态
+// Check current state
 console.log('Current BGM:', bgm.getCurrentBGM());
 console.log('Current Scene:', bgm.getCurrentScene());
 
-// 手动控制
+// Manual control
 bgm.stopAll();
 bgm.changeScene('Game');
 bgm.setVolume(0.3);
 ```
 
-## 常见问题
+## Common Issues
 
-### Q: BGM 没有播放？
+### Q: BGM not playing?
 
-检查清单：
-1. 配置文件路径是否正确（`/assets/audio/bgm-config.json`）
-2. 音乐文件路径是否正确
-3. 场景名称是否与配置中一致
-4. 浏览器是否需要用户交互才能播放音频
-5. 检查控制台是否有错误信息
+Checklist:
+1. Is the configuration file path correct (`/assets/audio/bgm-config.json`)?
+2. Are music file paths correct?
+3. Does the scene name match the configuration?
+4. Does the browser require user interaction to play audio?
+5. Check console for error messages
 
-### Q: 场景切换时音乐重复播放？
+### Q: Music repeats when switching scenes?
 
-系统已经处理了这种情况：
+The system already handles this:
 ```typescript
-// 相同 BGM 不会重复播放
+// Same BGM won't play repeatedly
 if (this.currentBGM === bgmKey && this.currentBGMSound?.isPlaying) {
     return;
 }
 ```
 
-### Q: 如何处理浏览器自动播放限制？
+### Q: How to handle browser autoplay restrictions?
 
 ```typescript
-// 在用户第一次交互时启动音频
+// Start audio on first user interaction
 class MainMenu extends Scene {
     create() {
-        // 添加开始按钮
+        // Add start button
         const startButton = this.add.text(400, 300, 'Start Game');
         
         startButton.setInteractive();
         startButton.on('pointerdown', () => {
-            // 用户交互后初始化音频
+            // Initialize audio after user interaction
             BGMPlayer.getInstance().initialize(this.game);
             this.scene.start('Game');
         });
@@ -420,19 +420,19 @@ class MainMenu extends Scene {
 }
 ```
 
-### Q: 如何支持多种音频格式？
+### Q: How to support multiple audio formats?
 
 ```typescript
-// 扩展 BGMPlayer 支持多格式
+// Extend BGMPlayer to support multiple formats
 private async loadSound(key: string, urls: string | string[]): Promise<void> {
     const urlArray = Array.isArray(urls) ? urls : [urls];
     
-    // Phaser 会自动选择浏览器支持的格式
+    // Phaser will automatically choose browser-supported format
     this.activeScene!.load.audio(key, urlArray);
 }
 ```
 
-配置示例：
+Configuration example:
 ```json
 {
   "bgmList": {
@@ -446,63 +446,63 @@ private async loadSound(key: string, urls: string | string[]): Promise<void> {
 }
 ```
 
-## 性能优化
+## Performance Optimization
 
-### 1. 内存管理
+### 1. Memory Management
 
 ```typescript
-// 场景销毁时清理
+// Clean up when scene is destroyed
 destroy(): void {
     const bgmPlayer = BGMPlayer.getInstance();
     
-    // 只停止播放，不销毁实例
+    // Only stop playback, don't destroy instance
     bgmPlayer.stopAll();
     
-    // 完全销毁（游戏结束时）
+    // Complete destruction (when game ends)
     // bgmPlayer.destroy();
 }
 ```
 
-### 2. 加载优化
+### 2. Loading Optimization
 
-- 预加载主要场景的 BGM
-- 特殊场景的 BGM 延迟加载
-- 使用较小的音频文件
-- 考虑使用音频流（Web Audio API）
+- Preload main scene BGM
+- Lazy load special scene BGM
+- Use smaller audio files
+- Consider using audio streaming (Web Audio API)
 
-### 3. 移动设备优化
+### 3. Mobile Device Optimization
 
 ```typescript
-// 检测移动设备并调整音量
+// Detect mobile device and adjust volume
 if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
-    BGMPlayer.getInstance().setVolume(0.3); // 移动设备降低音量
+    BGMPlayer.getInstance().setVolume(0.3); // Lower volume on mobile
 }
 ```
 
-## 扩展功能示例
+## Extension Examples
 
-### 动态音乐层次
+### Dynamic Music Layers
 
 ```typescript
-// 根据游戏强度调整音乐
+// Adjust music based on game intensity
 class DynamicBGMPlayer extends BGMPlayer {
     private layers: Map<string, Phaser.Sound.BaseSound> = new Map();
     
     addMusicLayer(key: string, url: string) {
-        // 加载并同步播放多个音轨
+        // Load and sync multiple tracks
     }
     
     setIntensity(level: number) {
-        // 根据强度调整各层音量
-        // 0 = 只有基础层，1 = 所有层
+        // Adjust layer volumes based on intensity
+        // 0 = base layer only, 1 = all layers
     }
 }
 ```
 
-### 音乐节拍同步
+### Music Beat Synchronization
 
 ```typescript
-// 音乐节拍事件系统
+// Music beat event system
 class BeatSyncBGMPlayer extends BGMPlayer {
     private bpm: number = 120;
     private beatCallbacks: Function[] = [];
@@ -517,14 +517,14 @@ class BeatSyncBGMPlayer extends BGMPlayer {
 }
 ```
 
-## 总结
+## Summary
 
-BGMPlayer 系统提供了完整的背景音乐管理方案：
+The BGMPlayer system provides a complete background music management solution:
 
-1. **自动化管理** - 场景切换自动处理音乐
-2. **配置驱动** - JSON 配置文件集中管理
-3. **智能加载** - 预加载和延迟加载策略
-4. **灵活控制** - 支持手动控制和自动播放
-5. **性能优化** - 避免重复加载和播放
+1. **Automated Management** - Automatic music handling on scene transitions
+2. **Configuration-Driven** - Centralized management through JSON config
+3. **Smart Loading** - Preload and lazy load strategies
+4. **Flexible Control** - Supports manual control and auto-play
+5. **Performance Optimized** - Avoids duplicate loading and playback
 
-通过正确配置和使用，可以为游戏创建专业的音乐体验。
+With proper configuration and usage, you can create a professional music experience for your game.

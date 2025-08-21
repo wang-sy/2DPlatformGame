@@ -1,37 +1,37 @@
-# 音效配置指南
+# Sound Effect Configuration Guide
 
-## 概述
+## Overview
 
-本项目使用 `SoundEffectPlayer` 管理器来处理游戏中的所有音效。该系统支持：
-- 基于动画自动播放音效
-- 随机音效选择（一个动画可配置多个音效）
-- 延迟加载和预加载策略
-- 全局音量控制
+This project uses the `SoundEffectPlayer` manager to handle all sound effects in the game. The system supports:
+- Automatic sound playback based on animations
+- Random sound selection (multiple sounds configurable per animation)
+- Lazy loading and preloading strategies
+- Global volume control
 
-## 系统架构
+## System Architecture
 
-### SoundEffectPlayer 单例模式
+### SoundEffectPlayer Singleton Pattern
 
 ```typescript
-// 获取音效播放器实例
+// Get sound effect player instance
 const soundEffectPlayer = SoundEffectPlayer.getInstance();
 
-// 在 Preloader 场景中初始化
+// Initialize in Preloader scene
 soundEffectPlayer.init(scene);
 await soundEffectPlayer.loadConfig();
 soundEffectPlayer.preloadSounds();
 ```
 
-### 核心功能
+### Core Features
 
-1. **配置加载**：从 JSON 文件读取音效配置
-2. **音效预加载**：在游戏开始前加载所有音效资源
-3. **动画关联**：将音效与精灵图集的动画关联
-4. **随机播放**：从多个音效中随机选择播放
+1. **Configuration Loading**: Read sound effect configuration from JSON file
+2. **Sound Preloading**: Load all sound resources before game starts
+3. **Animation Association**: Associate sounds with sprite atlas animations
+4. **Random Playback**: Randomly select from multiple sounds
 
-## 配置文件格式
+## Configuration File Format
 
-创建 `assets/audio/sound_effect/config.json` 文件：
+Create `assets/audio/sound_effect/config.json` file:
 
 ```json
 {
@@ -94,27 +94,27 @@ soundEffectPlayer.preloadSounds();
 }
 ```
 
-### 配置说明
+### Configuration Details
 
-- **第一层键**：精灵图集名称（如 `player`、`enemy`）- 必须与 Tiled 地图中的对象名称一致
-- **第二层键**：动画名称（如 `jump`、`hit`、`walk`）
-- **音效数组**：每个动画可配置多个音效
-  - `key`：音效的唯一标识符
-  - `uri`：音效文件路径
+- **First level key**: Sprite atlas name (e.g., `player`, `enemy`) - must match object names in Tiled maps
+- **Second level key**: Animation name (e.g., `jump`, `hit`, `walk`)
+- **Sound array**: Multiple sounds can be configured per animation
+  - `key`: Unique identifier for the sound
+  - `uri`: Sound file path
 
-## 在精灵类中使用
+## Usage in Sprite Classes
 
-### Player.ts 实现示例
+### Player.ts Implementation Example
 
 ```typescript
 import { SoundEffectPlayer } from '../managers/SoundEffectPlayer';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private soundEffectPlayer: SoundEffectPlayer;
-    private key: string = ''; // 从 Tiled 对象获取的精灵名称
+    private key: string = ''; // Sprite name from Tiled object
     
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
-        let key = tiledObject.name; // 使用 Tiled 对象的名称作为键
+        let key = tiledObject.name; // Use Tiled object name as key
         super(scene, x, y, key);
         
         this.key = key;
@@ -127,30 +127,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.play(animKey);
             this.currentAnimation = animKey;
             
-            // 自动播放对应音效
+            // Automatically play corresponding sound
             if (this.soundEffectPlayer.hasAnimationSound(this.key, animName)) {
                 this.soundEffectPlayer.playAnimationSound(this.key, animName);
             }
         }
     }
     
-    // 跳跃时的特殊音效处理
+    // Special sound handling for jumping
     update(): void {
         if (justPressedUp && !this.isCharging) {
-            // 播放跳跃音效（音量略低）
+            // Play jump sound (slightly lower volume)
             if (this.soundEffectPlayer.hasAnimationSound(this.key, 'jump')) {
                 this.soundEffectPlayer.playAnimationSound(this.key, 'jump', 0.7);
             }
         }
     }
     
-    // 受伤音效
+    // Damage sound
     takeDamage(damage: number): void {
         this.playAnimation('hit');
-        // 音效已在 playAnimation 中自动播放
+        // Sound automatically plays in playAnimation
     }
     
-    // 死亡音效
+    // Death sound
     private handleDeath(): void {
         if (this.soundEffectPlayer.hasAnimationSound(this.key, 'die')) {
             this.soundEffectPlayer.playAnimationSound(this.key, 'die');
@@ -159,7 +159,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 }
 ```
 
-### Enemy.ts 实现示例
+### Enemy.ts Implementation Example
 
 ```typescript
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -172,7 +172,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     
     takeDamage(damage: number): void {
-        // 播放死亡音效
+        // Play death sound
         if (this.soundEffectPlayer.hasAnimationSound(this.enemyName, 'die')) {
             this.soundEffectPlayer.playAnimationSound(this.enemyName, 'die', 0.6);
         }
@@ -181,96 +181,96 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 }
 ```
 
-## 音效管理最佳实践
+## Sound Management Best Practices
 
-### 1. 文件组织结构
+### 1. File Organization Structure
 
 ```
 assets/
 └── audio/
-    ├── bgm-config.json         # BGM 配置文件
+    ├── bgm-config.json         # BGM configuration file
     └── sound_effect/
-        ├── config.json          # 音效配置文件
-        ├── player/             # 玩家音效
+        ├── config.json          # Sound effect configuration file
+        ├── player/             # Player sounds
         │   ├── jump_1.mp3
         │   ├── jump_2.mp3
         │   ├── hit.mp3
         │   └── death.mp3
-        ├── enemy/              # 敌人音效
+        ├── enemy/              # Enemy sounds
         │   ├── attack.mp3
         │   └── defeat.mp3
-        └── items/              # 物品音效
+        └── items/              # Item sounds
             ├── coin.mp3
             └── powerup.mp3
 ```
 
-### 2. 命名规范
+### 2. Naming Conventions
 
-- 音效键名：`{角色类型}_{动作}_{序号}`
-  - 例如：`player_jump_1`、`enemy_attack`
-- 文件名：简洁描述性命名
-  - 例如：`jump_1.mp3`、`hit.mp3`
+- Sound key names: `{character_type}_{action}_{number}`
+  - Examples: `player_jump_1`, `enemy_attack`
+- File names: Concise descriptive naming
+  - Examples: `jump_1.mp3`, `hit.mp3`
 
-### 3. 音量控制策略
+### 3. Volume Control Strategy
 
-| 角色类型 | 动作 | 推荐音量 | 说明 |
-|---------|------|---------|------|
-| Player | 默认 | 1.0 | 标准音量 |
-| Player | 跳跃 | 0.7 | 降低避免过响 |
-| Player | 受击/死亡 | 1.0 | 需要明显 |
-| Enemy | 默认 | 0.4 | 避免干扰 |
-| Enemy | 死亡 | 0.6 | 适中音量 |
-| Items | 收集 | 0.8 | 清晰但不刺耳 |
+| Character Type | Action | Recommended Volume | Notes |
+|----------------|--------|-------------------|-------|
+| Player | Default | 1.0 | Standard volume |
+| Player | Jump | 0.7 | Reduced to avoid being too loud |
+| Player | Hit/Death | 1.0 | Needs to be noticeable |
+| Enemy | Default | 0.4 | Avoid interference |
+| Enemy | Death | 0.6 | Moderate volume |
+| Items | Collect | 0.8 | Clear but not harsh |
 
 ```typescript
-// 播放时指定音量（0.0 - 1.0）
+// Specify volume when playing (0.0 - 1.0)
 soundEffectPlayer.playAnimationSound('player', 'jump', 0.5);
 
-// 全局音量控制
+// Global volume control
 soundEffectPlayer.setGlobalVolume(0.8);
 
-// 单个音效音量调整
+// Individual sound volume adjustment
 soundEffectPlayer.setVolume('player_jump_1', 0.6);
 ```
 
-### 4. 性能优化建议
+### 4. Performance Optimization Suggestions
 
-1. **预加载策略**
+1. **Preloading Strategy**
    ```typescript
-   // 在 Preloader.ts 中
+   // In Preloader.ts
    async preload() {
-       // 初始化并加载配置
+       // Initialize and load configuration
        this.soundEffectPlayer.init(this);
        await this.soundEffectPlayer.loadConfig();
        
-       // 预加载所有音效
+       // Preload all sounds
        this.soundEffectPlayer.preloadSounds();
    }
    
    create() {
-       // 音效加载完成后初始化
+       // Initialize after sounds are loaded
        this.soundEffectPlayer.onSoundsLoaded();
    }
    ```
 
-2. **音效复用**
-   - 相似动作可共用音效（如不同敌人的受击音效）
-   - 使用音效池避免重复创建
+2. **Sound Reuse**
+   - Similar actions can share sounds (e.g., hit sounds for different enemies)
+   - Use sound pools to avoid repeated creation
 
-3. **内存管理**
+3. **Memory Management**
    ```typescript
-   // 场景切换时清理音效
+   // Clean up sounds on scene transition
    destroy(): void {
        this.soundEffectPlayer.stopAllSounds();
        this.soundEffectPlayer.clear();
    }
    ```
 
-## 调试功能
+## Debug Features
 
-### 控制台日志输出
+### Console Log Output
 
-SoundEffectPlayer 提供详细的调试信息：
+SoundEffectPlayer provides detailed debug information:
 
 ```
 [SoundEffectPlayer] Initializing with scene: Preloader
@@ -281,28 +281,28 @@ SoundEffectPlayer 提供详细的调试信息：
 [SoundEffectPlayer] Playing sound: player_jump_1 at volume: 0.5
 ```
 
-### 常用调试方法
+### Common Debug Methods
 
 ```typescript
-// 获取已加载的音效列表
+// Get loaded sounds list
 const loadedSounds = soundEffectPlayer.getLoadedSounds();
 console.log('Loaded sounds:', loadedSounds);
 
-// 获取音效配置
+// Get sound configuration
 const config = soundEffectPlayer.getSoundConfig();
 console.log('Sound config:', config);
 
-// 检查动画是否有关联音效
+// Check if animation has associated sound
 const hasSound = soundEffectPlayer.hasAnimationSound('player', 'jump');
 console.log('Player jump has sound:', hasSound);
 ```
 
-## 高级功能
+## Advanced Features
 
-### 1. 条件音效播放
+### 1. Conditional Sound Playback
 
 ```typescript
-// 根据游戏状态播放不同音效
+// Play different sounds based on game state
 if (player.isUnderwater) {
     soundEffectPlayer.playSound('underwater_jump', 0.6);
 } else {
@@ -310,19 +310,19 @@ if (player.isUnderwater) {
 }
 ```
 
-### 2. 音效链
+### 2. Sound Chains
 
 ```typescript
-// 连续播放多个音效
+// Play multiple sounds consecutively
 soundEffectPlayer.playSound('powerup_collect', 0.7);
 scene.time.delayedCall(200, () => {
     soundEffectPlayer.playSound('powerup_activate', 0.8);
 });
 ```
 
-### 3. 随机音效变体
+### 3. Random Sound Variants
 
-配置多个音效后系统会自动随机选择：
+System automatically selects randomly when multiple sounds are configured:
 
 ```json
 "walk": [
@@ -332,46 +332,46 @@ scene.time.delayedCall(200, () => {
 ]
 ```
 
-## 常见问题解决
+## Troubleshooting
 
-### Q: 音效没有播放？
+### Q: Sound not playing?
 
-检查清单：
-1. 配置文件中的精灵名称是否与 Tiled 对象名称一致
-2. 音效文件路径是否正确（相对于项目根目录）
-3. 控制台是否有加载错误
-4. 浏览器是否静音或需要用户交互才能播放音频
+Checklist:
+1. Does sprite name in config match Tiled object name?
+2. Are sound file paths correct (relative to project root)?
+3. Any loading errors in console?
+4. Is browser muted or requires user interaction for audio?
 
-### Q: 音效延迟？
+### Q: Sound delay?
 
-解决方案：
-1. 确保在 Preloader 场景预加载
-2. 使用较小的音频文件（建议 < 100KB）
-3. 使用 MP3 或 OGG 格式
-4. 考虑使用音频精灵图（Audio Sprites）
+Solutions:
+1. Ensure preloading in Preloader scene
+2. Use smaller audio files (recommended < 100KB)
+3. Use MP3 or OGG format
+4. Consider using Audio Sprites
 
-### Q: 音效重复播放？
+### Q: Sound playing repeatedly?
 
-系统通过检查 `currentAnimation` 避免重复，如果仍有问题：
-1. 检查是否在多处调用了 `playAnimation`
-2. 确认动画切换逻辑是否正确
+System prevents repetition by checking `currentAnimation`. If still problematic:
+1. Check if `playAnimation` is called from multiple places
+2. Verify animation switching logic is correct
 
-### Q: 如何支持多平台？
+### Q: How to support multiple platforms?
 
 ```javascript
-// 在 Preloader 中提供多种格式
+// Provide multiple formats in Preloader
 this.load.audio('jump', [
     'assets/audio/jump.ogg',
     'assets/audio/jump.mp3'
 ]);
 ```
 
-## 集成流程总结
+## Integration Flow Summary
 
-1. **创建配置文件** - 在 `assets/audio/sound_effect/config.json` 定义音效映射
-2. **准备音效资源** - 将音效文件放入对应目录
-3. **初始化系统** - 在 Preloader 场景初始化 SoundEffectPlayer
-4. **精灵集成** - 在精灵类中调用音效播放方法
-5. **测试调试** - 使用控制台日志确认音效正常工作
+1. **Create Configuration File** - Define sound mappings in `assets/audio/sound_effect/config.json`
+2. **Prepare Sound Resources** - Place sound files in corresponding directories
+3. **Initialize System** - Initialize SoundEffectPlayer in Preloader scene
+4. **Sprite Integration** - Call sound playback methods in sprite classes
+5. **Test and Debug** - Use console logs to confirm sounds work properly
 
-通过这个系统，你可以轻松管理游戏中的所有音效，实现丰富的听觉体验。
+Through this system, you can easily manage all sounds in the game and create a rich auditory experience.

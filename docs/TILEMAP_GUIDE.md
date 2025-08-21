@@ -1,41 +1,41 @@
-# Tilemap 配置指南
+# Tilemap Configuration Guide
 
-## 概述
+## Overview
 
-本项目使用 Phaser 3 的 Tilemap 系统结合 Tiled 地图编辑器来创建游戏关卡。系统支持：
-- 自动加载 Tilemap 和相关资源
-- 基于对象层创建游戏实体
-- 支持图集（Atlas）和普通图块集（Tileset）
-- 碰撞检测配置
-- 动态对象属性传递
+This project uses Phaser 3's Tilemap system combined with the Tiled map editor to create game levels. The system supports:
+- Automatic loading of Tilemap and related resources
+- Creating game entities based on object layers
+- Support for both Atlas and regular Tilesets
+- Collision detection configuration
+- Dynamic object property passing
 
-## 系统架构
+## System Architecture
 
-### 核心流程
+### Core Flow
 
 ```
-Tiled 编辑器 → JSON 导出 → Preloader 加载 → Game 场景解析 → 游戏对象创建
+Tiled Editor → JSON Export → Preloader Loading → Game Scene Parsing → Game Object Creation
 ```
 
-### 关键组件
+### Key Components
 
-1. **Preloader.ts** - 负责加载 Tilemap 和相关资源
-2. **Game.ts** - 解析 Tilemap 并创建游戏对象
-3. **精灵类** - Player、Enemy、Collectible 等实体类
+1. **Preloader.ts** - Responsible for loading Tilemap and related resources
+2. **Game.ts** - Parses Tilemap and creates game objects
+3. **Sprite Classes** - Entity classes like Player, Enemy, Collectible
 
-## Tiled 地图编辑器配置
+## Tiled Map Editor Configuration
 
-### 1. 创建地图
+### 1. Create Map
 
-1. 新建地图时设置：
-   - 地图大小（如 32x20 tiles）
-   - 图块大小（如 32x32 像素）
-   - 渲染顺序：右下（Right Down）
+When creating a new map, set:
+- Map size (e.g., 32x20 tiles)
+- Tile size (e.g., 32x32 pixels)
+- Render order: Right Down
 
-### 2. 添加图块集（Tileset）
+### 2. Add Tilesets
 
-#### 普通图块集
-用于静态地形、背景等：
+#### Regular Tilesets
+For static terrain, backgrounds, etc.:
 ```json
 {
   "name": "tileset_name",
@@ -45,115 +45,115 @@ Tiled 编辑器 → JSON 导出 → Preloader 加载 → Game 场景解析 → �
 }
 ```
 
-#### 图集（Atlas）图块集
-用于带动画的精灵：
-1. 添加图块集时选择图片
-2. 在第一个图块的自定义属性中添加：
-   - 属性名：`atlas`
-   - 类型：`bool`
-   - 值：`true`
+#### Atlas Tilesets
+For animated sprites:
+1. Add tileset by selecting image
+2. Add custom property to the first tile:
+   - Property name: `atlas`
+   - Type: `bool`
+   - Value: `true`
 
-### 3. 创建图层
+### 3. Create Layers
 
-#### 图块层（Tile Layers）
-用于绘制地形、平台等：
+#### Tile Layers
+For drawing terrain, platforms, etc.:
 ```
-- background     # 背景层
-- platforms      # 平台层（设置碰撞）
-- decorations    # 装饰层
-```
-
-碰撞设置：
-1. 选择需要碰撞的图块
-2. 添加自定义属性：
-   - 属性名：`collides`
-   - 类型：`bool`
-   - 值：`true`
-
-#### 对象层（Object Layers）
-用于放置游戏实体：
-```
-- players        # 玩家起始位置
-- enemies        # 敌人
-- collectibles   # 可收集物品
-- hazards        # 危险物（尖刺等）
-- goals          # 目标点
+- background     # Background layer
+- platforms      # Platform layer (set collision)
+- decorations    # Decoration layer
 ```
 
-### 4. 创建游戏对象
+Collision setup:
+1. Select tiles that need collision
+2. Add custom property:
+   - Property name: `collides`
+   - Type: `bool`
+   - Value: `true`
 
-在对象层中创建对象时设置：
-
-#### Player 对象
+#### Object Layers
+For placing game entities:
 ```
-名称: player_sprite_name  // 对应图集名称
-类型: player
-位置: (x, y)
-大小: (width, height)     // 可选，用于缩放
-```
-
-#### Enemy 对象
-```
-名称: enemy_sprite_name
-类型: enemy
-自定义属性:
-  - moveSpeed: 100        // 移动速度
-  - moveRange: 200        // 移动范围
-  - damage: 1             // 伤害值
-  - health: 2             // 生命值
+- players        # Player spawn position
+- enemies        # Enemies
+- collectibles   # Collectible items
+- hazards        # Hazards (spikes, etc.)
+- goals          # Goal points
 ```
 
-#### Collectible 对象
+### 4. Create Game Objects
+
+When creating objects in object layers:
+
+#### Player Object
 ```
-名称: item_sprite_name
-类型: collectible
-自定义属性:
-  - score: 100            // 分数
-  - type: coin            // 类型
-  - mustCollect: true     // 是否必须收集
+Name: player_sprite_name  // Corresponds to atlas name
+Type: player
+Position: (x, y)
+Size: (width, height)     // Optional, for scaling
 ```
 
-#### Hazard 对象
+#### Enemy Object
 ```
-名称: hazard_sprite_name
-类型: hazard
-自定义属性:
-  - damage: 1             // 伤害值
-```
-
-#### Goal 对象
-```
-名称: goal_sprite_name
-类型: goal
+Name: enemy_sprite_name
+Type: enemy
+Custom Properties:
+  - moveSpeed: 100        // Movement speed
+  - moveRange: 200        // Movement range
+  - damage: 1             // Damage value
+  - health: 2             // Health points
 ```
 
-## Preloader 加载机制
+#### Collectible Object
+```
+Name: item_sprite_name
+Type: collectible
+Custom Properties:
+  - score: 100            // Score value
+  - type: coin            // Item type
+  - mustCollect: true     // Must collect to win
+```
 
-### 自动资源加载
+#### Hazard Object
+```
+Name: hazard_sprite_name
+Type: hazard
+Custom Properties:
+  - damage: 1             // Damage value
+```
 
-Preloader.ts 中的加载流程：
+#### Goal Object
+```
+Name: goal_sprite_name
+Type: goal
+```
+
+## Preloader Loading Mechanism
+
+### Automatic Resource Loading
+
+Loading flow in Preloader.ts:
 
 ```typescript
 async preload() {
-    // 1. 加载 Tilemap JSON
+    // 1. Load Tilemap JSON
     this.load.tilemapTiledJSON('tilemap', 'assets/tilemap/scenes/tilemap.json');
     
-    // 2. 加载原始 JSON 文本用于解析
+    // 2. Load raw JSON text for parsing
     this.load.text('tilemap_json_raw', 'assets/tilemap/scenes/tilemap.json');
     
-    // 3. 监听加载完成，解析并加载资源
+    // 3. Listen for load completion, parse and load resources
     this.load.once('filecomplete-text-tilemap_json_raw', () => {
         this.loadAllAssets();
     });
 }
 
 private loadAllAssets() {
-    // 解析 Tilemap JSON
+    // Parse Tilemap JSON
     let tilemapJsonObj = JSON.parse(tilemapJsonRaw);
     let tilesets = tilemapJsonObj["tilesets"];
     
     tilesets.forEach((tileset: any) => {
-        // 检查是否为图集
+        // Check if it's an atlas
         let isAtlas = false;
         let tiles = tileset["tiles"];
         if (tiles && tiles[0]?.properties) {
@@ -165,24 +165,24 @@ private loadAllAssets() {
         }
         
         if (isAtlas) {
-            // 加载图集和动画配置
+            // Load atlas and animation configuration
             let atlasJsonUri = imageUri.replace(/(\.[^/.]+)$/, '.json');
             this.load.atlas(name, imageUri, atlasJsonUri);
             
-            // 加载动画配置
+            // Load animation configuration
             let animationConfigUri = imageUri.replace(/(\.[^/.]+)$/, '_animators.json');
             this.load.json(`${name}_animations`, animationConfigUri);
         } else {
-            // 加载普通图片
+            // Load regular image
             this.load.image(name, imageUri);
         }
     });
 }
 ```
 
-### 动画配置文件
+### Animation Configuration Files
 
-对于图集，需要创建对应的动画配置文件 `{atlas_name}_animators.json`：
+For atlases, create corresponding animation configuration files `{atlas_name}_animators.json`:
 
 ```json
 {
@@ -218,16 +218,16 @@ private loadAllAssets() {
 }
 ```
 
-## Game 场景对象创建
+## Game Scene Object Creation
 
-### 地图加载和图层创建
+### Map Loading and Layer Creation
 
 ```typescript
 create() {
-    // 1. 创建 Tilemap
+    // 1. Create Tilemap
     this.map = this.make.tilemap({ key: 'tilemap' });
     
-    // 2. 添加图块集
+    // 2. Add tilesets
     this.tilesets = [];
     this.map.tilesets.forEach((tileset: Phaser.Tilemaps.Tileset) => {
         let addedTileset = this.map.addTilesetImage(tileset.name, tileset.name);
@@ -236,35 +236,35 @@ create() {
         }
     });
     
-    // 3. 创建图块层
+    // 3. Create tile layers
     this.layers = [];
     this.map.getTileLayerNames().forEach((tileLayerName: string) => {
         const layer = this.map.createLayer(tileLayerName, this.tilesets, 0, 0);
         if (layer) {
             this.layers.push(layer);
-            // 设置碰撞（基于 collides 属性）
+            // Set collision (based on collides property)
             layer.setCollisionByProperty({ collides: true });
         }
     });
     
-    // 4. 创建对象
+    // 4. Create objects
     this.createObjectsFromTilemap();
 }
 ```
 
-### 对象创建示例
+### Object Creation Examples
 
 ```typescript
 private createPlayerFromTilemap(playerObject: Phaser.Types.Tilemaps.TiledObject) {
-    // Player 类会使用对象的属性
+    // Player class uses object properties
     this.player = new Player(this, playerObject);
     
-    // 设置碰撞
+    // Set up collision
     this.layers.forEach(layer => {
         this.physics.add.collider(this.player, layer);
     });
     
-    // 设置相机跟随
+    // Set camera to follow
     this.cameras.main.startFollow(this.player);
     this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 }
@@ -273,31 +273,31 @@ private createEnemyFromTilemap(enemyObject: Phaser.Types.Tilemaps.TiledObject) {
     const enemy = new Enemy(this, enemyObject);
     this.enemies.add(enemy);
     
-    // Enemy 类内部会读取自定义属性
-    // moveSpeed, moveRange, damage, health 等
+    // Enemy class internally reads custom properties
+    // moveSpeed, moveRange, damage, health, etc.
 }
 ```
 
-## 精灵类中使用 Tiled 对象
+## Using Tiled Objects in Sprite Classes
 
-### Player.ts 示例
+### Player.ts Example
 
 ```typescript
 export class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
-        // 从 Tiled 对象获取位置
+        // Get position from Tiled object
         let x = tiledObject.x ?? 0;
         let y = tiledObject.y ?? 0;
         
-        // 使用对象名称作为纹理键
+        // Use object name as texture key
         let key = tiledObject.name;
         super(scene, x, y, key);
         
-        // 获取纹理的原始尺寸
+        // Get texture's original dimensions
         let texture = scene.textures.get(key);
         let firstFrame = (texture.frames as any)[texture.firstFrame];
         
-        // 应用 Tiled 中设置的缩放
+        // Apply scaling set in Tiled
         let displayWidth = (tiledObject.width ?? firstFrame.width);
         let displayHeight = (tiledObject.height ?? firstFrame.height);
         
@@ -305,14 +305,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         let yScale = displayHeight / firstFrame.height;
         this.setScale(xScale, yScale);
         
-        // 设置物理碰撞体（原始尺寸的70%）
+        // Set physics collision body (70% of original size)
         this.setSize(firstFrame.width * 0.7, firstFrame.height * 0.7);
         this.setOffset(firstFrame.width * 0.1, firstFrame.height * 0.1);
     }
 }
 ```
 
-### Enemy.ts 示例
+### Enemy.ts Example
 
 ```typescript
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -323,7 +323,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene: Scene, enemyObject: Phaser.Types.Tilemaps.TiledObject) {
         super(scene, enemyObject.x ?? 0, enemyObject.y ?? 0, enemyObject.name);
         
-        // 读取自定义属性
+        // Read custom properties
         const properties = enemyObject.properties as any;
         if (properties) {
             this.moveSpeed = properties.moveSpeed || 50;
@@ -332,13 +332,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.health = properties.health || 1;
         }
         
-        // 设置巡逻行为
+        // Set patrol behavior
         this.startX = this.x;
         this.movingRight = true;
     }
     
     update(): void {
-        // 使用属性控制行为
+        // Use properties to control behavior
         if (this.movingRight) {
             this.setVelocityX(this.moveSpeed);
             if (this.x >= this.startX + this.moveRange) {
@@ -354,56 +354,56 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 }
 ```
 
-## 文件组织结构
+## File Organization Structure
 
 ```
 assets/
 └── tilemap/
     ├── scenes/
-    │   └── tilemap.json           # 主地图文件
+    │   └── tilemap.json           # Main map file
     ├── tiles/
-    │   ├── terrain.png            # 地形图块集
-    │   └── decorations.png        # 装饰图块集
+    │   ├── terrain.png            # Terrain tileset
+    │   └── decorations.png        # Decoration tileset
     └── sprites/
-        ├── player.png              # 玩家图集
-        ├── player.json             # 图集定义
-        ├── player_animators.json   # 动画配置
+        ├── player.png              # Player atlas
+        ├── player.json             # Atlas definition
+        ├── player_animators.json   # Animation configuration
         ├── enemy.png
         ├── enemy.json
         └── enemy_animators.json
 ```
 
-## 最佳实践
+## Best Practices
 
-### 1. 命名规范
+### 1. Naming Conventions
 
-- 图块集：`tileset_terrain`、`tileset_decorations`
-- 图集：`player`、`enemy`、`items`
-- 对象类型：`player`、`enemy`、`collectible`、`hazard`、`goal`
-- 图层：`background`、`platforms`、`foreground`
+- Tilesets: `tileset_terrain`, `tileset_decorations`
+- Atlases: `player`, `enemy`, `items`
+- Object types: `player`, `enemy`, `collectible`, `hazard`, `goal`
+- Layers: `background`, `platforms`, `foreground`
 
-### 2. 性能优化
+### 2. Performance Optimization
 
-1. **图层优化**
-   - 静态背景使用单独图层
-   - 碰撞图块放在专门的图层
-   - 装饰元素使用不带碰撞的图层
+1. **Layer Optimization**
+   - Use separate layers for static backgrounds
+   - Put collision tiles in dedicated layers
+   - Use non-collision layers for decorations
 
-2. **图块集优化**
-   - 相似的图块放在同一图块集
-   - 图块集大小控制在 2048x2048 以内
-   - 使用 2 的幂次方尺寸
+2. **Tileset Optimization**
+   - Group similar tiles in the same tileset
+   - Keep tileset size under 2048x2048
+   - Use power-of-2 dimensions
 
-3. **对象数量控制**
-   - 合理控制敌人和收集物数量
-   - 使用对象池管理动态对象
+3. **Object Count Control**
+   - Reasonably limit enemy and collectible counts
+   - Use object pools for dynamic objects
 
-### 3. 碰撞配置
+### 3. Collision Configuration
 
 ```typescript
-// 在 Game.ts 中设置碰撞组
-private createOverleapEvents() {
-    // 玩家 vs 危险物
+// Set up collision groups in Game.ts
+private createOverlapEvents() {
+    // Player vs hazards
     this.physics.add.overlap(
         this.player, 
         this.hazards, 
@@ -412,7 +412,7 @@ private createOverleapEvents() {
         this
     );
     
-    // 玩家 vs 收集物
+    // Player vs collectibles
     this.physics.add.overlap(
         this.player,
         this.collectibles,
@@ -423,15 +423,15 @@ private createOverleapEvents() {
 }
 ```
 
-## 调试技巧
+## Debugging Tips
 
-### 1. 显示碰撞边界
+### 1. Display Collision Boundaries
 
 ```typescript
-// 在 Game.ts 的 create 方法中
+// In Game.ts create method
 this.physics.world.createDebugGraphic();
 
-// 显示图块碰撞
+// Display tile collisions
 const debugGraphics = this.add.graphics().setAlpha(0.75);
 layer.renderDebug(debugGraphics, {
     tileColor: null,
@@ -440,58 +440,58 @@ layer.renderDebug(debugGraphics, {
 });
 ```
 
-### 2. 控制台输出
+### 2. Console Output
 
 ```typescript
-// 输出地图信息
+// Output map information
 console.log('Map size:', this.map.width, 'x', this.map.height);
 console.log('Tile size:', this.map.tileWidth, 'x', this.map.tileHeight);
 console.log('Layers:', this.map.layers);
 console.log('Objects:', this.map.objects);
 ```
 
-### 3. 对象属性检查
+### 3. Object Property Inspection
 
 ```typescript
-// 在创建对象时输出属性
+// Output properties when creating objects
 console.log('Object properties:', tiledObject.properties);
 console.log('Object position:', tiledObject.x, tiledObject.y);
 console.log('Object size:', tiledObject.width, tiledObject.height);
 ```
 
-## 常见问题
+## Common Issues
 
-### Q: 图块/精灵不显示？
+### Q: Tiles/sprites not displaying?
 
-1. 检查文件路径是否正确
-2. 确认图块集名称与代码中一致
-3. 检查是否正确设置了 atlas 属性
-4. 查看控制台是否有加载错误
+1. Check if file paths are correct
+2. Confirm tileset names match in code
+3. Check if atlas property is set correctly
+4. Look for loading errors in console
 
-### Q: 碰撞不工作？
+### Q: Collision not working?
 
-1. 确认图块设置了 `collides: true` 属性
-2. 检查物理引擎是否启用
-3. 确认碰撞体大小设置正确
-4. 使用调试显示查看碰撞边界
+1. Confirm tiles have `collides: true` property
+2. Check if physics engine is enabled
+3. Verify collision body sizes are set correctly
+4. Use debug display to see collision boundaries
 
-### Q: 动画不播放？
+### Q: Animations not playing?
 
-1. 检查动画配置文件是否存在
-2. 确认帧名称与图集中一致
-3. 检查 AnimationManager 是否正确初始化
-4. 查看控制台的动画创建日志
+1. Check if animation configuration file exists
+2. Confirm frame names match those in atlas
+3. Check if AnimationManager is initialized correctly
+4. Review animation creation logs in console
 
-## 扩展功能
+## Extended Features
 
-### 1. 动态加载关卡
+### 1. Dynamic Level Loading
 
 ```typescript
 loadLevel(levelName: string) {
-    // 清理当前关卡
+    // Clear current level
     this.clearCurrentLevel();
     
-    // 加载新关卡
+    // Load new level
     this.load.tilemapTiledJSON(levelName, `assets/levels/${levelName}.json`);
     this.load.start();
     
@@ -501,9 +501,9 @@ loadLevel(levelName: string) {
 }
 ```
 
-### 2. 自定义对象类型
+### 2. Custom Object Types
 
-在 Game.ts 中扩展 `createObject` 方法：
+Extend the `createObject` method in Game.ts:
 
 ```typescript
 private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
@@ -514,30 +514,30 @@ private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
         case "checkpoint":
             this.createCheckpoint(obj);
             break;
-        // ... 其他自定义类型
+        // ... other custom types
     }
 }
 ```
 
-### 3. 层级效果
+### 3. Layer Effects
 
 ```typescript
-// 创建前景层覆盖玩家
+// Create foreground layer to cover player
 const foregroundLayer = this.map.createLayer('foreground', this.tilesets);
-foregroundLayer?.setDepth(1000); // 设置高深度值
+foregroundLayer?.setDepth(1000); // Set high depth value
 
-// 玩家默认深度为 0
+// Player default depth is 0
 this.player.setDepth(0);
 ```
 
-## 总结
+## Summary
 
-Tilemap 系统通过 Tiled 编辑器和 Phaser 的集成，提供了强大的关卡设计能力：
+The Tilemap system, through integration of the Tiled editor and Phaser, provides powerful level design capabilities:
 
-1. **可视化编辑** - 使用 Tiled 直观设计关卡
-2. **自动加载** - Preloader 自动处理资源加载
-3. **灵活配置** - 通过自定义属性控制游戏逻辑
-4. **类型安全** - TypeScript 提供类型检查
-5. **易于扩展** - 支持添加新的对象类型和行为
+1. **Visual Editing** - Design levels intuitively using Tiled
+2. **Automatic Loading** - Preloader automatically handles resource loading
+3. **Flexible Configuration** - Control game logic through custom properties
+4. **Type Safety** - TypeScript provides type checking
+5. **Easy Extension** - Support for adding new object types and behaviors
 
-通过正确配置和使用，可以快速创建丰富多样的游戏关卡。
+With proper configuration and usage, you can quickly create rich and diverse game levels.

@@ -7,7 +7,7 @@
 
 ## Steps
 
-1. Install dependencies:
+1. Install dependencies (run this first):
 ```bash
 npm install
 ```

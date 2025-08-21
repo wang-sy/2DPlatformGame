@@ -18,7 +18,7 @@
                         "h": 64
                     },
                     "rotated": false,
-                    "trimmed": false,
+                    "trimmed": true,
                     "spriteSourceSize": {
                         "x": 0,
                         "y": 0,
@@ -43,7 +43,7 @@
                         "h": 64
                     },
                     "rotated": false,
-                    "trimmed": false,
+                    "trimmed": true,
                     "spriteSourceSize": {
                         "x": 0,
                         "y": 0,
@@ -68,7 +68,7 @@
                         "h": 64
                     },
                     "rotated": false,
-                    "trimmed": false,
+                    "trimmed": true,
                     "spriteSourceSize": {
                         "x": 0,
                         "y": 0,

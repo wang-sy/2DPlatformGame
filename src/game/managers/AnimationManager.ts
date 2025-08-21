@@ -32,8 +32,9 @@ export interface LegacyAnimationFormat {
     type?: string;
     animations: Array<{
         name: string;
-        filename_prefix: string;
-        frame_range: {
+        frames?: string[];  // New format: direct frame list
+        filename_prefix?: string;  // Old format: prefix-based
+        frame_range?: {
             from: number;
             to: number;
         };
@@ -114,15 +115,26 @@ export class AnimationManager {
         const animations: AnimationConfig[] = [];
         
         for (const anim of config.animations) {
-            animations.push({
-                key: anim.name,
-                prefix: anim.filename_prefix,
-                start: anim.frame_range.from,
-                end: anim.frame_range.to,
-                zeroPad: anim.padding_size || 4,
-                frameRate: 10,
-                repeat: -1
-            });
+            if (anim.frames) {
+                // New format: use direct frame list
+                animations.push({
+                    key: anim.name,
+                    frames: anim.frames,
+                    frameRate: 10,
+                    repeat: -1
+                });
+            } else if (anim.filename_prefix && anim.frame_range) {
+                // Old format: use prefix and range
+                animations.push({
+                    key: anim.name,
+                    prefix: anim.filename_prefix,
+                    start: anim.frame_range.from,
+                    end: anim.frame_range.to,
+                    zeroPad: anim.padding_size || 4,
+                    frameRate: 10,
+                    repeat: -1
+                });
+            }
         }
         
         this.registerAtlasAnimations(atlasKey, animations);

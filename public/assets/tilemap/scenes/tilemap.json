@@ -41,13 +41,13 @@
       "objects": [
         {
           "gid": 3,
-          "height": 64,
+          "height": 51,
           "id": 38,
           "name": "character_purple",
           "rotation": 0,
           "type": "player",
           "visible": true,
-          "width": 64,
+          "width": 42,
           "x": 64,
           "y": 960
         },
@@ -209,14 +209,14 @@
     {
       "firstgid": 3,
       "image": "assets/player/character_purple.png",
-      "imageheight": 64,
-      "imagewidth": 64,
+      "imageheight": 102,
+      "imagewidth": 84,
       "margin": 0,
       "name": "character_purple",
       "spacing": 0,
       "tilecount": 1,
-      "tileheight": 64,
-      "tilewidth": 64,
+      "tileheight": 102,
+      "tilewidth": 84,
       "tiles":[
         {
          "id":0,

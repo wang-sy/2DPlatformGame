@@ -28,6 +28,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private health: number = 3;
     private maxHealth: number = 3;
     private isInvulnerable: boolean = false;
+    
+    // Terrain stuck detection
+    private stuckCheckTimer: number = 0;
+    private stuckCheckInterval: number = 100; // Check every 100ms
+    private isFloatingUp: boolean = false;
+    private floatUpSpeed: number = -200; // Speed to float up when stuck
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -84,6 +90,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     update(): void {
         const velocity = this.body?.velocity;
         if (!velocity) return;
+
+        // Check if player is stuck in terrain
+        this.checkAndFixStuckInTerrain();
 
         const onGround = this.body?.blocked.down || false;
         const touchingLeft = this.body?.blocked.left || false;
@@ -337,5 +346,51 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     getMaxHealth(): number {
         return this.maxHealth;
+    }
+    
+    private checkAndFixStuckInTerrain(): void {
+        const deltaTime = this.scene.game.loop.delta;
+        this.stuckCheckTimer += deltaTime;
+        
+        // Only check periodically to avoid performance issues
+        if (this.stuckCheckTimer < this.stuckCheckInterval) {
+            return;
+        }
+        
+        this.stuckCheckTimer = 0;
+        
+        // Check if player is stuck (overlapping with tilemap)
+        const isStuck = this.isStuckInTerrain();
+        
+        if (isStuck) {
+            // Start floating up
+            if (!this.isFloatingUp) {
+                console.log('Player stuck in terrain! Floating up...');
+                this.isFloatingUp = true;
+            }
+            // Apply upward velocity to float out
+            this.setVelocityY(this.floatUpSpeed);
+        } else {
+            // Not stuck anymore, stop floating
+            if (this.isFloatingUp) {
+                console.log('Player unstuck!');
+                this.isFloatingUp = false;
+            }
+        }
+    }
+    
+    private isStuckInTerrain(): boolean {
+        const gameScene = this.scene as any;
+        if (!gameScene.layers) return false;
+        
+        // Check if player center is inside any collision tile
+        for (const layer of gameScene.layers) {
+            const tile = layer.getTileAtWorldXY(this.x, this.y);
+            if (tile && tile.collides) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

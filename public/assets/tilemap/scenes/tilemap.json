@@ -49,7 +49,8 @@
           "visible": true,
           "width": 42,
           "x": 64,
-          "y": 960
+          "y": 960,
+          "uuid": "a7e5f2d4-8b3c-4f9a-b2e1-6d9c5a3b8f7e"
         },
         {
           "gid": 4,
@@ -61,7 +62,8 @@
           "visible": true,
           "width": 64,
           "x": 128,
-          "y": 1088
+          "y": 1088,
+          "uuid": "b2f8c5e9-4d6a-8e2b-a9c7-1e5f3d7b9a4c"
         },
         {
           "gid": 5,
@@ -73,7 +75,8 @@
           "visible": true,
           "width": 64,
           "x": 1472,
-          "y": 64
+          "y": 64,
+          "uuid": "c3a9d7f6-5e8b-9d2c-b4e8-2f6a4c8e9b5d"
         },
         {
           "gid": 6,
@@ -85,7 +88,8 @@
           "visible": true,
           "width": 64,
           "x": 576,
-          "y": 640
+          "y": 640,
+          "uuid": "d4b8e9a7-6f9c-4e3d-c5f9-3a7b5d9f6e8a"
         },
         {
           "gid": 7,
@@ -97,7 +101,8 @@
           "visible": true,
           "width": 64,
           "x": 896,
-          "y": 448
+          "y": 448,
+          "uuid": "e5c9f8b8-7a4d-5f4e-d6a9-4b8c6e9a7f9b"
         },
         {
           "gid": 6,
@@ -109,7 +114,8 @@
           "visible": true,
           "width": 64,
           "x": 320,
-          "y": 448
+          "y": 448,
+          "uuid": "f6d4a9c9-8b5e-6a5f-e7b4-5c9d7f9b8a4c"
         },
         {
           "gid": 6,
@@ -121,7 +127,8 @@
           "visible": true,
           "width": 64,
           "x": 768,
-          "y": 704
+          "y": 704,
+          "uuid": "a7e5b4d4-9c6f-7b6a-f8c5-6d9e8f4c9b5d"
         },
         {
           "gid": 6,
@@ -133,7 +140,8 @@
           "visible": true,
           "width": 64,
           "x": 1088,
-          "y": 960
+          "y": 960,
+          "uuid": "b8f6c5e5-4d7a-8c7b-a9d8-7e4a6f9d8b6e"
         },
         {
           "gid": 8,
@@ -145,7 +153,8 @@
           "visible": true,
           "width": 64,
           "x": 640,
-          "y": 1088
+          "y": 1088,
+          "uuid": "c9a7d6f6-5e8b-9d8c-c4e9-8f5b7a9e8c7f"
         }
       ],
       "opacity": 1,

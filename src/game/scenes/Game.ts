@@ -7,6 +7,8 @@ import { Enemy } from '../sprites/Enemy';
 import { Bullet } from '../sprites/Bullet';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
+import { GameObjectManager } from '../managers/GameObjectManager';
+import { UUIDGenerator } from '../utils/UUIDGenerator';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { eventBusDebugger } from '../utils/EventBusDebugger';
 
@@ -28,11 +30,13 @@ export class Game extends Scene
     healthUI: HealthUI;
     scoreText: Phaser.GameObjects.Text;
     collectedItemsManager: CollectedItemsManager;
+    gameObjectManager: GameObjectManager;
 
     constructor ()
     {
         super('Game');
         this.collectedItemsManager = new CollectedItemsManager();
+        this.gameObjectManager = GameObjectManager.getInstance();
     }
 
     create ()
@@ -53,6 +57,9 @@ export class Game extends Scene
         
         // Reset collected items manager for new game
         this.collectedItemsManager.reset();
+        
+        // Clear game object manager for new game
+        this.gameObjectManager.clear();
         
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87CEEB);
@@ -115,34 +122,40 @@ export class Game extends Scene
     }
 
     private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
+        // Extract UUID from the tilemap object, or generate one if not present
+        const uuid = (obj as any).uuid || UUIDGenerator.generate();
+        
         switch (obj.type) {
             case "player":
-                this.createPlayerFromTilemap(obj);
+                this.createPlayerFromTilemap(obj, uuid);
                 return
             case "hazard":
-                this.createHazardFromTilemap(obj);
+                this.createHazardFromTilemap(obj, uuid);
                 return
             case "goal":
-                this.createGoalFromTilemap(obj);
+                this.createGoalFromTilemap(obj, uuid);
                 return
             case "collectible":
-                this.createCollectibleFromTilemap(obj);
+                this.createCollectibleFromTilemap(obj, uuid);
                 return
             case "enemy":
-                this.createEnemyFromTilemap(obj);
+                this.createEnemyFromTilemap(obj, uuid);
                 return
             default:
                 console.log("unknown object type", obj.type);
         }
     }
 
-    private createPlayerFromTilemap(playerObject: Phaser.Types.Tilemaps.TiledObject) {
+    private createPlayerFromTilemap(playerObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
         // if player is already created, then skip.
         if (this.player) {
             return;
         }
         // Create player
         this.player = new Player(this, playerObject);
+        
+        // Register player with UUID
+        this.gameObjectManager.registerObject(uuid, this.player, 'player', playerObject.name);
 
         // Set up collides between player and tilemap layers
         this.layers.forEach(layer => {
@@ -160,25 +173,31 @@ export class Game extends Scene
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     }
 
-    private createHazardFromTilemap(hazardObject: Phaser.Types.Tilemaps.TiledObject) {
+    private createHazardFromTilemap(hazardObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
         if (!this.hazards) {
             this.hazards = this.physics.add.staticGroup();
         }
         
         const hazard = new StaticHazard(this, hazardObject);
         this.hazards.add(hazard);
+        
+        // Register hazard with UUID
+        this.gameObjectManager.registerObject(uuid, hazard, 'hazard', hazardObject.name);
     }
     
-    private createGoalFromTilemap(goalObject: Phaser.Types.Tilemaps.TiledObject) {
+    private createGoalFromTilemap(goalObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
         if (!this.goals) {
             this.goals = this.physics.add.staticGroup();
         }
         
         const goal = new Goal(this, goalObject);
         this.goals.add(goal);
+        
+        // Register goal with UUID
+        this.gameObjectManager.registerObject(uuid, goal, 'goal', goalObject.name);
     }
     
-    private createCollectibleFromTilemap(collectibleObject: Phaser.Types.Tilemaps.TiledObject) {
+    private createCollectibleFromTilemap(collectibleObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
         if (!this.collectibles) {
             this.collectibles = this.physics.add.staticGroup();
         }
@@ -186,13 +205,16 @@ export class Game extends Scene
         const collectible = new Collectible(this, collectibleObject);
         this.collectibles.add(collectible);
         
+        // Register collectible with UUID
+        this.gameObjectManager.registerObject(uuid, collectible, 'collectible', collectibleObject.name);
+        
         // Track must-collect items
         if (collectible.isMustCollect()) {
             this.collectedItemsManager.addMustCollectItem(collectible.getName());
         }
     }
     
-    private createEnemyFromTilemap(enemyObject: Phaser.Types.Tilemaps.TiledObject) {
+    private createEnemyFromTilemap(enemyObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
         if (!this.enemies) {
             this.enemies = this.physics.add.group({
                 classType: Enemy,
@@ -202,6 +224,9 @@ export class Game extends Scene
         
         const enemy = new Enemy(this, enemyObject);
         this.enemies.add(enemy);
+        
+        // Register enemy with UUID
+        this.gameObjectManager.registerObject(uuid, enemy, 'enemy', enemyObject.name);
         
         // Set up collides with tilemap layers
         this.layers.forEach(layer => {

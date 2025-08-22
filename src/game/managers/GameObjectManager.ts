@@ -33,7 +33,7 @@ export class GameObjectManager {
      * @param name Optional name of the object
      */
     registerObject(uuid: string, object: Phaser.GameObjects.GameObject, type: string, name?: string): void {
-        if (!UUIDGenerator.isValid(uuid)) {
+        if (uuid === undefined || uuid === null || uuid === '') {
             console.warn(`Invalid UUID: ${uuid}. Generating a new one.`);
             uuid = UUIDGenerator.generate();
         }

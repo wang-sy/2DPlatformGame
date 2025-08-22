@@ -5,6 +5,7 @@ import { Goal } from '../sprites/Goal';
 import { Collectible } from '../sprites/Collectible';
 import { Enemy } from '../sprites/Enemy';
 import { Bullet } from '../sprites/Bullet';
+import { Trigger } from '../sprites/Trigger';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
 import { GameObjectManager } from '../managers/GameObjectManager';
@@ -25,6 +26,7 @@ export class Game extends Scene
     goals: Phaser.Physics.Arcade.StaticGroup;
     collectibles: Phaser.Physics.Arcade.StaticGroup;
     enemies: Phaser.Physics.Arcade.Group;
+    triggers: Trigger[];
     restartKey: Phaser.Input.Keyboard.Key;
     isVictory: boolean = false;
     healthUI: HealthUI;
@@ -112,18 +114,37 @@ export class Game extends Scene
     }
 
     private createObjectsFromTilemap() {
+        // Create triggers last to ensure all target objects exist
+        const triggers: Phaser.Types.Tilemaps.TiledObject[] = [];
+        
         this.map.getObjectLayerNames().forEach(((objectLayerName: string) => {
             let objectLayer = this.map.getObjectLayer(objectLayerName);
-
             objectLayer?.objects.forEach((obj: Phaser.Types.Tilemaps.TiledObject) => {
-                this.createObject(obj)
+                if (obj.type === 'trigger') {
+                    triggers.push(obj);
+                } else {
+                    this.createObject(obj);
+                }
             })
         }))
+        
+        // Create triggers after all other objects
+        triggers.forEach(obj => {
+            this.createObject(obj);
+        });
     }
 
     private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
-        // Extract UUID from the tilemap object, or generate one if not present
-        const uuid = (obj as any).uuid || UUIDGenerator.generate();
+        console.log("create object", obj)
+        // Extract UUID from properties array, or generate one if not present
+        let uuid = UUIDGenerator.generate();
+        const properties = obj.properties as any[];
+        if (properties) {
+            const uuidProp = properties.find(prop => prop.name === 'uuid');
+            if (uuidProp) {
+                uuid = uuidProp.value;
+            }
+        }
         
         switch (obj.type) {
             case "player":
@@ -140,6 +161,9 @@ export class Game extends Scene
                 return
             case "enemy":
                 this.createEnemyFromTilemap(obj, uuid);
+                return
+            case "trigger":
+                this.createTriggerFromTilemap(obj, uuid);
                 return
             default:
                 console.log("unknown object type", obj.type);
@@ -233,6 +257,18 @@ export class Game extends Scene
             this.physics.add.collider(enemy, layer);
         });
     }
+    
+    private createTriggerFromTilemap(triggerObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
+        if (!this.triggers) {
+            this.triggers = [];
+        }
+        
+        const trigger = new Trigger(this, triggerObject);
+        this.triggers.push(trigger);
+        
+        // Register trigger with UUID
+        this.gameObjectManager.registerObject(uuid, trigger, 'trigger', triggerObject.name);
+    }
 
     private createOverleapEvents() {
         // Setup player vs hazards overlap detection
@@ -277,6 +313,19 @@ export class Game extends Scene
                 undefined,
                 this
             );
+        }
+        
+        // Setup player vs triggers overlap detection
+        if (this.player && this.triggers) {
+            this.triggers.forEach(trigger => {
+                this.physics.add.overlap(
+                    this.player,
+                    trigger,
+                    this.handlePlayerTriggerCollision,
+                    undefined,
+                    this
+                );
+            });
         }
         
         // Setup bullets vs enemies collision
@@ -542,6 +591,13 @@ export class Game extends Scene
         enemyInstance.takeDamage(1);
         
         this.cameras.main.shake(50, 0.003);
+    }
+    
+    private handlePlayerTriggerCollision(player: any, trigger: any) {
+        const playerInstance = player as Player;
+        const triggerInstance = trigger as Trigger;
+        
+        triggerInstance.activate(playerInstance);
     }
     
     private updateScoreDisplay() {

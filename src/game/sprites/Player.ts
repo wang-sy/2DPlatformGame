@@ -54,6 +54,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, key);
 
         this.key = key;
+        
+        // Read max health from tilemap properties
+        const properties = tiledObject.properties as any[];
+        if (properties) {
+            const maxHealthProp = properties.find(prop => prop.name === 'max_health');
+            if (maxHealthProp && maxHealthProp.value > 0) {
+                this.maxHealth = maxHealthProp.value;
+                this.health = this.maxHealth;
+            }
+        }
 
         scene.add.existing(this);
         scene.physics.add.existing(this);

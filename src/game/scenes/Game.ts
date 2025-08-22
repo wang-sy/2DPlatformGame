@@ -38,9 +38,10 @@ export class Game extends Scene
     create ()
     {
         // Enable EventBus debugger in development mode
-        if (import.meta.env.DEV) {
-            eventBusDebugger.enable();
-        }
+        // Disabled to reduce console noise
+        // if (import.meta.env.DEV) {
+        //     eventBusDebugger.enable();
+        // }
         
         // Emit scene start event
         eventBus.emit(GameEvent.SCENE_START, {

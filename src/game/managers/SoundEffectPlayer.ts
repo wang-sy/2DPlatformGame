@@ -29,14 +29,14 @@ export class SoundEffectPlayer {
     }
     
     init(scene: Phaser.Scene): void {
-        console.log('[SoundEffectPlayer] Initializing with scene:', scene.scene.key);
+        // console.log('[SoundEffectPlayer] Initializing with scene:', scene.scene.key);
         this.scene = scene;
         this.soundEffectConfig = {};
         this.loadedSounds.clear();
         this.animationToSounds.clear();
         this.configLoaded = false;
         this.setupEventListeners();
-        console.log('[SoundEffectPlayer] Initialization complete');
+        // console.log('[SoundEffectPlayer] Initialization complete');
     }
     
     private setupEventListeners(): void {
@@ -109,30 +109,30 @@ export class SoundEffectPlayer {
     }
     
     async loadConfig(configPath: string = 'assets/audio/sound_effect/config.json'): Promise<void> {
-        console.log('[SoundEffectPlayer] Loading config from:', configPath);
+        // console.log('[SoundEffectPlayer] Loading config from:', configPath);
         try {
             const response = await fetch(configPath);
             if (!response.ok) {
-                console.warn(`[SoundEffectPlayer] Config not found at ${configPath}`);
+                // console.warn(`[SoundEffectPlayer] Config not found at ${configPath}`);
                 return;
             }
             
             this.soundEffectConfig = await response.json();
             this.configLoaded = true;
             
-            console.log('[SoundEffectPlayer] Config loaded successfully');
-            console.log('[SoundEffectPlayer] Atlas keys:', Object.keys(this.soundEffectConfig));
+            // console.log('[SoundEffectPlayer] Config loaded successfully');
+            // console.log('[SoundEffectPlayer] Atlas keys:', Object.keys(this.soundEffectConfig));
             
             this.buildAnimationSoundMap();
             
-            console.log('[SoundEffectPlayer] Full config:', this.soundEffectConfig);
+            // console.log('[SoundEffectPlayer] Full config:', this.soundEffectConfig);
         } catch (error) {
-            console.error('[SoundEffectPlayer] Error loading config:', error);
+            // console.error('[SoundEffectPlayer] Error loading config:', error);
         }
     }
     
     private buildAnimationSoundMap(): void {
-        console.log('[SoundEffectPlayer] Building animation-sound map...');
+        // console.log('[SoundEffectPlayer] Building animation-sound map...');
         let mappingCount = 0;
         
         for (const [atlasKey, animations] of Object.entries(this.soundEffectConfig)) {
@@ -146,16 +146,16 @@ export class SoundEffectPlayer {
             }
         }
         
-        console.log(`[SoundEffectPlayer] Built ${mappingCount} animation-sound mappings`);
+        // console.log(`[SoundEffectPlayer] Built ${mappingCount} animation-sound mappings`);
     }
     
     preloadSounds(): void {
         if (!this.configLoaded) {
-            console.warn('[SoundEffectPlayer] Cannot preload - config not loaded yet');
+            // console.warn('[SoundEffectPlayer] Cannot preload - config not loaded yet');
             return;
         }
         
-        console.log('[SoundEffectPlayer] Starting sound preload...');
+        // console.log('[SoundEffectPlayer] Starting sound preload...');
         const allSounds = new Set<SoundEffect>();
         
         for (const animations of Object.values(this.soundEffectConfig)) {
@@ -169,20 +169,20 @@ export class SoundEffectPlayer {
         
         allSounds.forEach(sound => {
             if (!this.scene.cache.audio.exists(sound.key)) {
-                console.log(`[SoundEffectPlayer] Loading: ${sound.key} from ${sound.uri}`);
+                // console.log(`[SoundEffectPlayer] Loading: ${sound.key} from ${sound.uri}`);
                 this.scene.load.audio(sound.key, sound.uri);
                 loadedCount++;
             } else {
-                console.log(`[SoundEffectPlayer] Already cached: ${sound.key}`);
+                // console.log(`[SoundEffectPlayer] Already cached: ${sound.key}`);
                 skippedCount++;
             }
         });
         
-        console.log(`[SoundEffectPlayer] Preload complete - Loaded: ${loadedCount}, Skipped: ${skippedCount}, Total: ${allSounds.size}`);
+        // console.log(`[SoundEffectPlayer] Preload complete - Loaded: ${loadedCount}, Skipped: ${skippedCount}, Total: ${allSounds.size}`);
     }
     
     onSoundsLoaded(): void {
-        console.log('[SoundEffectPlayer] Processing loaded sounds...');
+        // console.log('[SoundEffectPlayer] Processing loaded sounds...');
         let successCount = 0;
         let errorCount = 0;
         
@@ -195,22 +195,22 @@ export class SoundEffectPlayer {
                             loop: false
                         });
                         this.loadedSounds.set(sound.key, audioSound);
-                        console.log(`[SoundEffectPlayer] Created sound object: ${sound.key} for ${animKey}`);
+                        // console.log(`[SoundEffectPlayer] Created sound object: ${sound.key} for ${animKey}`);
                         successCount++;
                     } catch (error) {
-                        console.error(`[SoundEffectPlayer] Error creating sound ${sound.key}:`, error);
+                        // console.error(`[SoundEffectPlayer] Error creating sound ${sound.key}:`, error);
                         errorCount++;
                     }
                 }
             });
         }
         
-        console.log(`[SoundEffectPlayer] Sound processing complete - Success: ${successCount}, Errors: ${errorCount}, Total loaded: ${this.loadedSounds.size}`);
+        // console.log(`[SoundEffectPlayer] Sound processing complete - Success: ${successCount}, Errors: ${errorCount}, Total loaded: ${this.loadedSounds.size}`);
     }
     
     playAnimationSound(atlasKey: string, animationName: string, volume: number = 0.5): void {
         const animKey = `${atlasKey}_${animationName}`;
-        console.log(`[SoundEffectPlayer] Attempting to play sound for animation: ${animKey}`);
+        // console.log(`[SoundEffectPlayer] Attempting to play sound for animation: ${animKey}`);
         
         let sounds = this.animationToSounds.get(animKey);
         
@@ -221,29 +221,29 @@ export class SoundEffectPlayer {
                 const fallbackKey = `${atlasKey}_hit`;
                 sounds = this.animationToSounds.get(fallbackKey);
                 if (sounds && sounds.length > 0) {
-                    console.log(`[SoundEffectPlayer] Using fallback sound 'hit' for 'die' animation`);
+                    // console.log(`[SoundEffectPlayer] Using fallback sound 'hit' for 'die' animation`);
                 }
             }
             
             if (!sounds || sounds.length === 0) {
-                console.log(`[SoundEffectPlayer] No sounds mapped for animation: ${animKey}`);
+                // console.log(`[SoundEffectPlayer] No sounds mapped for animation: ${animKey}`);
                 return;
             }
         }
         
         const randomIndex = Math.floor(Math.random() * sounds.length);
         const randomSound = sounds[randomIndex];
-        console.log(`[SoundEffectPlayer] Selected sound ${randomIndex + 1}/${sounds.length}: ${randomSound.key}`);
+        // console.log(`[SoundEffectPlayer] Selected sound ${randomIndex + 1}/${sounds.length}: ${randomSound.key}`);
         
         this.playSound(randomSound.key, volume);
     }
     
     playSound(soundKey: string, volume: number = 0.5): void {
-        console.log(`[SoundEffectPlayer] Playing sound: ${soundKey} at volume: ${volume}`);
+        // console.log(`[SoundEffectPlayer] Playing sound: ${soundKey} at volume: ${volume}`);
         const sound = this.loadedSounds.get(soundKey);
         
         if (!sound) {
-            console.log(`[SoundEffectPlayer] Sound not in cache, attempting to create: ${soundKey}`);
+            // console.log(`[SoundEffectPlayer] Sound not in cache, attempting to create: ${soundKey}`);
             if (this.scene.cache.audio.exists(soundKey)) {
                 try {
                     const newSound = this.scene.sound.add(soundKey, {
@@ -252,12 +252,12 @@ export class SoundEffectPlayer {
                     });
                     this.loadedSounds.set(soundKey, newSound);
                     newSound.play();
-                    console.log(`[SoundEffectPlayer] Created and played new sound: ${soundKey}`);
+                    // console.log(`[SoundEffectPlayer] Created and played new sound: ${soundKey}`);
                 } catch (error) {
-                    console.error(`[SoundEffectPlayer] Error playing sound ${soundKey}:`, error);
+                    // console.error(`[SoundEffectPlayer] Error playing sound ${soundKey}:`, error);
                 }
             } else {
-                console.warn(`[SoundEffectPlayer] Sound not found in audio cache: ${soundKey}`);
+                // console.warn(`[SoundEffectPlayer] Sound not found in audio cache: ${soundKey}`);
             }
             return;
         }
@@ -268,9 +268,9 @@ export class SoundEffectPlayer {
         
         if (!sound.isPlaying) {
             sound.play();
-            console.log(`[SoundEffectPlayer] Successfully played sound: ${soundKey}`);
+            // console.log(`[SoundEffectPlayer] Successfully played sound: ${soundKey}`);
         } else {
-            console.log(`[SoundEffectPlayer] Sound already playing: ${soundKey}`);
+            // console.log(`[SoundEffectPlayer] Sound already playing: ${soundKey}`);
         }
     }
     

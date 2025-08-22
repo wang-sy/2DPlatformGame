@@ -11,8 +11,9 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     private minBounceVelocity: number = 250;
     private maxBounceVelocity: number = 350;
     
-    constructor(scene: Phaser.Scene, x: number, y: number, direction: number) {
+    constructor(scene: Phaser.Scene, x: number, y: number, direction: number, playerVelocity?: { x: number, y: number }) {
         super(scene, x, y, 'bullet');
+
         
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -25,8 +26,12 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.setBounce(0, 0.6);
         this.setGravityY(this.gravity);
         
-        // Set horizontal velocity
-        this.setVelocityX(this.horizontalSpeed * direction);
+        // Set horizontal velocity (combine bullet speed with player velocity)
+        const playerVx = playerVelocity?.x || 0;
+        const playerVy = playerVelocity?.y || 0;
+        this.setVelocityX(this.horizontalSpeed * direction + playerVx * 0.5);
+        // Add a portion of player's vertical velocity too
+        this.setVelocityY(playerVy * 0.3);
         
         this.createdTime = scene.time.now;
         

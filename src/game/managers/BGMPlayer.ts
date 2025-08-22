@@ -119,10 +119,10 @@ export class BGMPlayer {
         soundsToPreload.forEach(({ key }) => {
           if (this.activeScene!.cache.audio.exists(key)) {
             this.loadedSounds.add(key);
-            console.log(`BGMPlayer: Preloaded sound "${key}"`);
+            // console.log(`BGMPlayer: Preloaded sound "${key}"`);
           }
         });
-        console.log(`BGMPlayer: Preloaded ${soundsToPreload.length} sound(s)`);
+        // console.log(`BGMPlayer: Preloaded ${soundsToPreload.length} sound(s)`);
         resolve();
       });
 
@@ -144,7 +144,7 @@ export class BGMPlayer {
         throw new Error(`Failed to load BGM config: ${response.statusText}`);
       }
       this.bgmConfig = await response.json();
-      console.log('BGMPlayer: BGM config loaded successfully', this.bgmConfig);
+      // console.log('BGMPlayer: BGM config loaded successfully', this.bgmConfig);
 
       // Preload sounds marked for preloading
       if (this.bgmConfig?.bgmList && this.game) {
@@ -182,7 +182,7 @@ export class BGMPlayer {
       const previousScene = this.currentScene;
       this.currentScene = primaryScene.scene.key;
       this.activeScene = primaryScene;
-      console.log(`BGMPlayer: Scene changed to ${this.currentScene}`);
+      // console.log(`BGMPlayer: Scene changed to ${this.currentScene}`);
       
       // Emit scene change event
       if (previousScene) {
@@ -264,7 +264,7 @@ export class BGMPlayer {
         this.activeScene!.load.once('complete', () => {
           if (this.activeScene!.cache.audio.exists(key)) {
             this.loadedSounds.add(key);
-            console.log(`BGMPlayer: Sound "${key}" loaded successfully`);
+            // console.log(`BGMPlayer: Sound "${key}" loaded successfully`);
             resolve();
           } else {
             reject(new Error(`Failed to load sound "${key}"`));
@@ -294,7 +294,7 @@ export class BGMPlayer {
 
       this.currentBGMSound.play();
       this.currentBGM = key;
-      console.log(`BGMPlayer: Playing BGM: ${key}`);
+      // console.log(`BGMPlayer: Playing BGM: ${key}`);
     } catch (error) {
       console.error(`BGMPlayer: Error playing sound instance "${key}":`, error);
     }
@@ -305,7 +305,7 @@ export class BGMPlayer {
       try {
         this.currentBGMSound.stop();
         this.currentBGMSound.destroy();
-        console.log(`BGMPlayer: Stopped BGM: ${this.currentBGM}`);
+        // console.log(`BGMPlayer: Stopped BGM: ${this.currentBGM}`);
       } catch (error) {
         console.error(`BGMPlayer: Error stopping BGM "${this.currentBGM}":`, error);
       }

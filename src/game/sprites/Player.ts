@@ -30,6 +30,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private maxHealth: number = 3;
     private isInvulnerable: boolean = false;
     private knockbackTime: number = 0;
+    private isDead: boolean = false;
     
     // Terrain stuck detection
     private stuckCheckTimer: number = 0;
@@ -72,7 +73,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // 居中偏移量为原始尺寸的10%
         this.setOffset(firstFrame.width * 0.1, firstFrame.height * 0.1);
         
-        this.setCollideWorldBounds(true);
+        // Only collide with horizontal world bounds, not vertical
+        this.setCollideWorldBounds(false);
         this.setBounce(0.1);
         this.setGravityY(800);
         
@@ -107,6 +109,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     update(): void {
         const velocity = this.body?.velocity;
         if (!velocity) return;
+        
+        // Manual world bounds check
+        const worldBounds = this.scene.physics.world.bounds;
+        
+        // Keep player within horizontal bounds only
+        // Use the actual physics body size for more accurate boundary detection
+        const bodyWidth = this.body.width;
+        const bodyOffset = this.body.offset.x;
+        const leftEdge = this.x - this.displayOriginX + bodyOffset;
+        const rightEdge = leftEdge + bodyWidth;
+        
+        if (leftEdge < worldBounds.left) {
+            this.x = worldBounds.left - bodyOffset + this.displayOriginX;
+            this.setVelocityX(Math.max(0, this.body.velocity.x));
+        } else if (rightEdge > worldBounds.right) {
+            this.x = worldBounds.right - bodyWidth - bodyOffset + this.displayOriginX;
+            this.setVelocityX(Math.min(0, this.body.velocity.x));
+        }
+        
+        // Check if player falls below the bottom boundary - trigger death
+        if (this.y > worldBounds.bottom + this.height) {
+            if (!this.isDead) { // Prevent multiple death triggers
+                this.handleDeath();
+                return;
+            }
+        }
 
         // Check if player is stuck in terrain
         this.checkAndFixStuckInTerrain();
@@ -296,7 +324,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const bulletX = this.x + (direction * 20);
         const bulletY = this.y;
         
-        const bullet = new Bullet(this.scene, bulletX, bulletY, direction);
+        // Pass player's current velocity to the bullet
+        const playerVelocity = {
+            x: this.body?.velocity.x || 0,
+            y: this.body?.velocity.y || 0
+        };
+        
+        const bullet = new Bullet(this.scene, bulletX, bulletY, direction, playerVelocity);
         this.bullets.add(bullet);
         
         eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
@@ -371,6 +405,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     private handleDeath(): void {
+        // Prevent multiple death triggers
+        if (this.isDead) return;
+        this.isDead = true;
+        
         this.setTint(0xff0000);
         this.setVelocity(0, -400);
         this.body!.enable = false;

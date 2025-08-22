@@ -1,520 +1,504 @@
-# User Configuration Guide
+# 🎨 User Configuration Guide
 
-This guide provides comprehensive instructions for configuring the Phaser 3 TypeScript game template to create your own customized game experience. The template uses a data-driven approach where most game elements can be configured through JSON files and Tiled map editor.
+Complete guide for game designers, level designers, and artists to customize the game without writing code. All game behavior can be controlled through JSON configuration files and the Tiled map editor.
 
-## Table of Contents
+## 📋 Table of Contents
 
-1. [Project Setup](#project-setup)
-2. [Tilemap Configuration](#tilemap-configuration)
+1. [Quick Start](#quick-start)
+2. [Level Design with Tiled](#level-design-with-tiled)
 3. [Player Configuration](#player-configuration)
 4. [Enemy Configuration](#enemy-configuration)
 5. [Collectibles Configuration](#collectibles-configuration)
-6. [Hazards Configuration](#hazards-configuration)
-7. [Audio Configuration](#audio-configuration)
-8. [Animation Configuration](#animation-configuration)
-9. [Build Configuration](#build-configuration)
+6. [Trigger System](#trigger-system)
+7. [Animation Configuration](#animation-configuration)
+8. [Audio Configuration](#audio-configuration)
+9. [Visual Assets](#visual-assets)
+10. [Advanced Techniques](#advanced-techniques)
 
-## Project Setup
+## 🚀 Quick Start
 
-### Installation
+### Required Tools
+- [Tiled Map Editor](https://www.mapeditor.org/) - Free level editor
+- Image editor (Photoshop, GIMP, Aseprite)
+- Audio editor (Audacity) - optional
+- Text editor for JSON files
 
-```bash
-npm install
+### File Locations
+```
+public/
+├── assets/
+│   ├── tilemap/scenes/     # Level maps
+│   ├── player/             # Player sprites
+│   ├── enemy/              # Enemy sprites
+│   ├── collectible/        # Items
+│   ├── hazards/            # Dangers
+│   └── audio/              # Sounds & music
 ```
 
-### Development Server
+## 🗺️ Level Design with Tiled
 
-```bash
-npm run dev         # Run with console logging
-npm run dev-nolog   # Run without console logging
-```
+### Opening a Level
+1. Install Tiled Map Editor
+2. Open `public/assets/tilemap/scenes/tilemap.json`
+3. Edit and save changes
+4. Refresh browser to see updates
 
-### Production Build
+### Layer Structure
+- **Level1**: Tile layer for terrain
+- **Objects**: Object layer for entities
 
-```bash
-npm run build       # Optimized production build
-npm run build-nolog # Production build without logging
-```
+### Placing Tiles
+1. Select tile from tileset panel
+2. Use stamp tool to place tiles
+3. Hold shift to draw lines
+4. Use bucket fill for areas
 
-## Tilemap Configuration
+### Adding Game Objects
+1. Switch to Objects layer
+2. Use Insert Rectangle tool
+3. Set object properties in Properties panel
+4. Add required properties based on type
 
-The game level is defined using Tiled map editor. The main tilemap file is located at `public/assets/tilemap/scenes/tilemap.json`.
+## 👤 Player Configuration
 
-### Tilemap Structure
-
+### Basic Properties
 ```json
 {
-  "height": 19,           // Map height in tiles
-  "width": 25,            // Map width in tiles
-  "tileheight": 64,      // Individual tile height in pixels
-  "tilewidth": 64,       // Individual tile width in pixels
-  "layers": [...],        // Array of tile and object layers
-  "tilesets": [...]      // Array of tilesets used
-}
-```
-
-### Layer Configuration
-
-#### Tile Layers
-Used for terrain and static elements:
-
-```json
-{
-  "type": "tilelayer",
-  "name": "Level1",
-  "data": [...]  // Array of tile IDs
-}
-```
-
-#### Object Layers
-Used for game entities:
-
-```json
-{
-  "type": "objectgroup",
-  "name": "Objects",
-  "objects": [...]  // Array of game objects
-}
-```
-
-### Tileset Properties
-
-Each tileset can have properties that control its behavior:
-
-```json
-{
-  "name": "tileset_name",
-  "image": "path/to/image.png",
-  "tiles": [
+  "type": "player",
+  "name": "character_purple",
+  "properties": [
     {
-      "properties": [
-        {
-          "name": "collides",
-          "type": "bool",
-          "value": true  // Makes tile solid for collision
-        },
-        {
-          "name": "atlas",
-          "type": "bool",
-          "value": true  // Indicates this is a texture atlas
-        }
-      ]
+      "name": "uuid",
+      "type": "string",
+      "value": "player-001"
+    },
+    {
+      "name": "max_health",
+      "type": "int",
+      "value": 3
     }
   ]
 }
 ```
 
-## Player Configuration
-
-Players are defined as objects in the tilemap with `type: "player"`.
-
-### Player Object Properties
-
-```json
-{
-  "gid": 3,                        // Graphics ID from tileset
-  "name": "character_purple",      // Texture/atlas name
-  "type": "player",                 // Must be "player"
-  "x": 64,                         // Starting X position
-  "y": 960,                        // Starting Y position
-  "width": 64,                     // Player width
-  "height": 64,                    // Player height
-  "properties": [                  // Optional custom properties
-    {
-      "name": "custom_property",
-      "value": "value"
-    }
-  ]
-}
-```
-
-### Player Capabilities (Hardcoded)
-
-- **Movement Speed**: 200 pixels/second
-- **Jump Speed**: 500 pixels/second
-- **Max Jumps**: 2 (double jump)
-- **Wall Jump Speed**: 400 pixels/second
-- **Charge Jump Multiplier**: 2x normal jump
-- **Health Points**: 3
-- **Gravity**: 800 pixels/second²
-
-## Enemy Configuration
-
-Enemies are defined as objects with `type: "enemy"` and support extensive customization through properties.
-
-### Enemy Object Properties
-
-```json
-{
-  "gid": 8,
-  "name": "frog",           // Enemy texture/atlas name
-  "type": "enemy",
-  "x": 320,
-  "y": 640,
-  "properties": [...]       // Behavior configuration
-}
-```
-
-### Enemy Behavior Properties
-
+### Configurable Parameters
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `damage` | int | 1 | Damage dealt to player on contact |
-| `move_method` | string | "static" | Movement pattern (see below) |
-| `move_speed` | int | 100 | Movement speed in pixels/second |
-| `jump_power` | int | 400 | Jump strength |
-| `patrol_distance` | int | 200 | Distance to patrol in pixels |
-| `detection_range` | int | 300 | Range to detect player |
-| `jump_interval` | int | 2000 | Time between jumps in milliseconds |
-| `death_particle_color` | hex | "#ff0000" | Color of death particles |
-| `atlas` | bool | false | Whether this enemy uses texture atlas |
+| uuid | string | auto | Unique identifier |
+| max_health | int | 3 | Maximum life points |
+
+### Player Sprite Requirements
+- Format: PNG with transparency
+- Recommended size: 84x102 pixels
+- Animation frames in atlas format
+
+## 👾 Enemy Configuration
+
+### Enemy Types & Movement Methods
+
+#### Static Enemy
+```json
+{
+  "type": "enemy",
+  "name": "frog",
+  "properties": [
+    {"name": "uuid", "value": "enemy-001"},
+    {"name": "move_method", "value": "static"},
+    {"name": "damage", "value": 1}
+  ]
+}
+```
+
+#### Patrolling Enemy
+```json
+{
+  "type": "enemy",
+  "name": "frog",
+  "properties": [
+    {"name": "uuid", "value": "enemy-002"},
+    {"name": "move_method", "value": "patrol"},
+    {"name": "move_speed", "value": 100},
+    {"name": "patrol_distance", "value": 200},
+    {"name": "damage", "value": 1}
+  ]
+}
+```
+
+#### Following Enemy
+```json
+{
+  "type": "enemy",
+  "name": "frog",
+  "properties": [
+    {"name": "uuid", "value": "enemy-003"},
+    {"name": "move_method", "value": "follow"},
+    {"name": "move_speed", "value": 80},
+    {"name": "detection_range", "value": 300},
+    {"name": "damage", "value": 2}
+  ]
+}
+```
 
 ### Movement Methods
+| Method | Description | Required Properties |
+|--------|-------------|-------------------|
+| static | Doesn't move | - |
+| patrol | Moves back and forth | patrol_distance |
+| jump | Jumps in place | jump_interval |
+| move_and_jump | Moves and jumps | patrol_distance, jump_interval |
+| patrol_jump | Patrols with jumping | patrol_distance, jump_interval |
+| follow | Follows player | detection_range |
+| follow_jump | Follows and jumps | detection_range, jump_interval |
 
-- **`static`**: No movement
-- **`patrol`**: Walk back and forth on ground
-- **`jump`**: Jump in place without moving
-- **`move_and_jump`**: Move forward by jumping (frog-like)
-- **`patrol_jump`**: Walk and occasionally jump
-- **`follow`**: Follow player when in range
-- **`follow_jump`**: Follow player and jump when needed
+### Enemy Properties
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| uuid | string | auto | Unique identifier |
+| move_method | string | static | AI behavior type |
+| move_speed | float | 50 | Movement speed |
+| jump_force | float | 300 | Jump strength |
+| patrol_distance | float | 100 | Patrol range |
+| detection_range | float | 200 | Player detection distance |
+| jump_interval | int | 2000 | Time between jumps (ms) |
+| damage | int | 1 | Damage dealt |
+| death_particle_color | string | #00ff00 | Death effect color |
 
-### Example Enemy Configuration
+## 💎 Collectibles Configuration
 
+### Coin Example
 ```json
 {
-  "name": "frog",
-  "type": "enemy",
+  "type": "collectible",
+  "name": "coin_gold",
   "properties": [
-    {"name": "damage", "value": 2},
-    {"name": "move_method", "value": "move_and_jump"},
-    {"name": "jump_power", "value": 500},
-    {"name": "jump_interval", "value": 1500},
-    {"name": "patrol_distance", "value": 300},
-    {"name": "death_particle_color", "value": "#00ff00"}
+    {"name": "uuid", "value": "coin-001"},
+    {"name": "score", "value": 100},
+    {"name": "type", "value": "coin"},
+    {"name": "rotate", "value": true},
+    {"name": "particle_color", "value": "#FFD700"}
   ]
 }
 ```
 
-## Collectibles Configuration
-
-Collectibles are objects with `type: "collectible"` that can be collected by the player.
-
-### Collectible Object Properties
-
+### Key Example (Required Item)
 ```json
 {
-  "gid": 6,
-  "name": "coin_gold",      // Collectible texture name
   "type": "collectible",
-  "x": 576,
-  "y": 640,
-  "properties": [...]        // Collectible configuration
-}
-```
-
-### Collectible Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `score` | int | 0 | Points awarded when collected |
-| `must_collect` | bool | false | Required for level completion |
-| `type` | string | "misc" | Category for grouping (coin, key, gem, etc.) |
-| `rotate` | bool | false | Whether item rotates continuously |
-| `particle_color` | hex | "#FFFFFF" | Color of collection particles |
-
-### Example Collectible Configuration
-
-```json
-{
   "name": "hud_key_green",
-  "type": "collectible",
   "properties": [
-    {"name": "score", "value": 100},
+    {"name": "uuid", "value": "key-001"},
     {"name": "must_collect", "value": true},
     {"name": "type", "value": "key"},
-    {"name": "rotate", "value": true},
+    {"name": "rotate", "value": false},
     {"name": "particle_color", "value": "#00FF00"}
   ]
 }
 ```
 
-## Hazards Configuration
+### Collectible Properties
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| uuid | string | auto | Unique identifier |
+| score | int | 0 | Points awarded |
+| type | string | item | Item category |
+| must_collect | bool | false | Required for level completion |
+| rotate | bool | true | Spinning animation |
+| particle_color | string | #FFFFFF | Collection effect color |
 
-Hazards are static objects that damage the player on contact.
+## 🎯 Trigger System
 
-### Hazard Object Properties
-
+### Movement Trigger (Spike Trap)
 ```json
 {
-  "gid": 4,
-  "name": "spikes",         // Hazard texture name
-  "type": "hazard",
-  "x": 128,
-  "y": 1088,
+  "type": "trigger",
+  "name": "spike_trap",
+  "width": 128,
+  "height": 64,
   "properties": [
-    {
-      "name": "damage",
-      "value": 1            // Damage dealt per contact
-    }
+    {"name": "uuid", "value": "trigger-001"},
+    {"name": "event_type", "value": "move"},
+    {"name": "target_uuid", "value": "spike-001"},
+    {"name": "velocity_x", "value": 0},
+    {"name": "velocity_y", "value": -1000},
+    {"name": "duration", "value": 1500},
+    {"name": "delay", "value": 200},
+    {"name": "repeat", "value": true},
+    {"name": "return_to_origin", "value": false}
   ]
 }
 ```
 
-## Audio Configuration
-
-### Background Music Configuration
-
-Located at `public/assets/audio/bgm-config.json`:
-
+### Scale Trigger (Growing Enemy)
 ```json
 {
-  "scenes": {
-    "MainMenu": {
-      "bgm": "menu_theme",    // BGM key to play
-      "loop": true,           // Loop the music
-      "volume": 0.7           // Volume (0.0 to 1.0)
-    },
-    "Game": {
-      "bgm": "game_theme",
-      "loop": true,
-      "volume": 0.5
-    },
-    "Victory": {
-      "bgm": "victory_theme",
-      "loop": false,
-      "volume": 0.8
-    },
-    "GameOver": {
-      "bgm": "gameover_theme",
-      "loop": false,
-      "volume": 0.6
-    }
-  },
-  "bgmList": {
-    "menu_theme": {
-      "url": "/assets/audio/bgm/Baltic Levity.mp3",
-      "preload": true        // Preload during game initialization
-    },
-    "game_theme": {
-      "url": "/assets/audio/bgm/Alls Fair In Love.mp3",
-      "preload": false       // Load on demand
-    }
-  }
+  "type": "trigger",
+  "name": "enemy_enlarger",
+  "properties": [
+    {"name": "uuid", "value": "trigger-002"},
+    {"name": "event_type", "value": "scale"},
+    {"name": "target_uuid", "value": "enemy-001"},
+    {"name": "scale_x", "value": 2.0},
+    {"name": "scale_y", "value": 2.0},
+    {"name": "duration", "value": 2000},
+    {"name": "repeat", "value": false},
+    {"name": "return_to_origin", "value": true}
+  ]
 }
 ```
 
-### Sound Effects Configuration
+### Trigger Properties
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| uuid | string | auto | Unique identifier |
+| event_type | string | - | "move" or "scale" |
+| target_uuid | string | - | UUID of target object |
+| velocity_x | float | 0 | Horizontal speed (pixels/sec) |
+| velocity_y | float | 0 | Vertical speed (pixels/sec) |
+| scale_x | float | 1 | Horizontal scale multiplier |
+| scale_y | float | 1 | Vertical scale multiplier |
+| duration | int | 1000 | Effect duration (ms) |
+| delay | int | 0 | Activation delay (ms) |
+| repeat | bool | false | Can trigger multiple times |
+| return_to_origin | bool | true | Return to original state |
 
-Located at `public/assets/audio/sound_effect/config.json`:
+### Trigger Use Cases
+1. **Spike Traps**: Spikes that pop up when player approaches
+2. **Moving Platforms**: Platforms that move when stepped on
+3. **Boss Transformations**: Enemies that grow when player enters arena
+4. **Environmental Hazards**: Falling rocks, rising lava
+5. **Puzzle Elements**: Doors, switches, mechanisms
 
-```json
-{
-  "character_purple": {
-    "idle": [],              // No sound for idle
-    "walk": [
-      {
-        "key": "purple_walk_1",
-        "uri": "assets/audio/sound_effect/sfx_select.mp3"
-      }
-    ],
-    "jump": [
-      {
-        "key": "purple_jump",
-        "uri": "assets/audio/sound_effect/sfx_jump.mp3"
-      }
-    ],
-    "hit": [
-      {
-        "key": "purple_hurt",
-        "uri": "assets/audio/sound_effect/sfx_hurt.mp3"
-      }
-    ]
-  },
-  "frog": {
-    "jump": [
-      {
-        "key": "frog_jump_1",
-        "uri": "assets/audio/sound_effect/sfx_jump.mp3"
-      },
-      {
-        "key": "frog_jump_2",
-        "uri": "assets/audio/sound_effect/sfx_select.mp3"
-      }
-    ],
-    "die": [
-      {
-        "key": "frog_die",
-        "uri": "assets/audio/sound_effect/sfx_disappear.mp3"
-      }
-    ]
-  }
-}
-```
+## 🎬 Animation Configuration
 
-Each animation can have multiple sound effects, and one will be randomly selected when played.
-
-## Animation Configuration
-
-Animations are configured per atlas/sprite sheet. Located at `public/assets/[sprite_name]/[sprite_name]_animators.json`:
-
-### Animation Configuration Format
+### Animation File Format
+Create `[sprite_name].json` next to sprite image:
 
 ```json
 {
-  "name": "character_purple",
-  "type": "character",
-  "animations": [
+  "anims": [
     {
-      "name": "idle",
-      "filename_prefix": "idle/frame",
-      "frame_range": {
-        "from": 0,
-        "to": 0               // Single frame
-      },
-      "padding_size": 4       // Zero padding (frame0000)
+      "key": "idle",
+      "frames": [0, 1, 2, 3],
+      "frameRate": 10,
+      "repeat": -1
     },
     {
-      "name": "walk",
-      "filename_prefix": "walk/frame",
-      "frame_range": {
-        "from": 0,
-        "to": 1               // Frames 0-1
-      },
-      "padding_size": 4
+      "key": "walk",
+      "frames": [4, 5, 6, 7, 8, 9],
+      "frameRate": 15,
+      "repeat": -1
     },
     {
-      "name": "jump",
-      "filename_prefix": "jump/frame",
-      "frame_range": {
-        "from": 0,
-        "to": 0
-      },
-      "padding_size": 4
+      "key": "jump",
+      "frames": [10],
+      "frameRate": 1,
+      "repeat": 0
+    },
+    {
+      "key": "die",
+      "frames": [11, 12, 13],
+      "frameRate": 10,
+      "repeat": 0
     }
   ]
 }
 ```
 
 ### Animation Properties
-
 | Property | Type | Description |
 |----------|------|-------------|
-| `name` | string | Animation identifier |
-| `filename_prefix` | string | Prefix for frame files |
-| `frame_range.from` | int | Starting frame number |
-| `frame_range.to` | int | Ending frame number |
-| `padding_size` | int | Zero padding for frame numbers |
+| key | string | Animation name |
+| frames | array | Frame indices from atlas |
+| frameRate | int | Frames per second |
+| repeat | int | -1 = loop, 0 = once, n = n times |
 
-## Build Configuration
+### Standard Animation Names
+- **idle**: Standing still
+- **walk**: Moving horizontally
+- **jump**: In the air
+- **duck**: Crouching
+- **hit**: Taking damage
+- **die**: Death sequence
+- **charge**: Charging jump
 
-### Development Configuration
+## 🔊 Audio Configuration
 
-Located at `vite/config.dev.mjs`:
-
-```javascript
+### Background Music (`bgm-config.json`)
+```json
 {
-  base: './',               // Base path for assets
-  server: {
-    port: 8080             // Development server port
+  "MainMenu": "Attic Secrets.mp3",
+  "Game": "Baltic Levity.mp3",
+  "GameOver": "sad-music.mp3",
+  "Victory": "Alls Fair In Love.mp3",
+  "volume": 0.5
+}
+```
+
+### Sound Effects (`config.json`)
+```json
+{
+  "player": {
+    "jump": ["sfx_jump.mp3", "sfx_jump-high.mp3"],
+    "hit": ["sfx_hurt.mp3"],
+    "shoot": ["sfx_throw.mp3"],
+    "die": ["sfx_disappear.mp3"]
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          phaser: ['phaser']  // Separate Phaser into its own chunk
-        }
-      }
-    }
+  "enemy": {
+    "hit": ["sfx_bump.mp3"],
+    "die": ["sfx_magic.mp3"]
+  },
+  "collectible": {
+    "collect": ["sfx_coin.mp3", "sfx_gem.mp3"]
   }
 }
 ```
 
-### Production Configuration
+### Audio Guidelines
+- **Format**: MP3 or OGG
+- **BGM**: Loop seamlessly
+- **SFX**: Keep under 1 second
+- **Multiple sounds**: Random selection
+- **Volume**: Test at different levels
 
-Located at `vite/config.prod.optimized.mjs`:
+## 🎨 Visual Assets
 
-```javascript
-{
-  base: './',
-  logLevel: 'warning',
-  optimizeDeps: {
-    force: false,           // Don't force rebuild
-    include: ['phaser'],    // Pre-bundle Phaser
-    exclude: []
-  },
-  build: {
-    sourcemap: false,       // Disable source maps for production
-    chunkSizeWarningLimit: 300,
-    target: 'es2020',      // Target modern browsers
-    minify: 'terser',      // Use Terser for minification
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console logs
-        drop_debugger: true // Remove debugger statements
-      }
-    }
-  }
-}
+### Sprite Requirements
+
+#### Player Sprites
+- **Size**: ~84x102 pixels
+- **Format**: PNG with transparency
+- **Atlas**: Multiple frames in one image
+- **Animations**: idle, walk, jump, hit, die
+
+#### Enemy Sprites
+- **Size**: 64x64 pixels recommended
+- **Format**: PNG with transparency
+- **Atlas**: Animation frames
+- **Facing**: Include left/right versions
+
+#### Tiles
+- **Size**: 64x64 pixels (standard)
+- **Format**: PNG
+- **Edges**: Seamless tiling
+- **Variants**: Create variety
+
+#### Collectibles
+- **Size**: 32x32 or 64x64 pixels
+- **Format**: PNG with transparency
+- **Effects**: Glow, sparkle optional
+- **Colors**: Distinct for each type
+
+### Asset Organization
 ```
-
-## Game Configuration Summary
-
-### Essential Files to Configure
-
-1. **Level Design**: `public/assets/tilemap/scenes/tilemap.json`
-2. **Background Music**: `public/assets/audio/bgm-config.json`
-3. **Sound Effects**: `public/assets/audio/sound_effect/config.json`
-4. **Sprite Animations**: `public/assets/[sprite]/[sprite]_animators.json`
-5. **Build Settings**: `vite/config.*.mjs`
-
-### Configuration Workflow
-
-1. **Design your level** in Tiled map editor
-2. **Add game objects** with appropriate types and properties
-3. **Configure audio** by updating BGM and sound effect JSON files
-4. **Set up animations** for each sprite/atlas
-5. **Place assets** in the correct directories
-6. **Test** using development server
-7. **Build** for production when ready
-
-### Asset Directory Structure
-
-```
-public/assets/
-├── audio/
-│   ├── bgm-config.json
-│   ├── bgm/
-│   │   └── *.mp3
-│   └── sound_effect/
-│       ├── config.json
-│       └── *.mp3
-├── tilemap/
-│   ├── scenes/
-│   │   └── tilemap.json
-│   └── tiles/
-│       └── *.png
+assets/
 ├── player/
-│   ├── [name].png
-│   ├── [name].json
-│   └── [name]_animators.json
+│   ├── character_purple.png
+│   └── character_purple.json
 ├── enemy/
-│   ├── [name].png
-│   ├── [name].json
-│   └── [name]_animators.json
+│   ├── frog.png
+│   └── frog.json
 ├── collectible/
-│   └── *.png
-├── hazards/
-│   └── *.png
-└── goal/
-    └── *.png
+│   ├── coin_gold.png
+│   └── gem_blue.png
+└── tilemap/
+    └── tiles/
+        ├── grass_top.png
+        └── grass_center.png
 ```
 
-## Tips for Configuration
+## 🔧 Advanced Techniques
 
-1. **Test incrementally**: Make small changes and test frequently
-2. **Use consistent naming**: Keep asset names consistent across configs
-3. **Optimize assets**: Compress images and audio for better performance
-4. **Backup configs**: Keep backups of working configurations
-5. **Document changes**: Comment custom properties in Tiled
-6. **Validate JSON**: Ensure all JSON files are valid before testing
+### Creating Chain Reactions with Triggers
+1. Create multiple triggers with delays
+2. Have triggers target other triggers
+3. Use return_to_origin for repeating patterns
+
+### Complex Enemy Patterns
+Combine properties for unique behaviors:
+```json
+{
+  "move_method": "patrol_jump",
+  "patrol_distance": 300,
+  "jump_interval": 1000,
+  "move_speed": 150,
+  "jump_force": 500
+}
+```
+
+### Level Progression
+1. Use must_collect items as keys
+2. Place goal behind obstacles
+3. Create multiple paths with different difficulties
+
+### Environmental Storytelling
+- Place decorative objects (no collision)
+- Use background layers for depth
+- Create atmospheric lighting with colored tiles
+
+### Performance Tips
+1. **Limit particles**: Use particle_color sparingly
+2. **Optimize sprites**: Keep sizes reasonable
+3. **Reuse assets**: Use same sprite for multiple enemies
+4. **Test frequently**: Check performance on target devices
+
+## 📝 Configuration Checklist
+
+### Before Testing Your Level
+- [ ] All objects have UUIDs
+- [ ] Player has spawn point
+- [ ] Enemies have movement configured
+- [ ] Must-collect items placed
+- [ ] Goal is accessible
+- [ ] Triggers have valid targets
+- [ ] Audio files exist
+- [ ] Animation JSONs created
+- [ ] Tile collisions set
+
+### Common Issues & Solutions
+
+**Problem**: Enemy not moving
+- Check move_method property
+- Verify patrol_distance is set
+- Ensure no collision blocking path
+
+**Problem**: Trigger not working
+- Verify target_uuid matches exactly
+- Check trigger size and position
+- Ensure target object exists
+
+**Problem**: Animation not playing
+- Check animation JSON syntax
+- Verify frame indices exist
+- Ensure animation key matches
+
+**Problem**: Collectible not working
+- Add type property
+- Set particle_color for feedback
+- Check collision bounds
+
+## 🎯 Quick Reference
+
+### Object Types
+- `player` - Player character
+- `enemy` - Hostile entity
+- `collectible` - Pickup item
+- `hazard` - Static danger
+- `goal` - Level endpoint
+- `trigger` - Event zone
+
+### Essential Properties
+- `uuid` - Unique identifier (all objects)
+- `type` - Object category (Tiled)
+- `name` - Sprite/asset name (Tiled)
+- `x, y` - Position (Tiled)
+- `width, height` - Size (Tiled)
+
+### Color Format
+- Hex: `"#FF0000"` (red)
+- Hex: `"#00FF00"` (green)
+- Hex: `"#0000FF"` (blue)
+- Hex: `"#FFD700"` (gold)
+
+---
+
+Happy creating! For technical questions, see the Developer Documentation.

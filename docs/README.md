@@ -1,227 +1,265 @@
-# Phaser 3 TypeScript Game Template
+# 🎮 Advanced Phaser 3 Platform Game Framework
 
-A powerful, configurable 2D platformer game template built with Phaser 3 and TypeScript. Features data-driven design, allowing you to create custom games through configuration files without modifying code.
+An enterprise-grade 2D platform game framework built with Phaser 3, TypeScript, and modern web technologies. Features a revolutionary UUID-based object management system, trigger-based event system, and fully configurable game mechanics.
 
-## 🎮 What is This?
+## ✨ Core Features
 
-This is a complete game template featuring:
-- **Platformer mechanics**: Jump, double-jump, wall-jump, charge-jump
-- **Enemy AI**: 7 different movement patterns
-- **Collectibles system**: Coins, keys, power-ups with scoring
-- **Level design**: Tilemap-based levels created with Tiled editor
-- **Audio system**: Background music and sound effects per animation
-- **Scene flow**: Main menu → Game → Victory/Game Over
+### 🏃 Advanced Player Mechanics
+- **Multi-Jump System**: Double jump, wall jump, charged jump
+- **Combat System**: Shooting with physics-based bullets and recoil
+- **Health System**: Configurable max health, damage system with invulnerability frames
+- **Smart Collision**: Automatic terrain stuck detection and recovery
 
-## 🚀 Quick Start
+### 🤖 Intelligent Enemy AI
+- **8 Movement Patterns**: Static, patrol, jump, follow, and combinations
+- **Dynamic Behaviors**: Player detection, pathfinding, customizable properties
+- **Visual Effects**: Death animations with particles, shockwaves, and screen shake
 
-### For Players
+### 🎯 Revolutionary Trigger System
+- **Event Triggers**: Place invisible zones that activate game events
+- **Movement Events**: Make objects move, float, or follow paths
+- **Scale Events**: Dynamic object scaling for dramatic effects
+- **Configurable Properties**: Delay, duration, repeat, return-to-origin
+
+### 🆔 UUID-Based Object Management
+- **Unique Identification**: Every game object has a persistent UUID
+- **Cross-Reference System**: Triggers can target any object by UUID
+- **Debug Tools**: Object tracking and relationship visualization
+
+### 🎵 Dynamic Audio System
+- **Background Music**: Scene-based BGM with smooth transitions
+- **Sound Effects**: Animation-synchronized SFX with fallback system
+- **Configuration-Driven**: JSON-based audio mapping
+
+### 💎 Collectibles & Progression
+- **Item Types**: Coins, keys, gems with custom properties
+- **Must-Collect System**: Required items for level completion
+- **Score Tracking**: Persistent score and collection statistics
+- **Visual Feedback**: Floating, rotating, pulsing animations
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 16+ and npm
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- [Tiled Map Editor](https://www.mapeditor.org/) (for level design)
+
+### Installation
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd template-vite-ts
+
 # Install dependencies
 npm install
 
-# Run the game
+# Start development server
 npm run dev
 
-# Open browser to http://localhost:8080
+# Build for production
+npm run build
 ```
 
-### For Level Designers
-1. Install [Tiled Map Editor](https://www.mapeditor.org/)
-2. Open `public/assets/tilemap/scenes/tilemap.json`
-3. Design your level
-4. Save and refresh the game
+### Quick Play
+1. Open `http://localhost:8081` in your browser
+2. Use arrow keys to move
+3. Press SPACE to jump (hold for charged jump)
+4. Press X to shoot
+5. Press R to restart
+6. Collect all keys to unlock the goal!
 
-### For Developers
+## 🎮 Game Controls
+
+| Key | Action | Special |
+|-----|--------|---------|
+| ← → | Move left/right | - |
+| ↑ | Jump | Hold for charged jump |
+| ↓ | Duck | - |
+| SPACE | Alternative jump | Double-tap for double jump |
+| X | Shoot | Limited by cooldown |
+| R | Restart level | - |
+| ESC | Pause (when implemented) | - |
+
+### Advanced Techniques
+- **Wall Jump**: Jump while touching a wall
+- **Charged Jump**: Hold jump button, release for super jump
+- **Stomp Attack**: Jump on enemies to defeat them
+- **Bullet Physics**: Bullets inherit player momentum
+
+## 🗺️ Level Design
+
+### Using Tiled Editor
+1. Open `public/assets/tilemap/scenes/tilemap.json`
+2. Edit tile layers for terrain
+3. Add objects for entities
+4. Configure properties for behaviors
+5. Save and refresh the game
+
+### Object Properties
+
+#### Player Configuration
+```json
+{
+  "type": "player",
+  "properties": [
+    {"name": "uuid", "value": "unique-id"},
+    {"name": "max_health", "value": 3}
+  ]
+}
+```
+
+#### Enemy Configuration
+```json
+{
+  "type": "enemy",
+  "properties": [
+    {"name": "uuid", "value": "unique-id"},
+    {"name": "move_method", "value": "patrol"},
+    {"name": "move_speed", "value": 100},
+    {"name": "damage", "value": 1}
+  ]
+}
+```
+
+#### Trigger Configuration
+```json
+{
+  "type": "trigger",
+  "properties": [
+    {"name": "event_type", "value": "move"},
+    {"name": "target_uuid", "value": "target-object-id"},
+    {"name": "velocity_y", "value": -1000},
+    {"name": "duration", "value": 1500},
+    {"name": "return_to_origin", "value": false}
+  ]
+}
+```
+
+## 🏗️ Project Structure
+
+```
+├── src/
+│   ├── game/
+│   │   ├── scenes/        # Game scenes (Menu, Game, Victory)
+│   │   ├── sprites/       # Game entities (Player, Enemy, etc.)
+│   │   ├── managers/      # System managers (Animation, Audio, UUID)
+│   │   ├── events/        # Event bus system
+│   │   └── utils/         # Utilities (UUID generator, debugger)
+│   └── main.ts           # Entry point
+├── public/
+│   └── assets/
+│       ├── player/       # Player sprites and animations
+│       ├── enemy/        # Enemy sprites and animations
+│       ├── tilemap/      # Level maps and tilesets
+│       └── audio/        # Music and sound effects
+├── vite/                 # Build configurations
+└── docs/                 # Documentation
+```
+
+## 🔧 Configuration Files
+
+### Animation Configuration (`*.json`)
+```json
+{
+  "anims": [
+    {
+      "key": "idle",
+      "frames": [0, 1, 2, 3],
+      "frameRate": 10,
+      "repeat": -1
+    }
+  ]
+}
+```
+
+### Audio Configuration (`bgm-config.json`)
+```json
+{
+  "MainMenu": "Attic Secrets.mp3",
+  "Game": "Baltic Levity.mp3",
+  "volume": 0.5
+}
+```
+
+### Sound Effects Configuration (`config.json`)
+```json
+{
+  "player": {
+    "jump": ["sfx_jump.mp3"],
+    "hit": ["sfx_hurt.mp3"],
+    "shoot": ["sfx_throw.mp3"]
+  }
+}
+```
+
+## 📊 Performance Optimization
+
+- **Object Pooling**: Bullets and particles are recycled
+- **Lazy Loading**: Assets load on-demand
+- **Event Delegation**: Central event bus reduces listeners
+- **Culling**: Off-screen objects are deactivated
+- **Texture Atlas**: Sprites use atlases for batch rendering
+
+## 🐛 Debug Mode
+
+Enable debug features in development:
+- Press `U` to show UUID registry (when enabled)
+- View trigger zones by uncommenting debug visualization
+- Event bus debugger shows all events
+- Console logs for state changes
+
+## 🚢 Deployment
+
+### Production Build
 ```bash
-# Development with hot reload
-npm run dev
-
-# Production build
+# Optimized build
 npm run build
 
-# Output will be in dist/ folder
+# Build without console logs
+npm run build-nolog
+
+# Deploy dist/ folder to any static host
 ```
+
+### Hosting Options
+- **GitHub Pages**: Free static hosting
+- **Netlify**: Automatic deploys from Git
+- **Vercel**: Zero-config deployment
+- **Custom Server**: Serve dist/ with any web server
 
 ## 📚 Documentation
 
-### [🎨 USER_CONFIGURATION_GUIDE.md](./USER_CONFIGURATION_GUIDE.md)
-**For: Level Designers, Game Designers, Artists**
-
-Learn how to customize the game without coding:
-- **Tilemap Configuration**: Design levels using Tiled editor
-- **Enemy Configuration**: Set movement patterns, damage, AI behavior
-- **Collectibles Setup**: Configure items, scores, and requirements
-- **Audio Configuration**: Add music and sound effects
-- **Animation Setup**: Configure sprite animations
-- **Asset Management**: Organize game resources
-
-**Start here if you want to:**
-- Create new levels
-- Add new enemies or items
-- Change game graphics
-- Configure sounds and music
-- Adjust game balance
-
----
-
-### [🔧 DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)
-**For: Programmers, Technical Artists, System Designers**
-
-Deep technical guide for extending the codebase:
-- **Architecture Overview**: Event-driven design, singleton patterns
-- **Core Systems**: Scene management, entity system, physics
-- **Event Bus**: Type-safe communication between systems
-- **Manager Systems**: Animation, audio, collection tracking
-- **Extension Guide**: Add new features and game mechanics
-- **Performance Tips**: Optimization strategies
-- **Debugging Tools**: Built-in debugging utilities
-
-**Start here if you want to:**
-- Add new game mechanics
-- Create new sprite types
-- Implement new AI behaviors
-- Optimize performance
-- Debug issues
-- Understand the architecture
-
----
-
-### [📦 HOW_TO_BUILD.md](./HOW_TO_BUILD.md)
-**For: DevOps, Release Managers, Server Administrators**
-
-Production build and deployment guide:
-- **Prerequisites**: Node.js and npm setup
-- **Build Commands**: Development and production builds
-- **Output Structure**: Understanding dist/ folder
-- **Deployment**: Hosting the game
-- **Optimization**: Build configuration options
-
-**Start here if you want to:**
-- Deploy the game to a server
-- Create distribution packages
-- Set up CI/CD pipelines
-- Optimize build size
-
-## 🎯 Common Tasks
-
-| I want to... | Documentation | Section |
-|-------------|---------------|---------|
-| **Create a new level** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Tilemap Configuration |
-| **Add a new enemy type** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Enemy Configuration |
-| **Change player abilities** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Player Configuration |
-| **Add collectible items** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Collectibles Configuration |
-| **Configure background music** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Audio Configuration → BGM |
-| **Add sound effects** | [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md) | Audio Configuration → Sound Effects |
-| **Build for production** | [How to Build](./HOW_TO_BUILD.md) | Build Commands |
-| **Add new game mechanics** | [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) | Extension Guide |
-| **Debug physics issues** | [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) | Debugging Guide |
-| **Optimize performance** | [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) | Performance Optimization |
-| **Understand the code** | [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) | Architecture Overview |
-| **Add a new scene** | [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) | Scene Management |
-
-## 🗂️ Project Structure
-
-```
-template-vite-ts/
-├── public/
-│   └── assets/
-│       ├── audio/
-│       │   ├── bgm-config.json      # Background music configuration
-│       │   ├── bgm/                 # Music files
-│       │   └── sound_effect/
-│       │       ├── config.json      # Sound effects configuration
-│       │       └── *.mp3           # Sound files
-│       ├── tilemap/
-│       │   └── scenes/
-│       │       └── tilemap.json    # Level design (Tiled)
-│       ├── player/                 # Player sprites & animations
-│       ├── enemy/                  # Enemy sprites & animations
-│       ├── collectible/            # Item sprites
-│       └── goal/                   # Goal/flag sprites
-├── src/
-│   └── game/
-│       ├── main.ts                 # Game configuration
-│       ├── scenes/                 # Game scenes
-│       ├── sprites/                # Game entities
-│       ├── managers/               # System managers
-│       ├── events/                 # Event system
-│       └── ui/                     # UI components
-├── docs/                           # Documentation
-├── vite/                           # Build configuration
-└── package.json                    # Dependencies
-```
-
-## 🛠️ Technology Stack
-
-- **Game Engine**: [Phaser 3.90.0](https://phaser.io/)
-- **Language**: [TypeScript 5.7.2](https://www.typescriptlang.org/)
-- **Build Tool**: [Vite 6.3.1](https://vitejs.dev/)
-- **Level Editor**: [Tiled](https://www.mapeditor.org/)
-- **Physics**: Arcade Physics
-- **Module System**: ES Modules
-
-## 📋 Key Features
-
-### Game Mechanics
-- **Player Movement**: Walk, run, jump, double-jump, wall-jump, charge-jump
-- **Health System**: 3 hearts, damage and invulnerability frames
-- **Collection System**: Items with scores, must-collect requirements
-- **Enemy AI**: Static, patrol, jump, follow player, combined behaviors
-- **Hazards**: Spikes and other environmental dangers
-- **Victory Conditions**: Reach goal after collecting required items
-
-### Technical Features
-- **Data-Driven**: Configure through JSON and Tiled properties
-- **Event System**: Loose coupling between components
-- **Asset Management**: Automatic asset discovery from tilemap
-- **Animation System**: Atlas support with frame-based animations
-- **Audio System**: Scene-based BGM, animation-linked sound effects
-- **Singleton Managers**: Global access to core systems
-- **TypeScript**: Full type safety and IntelliSense support
-
-## 🎨 Customization Options
-
-Without coding, you can:
-- Design unlimited levels
-- Configure 7 enemy movement patterns
-- Set damage values and health
-- Create collectible items with scores
-- Define must-collect items for progression
-- Add background music per scene
-- Configure sound effects per animation
-- Adjust movement speeds and jump powers
-- Set patrol distances and detection ranges
-- Customize particle effects and colors
-
-## 📝 Version Information
-
-- **Template Version**: 1.4.0
-- **Documentation Version**: 2.0.0
-- **Last Updated**: January 2025
+- [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) - Architecture and API reference
+- [Configuration Guide](./USER_CONFIGURATION_GUIDE.md) - Customization without coding
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Make your changes
-4. Update relevant documentation
+2. Create a feature branch
+3. Implement your feature
+4. Add tests if applicable
 5. Submit a pull request
 
 ## 📄 License
 
 MIT License - See LICENSE file for details
 
-## 🆘 Need Help?
+## 🙏 Credits
 
-- **Configuration issues**: Check [User Configuration Guide](./USER_CONFIGURATION_GUIDE.md)
-- **Code questions**: See [Developer Documentation](./DEVELOPER_DOCUMENTATION.md)
-- **Build problems**: Review [How to Build](./HOW_TO_BUILD.md)
-- **Bug reports**: Create an issue on GitHub
+- **Framework**: [Phaser 3](https://phaser.io/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Level Editor**: [Tiled](https://www.mapeditor.org/)
+
+## 💡 Tips & Tricks
+
+- Hold jump button before landing for immediate charged jump
+- Shoot downward while jumping for extra height
+- Wall jump timing: Jump immediately after touching wall
+- Enemies can be used as platforms after defeating them
+- Triggers can create complex chain reactions
+- UUID system allows for dynamic level scripting
 
 ---
 
-**Ready to start?** Choose your path:
-- 🎮 [Play the game](#for-players)
-- 🎨 [Design levels](./USER_CONFIGURATION_GUIDE.md#tilemap-configuration)
-- 💻 [Extend the code](./DEVELOPER_DOCUMENTATION.md#extension-guide)
-- 📦 [Build for production](./HOW_TO_BUILD.md#build-commands)
+Built with ❤️ using Phaser 3 and TypeScript

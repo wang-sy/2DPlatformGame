@@ -1,971 +1,640 @@
-# Developer Documentation
+# 🔧 Developer Documentation
 
-This comprehensive guide is for developers who want to extend the Phaser 3 TypeScript game template with new features, modify existing systems, or understand the architecture for maintenance and optimization.
+Comprehensive technical guide for developers working with the Advanced Phaser 3 Platform Game Framework. This document covers architecture, APIs, extension points, and best practices.
 
-## Table of Contents
+## 📋 Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [Core Systems](#core-systems)
-3. [Event System](#event-system)
-4. [Scene Management](#scene-management)
-5. [Entity System](#entity-system)
-6. [Manager Systems](#manager-systems)
-7. [UI System](#ui-system)
-8. [Asset Pipeline](#asset-pipeline)
-9. [Development Workflow](#development-workflow)
-10. [Extension Guide](#extension-guide)
-11. [Performance Optimization](#performance-optimization)
-12. [Debugging Guide](#debugging-guide)
+3. [Sprite System](#sprite-system)
+4. [Manager Systems](#manager-systems)
+5. [Event System](#event-system)
+6. [Scene Management](#scene-management)
+7. [UUID System](#uuid-system)
+8. [Trigger System](#trigger-system)
+9. [Animation System](#animation-system)
+10. [Audio System](#audio-system)
+11. [Extension Guide](#extension-guide)
+12. [Performance Guidelines](#performance-guidelines)
+13. [Debugging Tools](#debugging-tools)
+14. [API Reference](#api-reference)
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
 ### Technology Stack
-
 - **Framework**: Phaser 3.90.0
 - **Language**: TypeScript 5.7.2
 - **Build Tool**: Vite 6.3.1
-- **Physics Engine**: Arcade Physics
+- **Physics**: Arcade Physics
 - **Module System**: ES Modules
 
-### Project Structure
+### Design Patterns
+- **Singleton Pattern**: Managers (AnimationManager, GameObjectManager)
+- **Observer Pattern**: Event Bus system
+- **Factory Pattern**: Object creation from tilemap
+- **Component Pattern**: Sprite behaviors
+- **Object Pool Pattern**: Bullet management
 
-```
-src/
-├── main.ts                    # Application entry point
-├── game/
-│   ├── main.ts               # Game initialization
-│   ├── events/               # Event system
-│   │   └── EventBus.ts      # Centralized event bus
-│   ├── scenes/               # Game scenes
-│   │   ├── Boot.ts          # Initial loading
-│   │   ├── Preloader.ts     # Asset preloading
-│   │   ├── MainMenu.ts      # Main menu
-│   │   ├── Game.ts          # Main gameplay
-│   │   ├── GameOver.ts      # Game over screen
-│   │   └── Victory.ts       # Victory screen
-│   ├── sprites/              # Game entities
-│   │   ├── Player.ts        # Player character
-│   │   ├── Enemy.ts         # Enemy entities
-│   │   ├── Collectible.ts   # Collectible items
-│   │   ├── Goal.ts          # Level goals
-│   │   └── StaticHazard.ts  # Static hazards
-│   ├── managers/             # System managers
-│   │   ├── AnimationManager.ts      # Animation system
-│   │   ├── BGMPlayer.ts             # Background music
-│   │   ├── SoundEffectPlayer.ts     # Sound effects
-│   │   └── CollectedItemsManager.ts # Item tracking
-│   ├── ui/                   # UI components
-│   │   └── HealthUI.ts      # Health display
-│   └── utils/                # Utilities
-│       └── EventBusDebugger.ts # Debug tools
-```
+### Core Principles
+1. **Configuration-Driven**: JSON files control behavior
+2. **Event-Driven**: Loose coupling via event bus
+3. **UUID-Based**: Unique identification for all objects
+4. **Modular Design**: Independent, reusable components
+5. **Type Safety**: Full TypeScript typing
 
-### Data Flow Architecture
+## 🎮 Core Systems
 
-```
-┌─────────────────┐
-│   Entry Point   │
-│    (main.ts)    │
-└────────┬────────┘
-         │
-    ┌────▼────┐
-    │  Game   │
-    │  Init   │
-    └────┬────┘
-         │
-    ┌────▼────┐     ┌──────────────┐
-    │  Boot   │────▶│  Preloader   │
-    │  Scene  │     │    Scene     │
-    └─────────┘     └──────┬───────┘
-                           │
-                    ┌──────▼───────┐
-                    │  Main Menu   │
-                    │    Scene     │
-                    └──────┬───────┘
-                           │
-                    ┌──────▼───────┐
-                    │  Game Scene  │◀──┐
-                    └──────┬───────┘   │
-                           │            │
-                ┌──────────┴─────────┐  │
-                ▼                    ▼  │
-         ┌─────────────┐    ┌──────────┴─┐
-         │  Game Over  │    │  Victory   │
-         │    Scene    │    │   Scene    │
-         └─────────────┘    └────────────┘
-```
-
-## Core Systems
-
-### 1. Game Configuration (game/main.ts:12-32)
-
+### Game Initialization Flow
 ```typescript
-const config: Phaser.Types.Core.GameConfig = {
-    type: AUTO,                    // Renderer type
-    width: 1024,                   // Game width
-    height: 768,                   // Game height
-    parent: 'game-container',      // DOM container
-    backgroundColor: '#028af8',    // Background color
-    scene: [...],                  // Scene list
+// src/main.ts
+const game = new Game({
+    type: Phaser.AUTO,
+    width: 1024,
+    height: 768,
     physics: {
-        default: "arcade",
+        default: 'arcade',
         arcade: {
-            gravity: {x: 0, y: 600},
-            debug: false           // Set true for physics debug
+            gravity: { y: 1000 },
+            debug: false
         }
-    }
-};
-```
-
-### 2. Singleton Pattern Implementation
-
-Most managers use singleton pattern for global access:
-
-```typescript
-export class ManagerClass {
-    private static instance: ManagerClass;
-    
-    private constructor() {}
-    
-    public static getInstance(): ManagerClass {
-        if (!ManagerClass.instance) {
-            ManagerClass.instance = new ManagerClass();
-        }
-        return ManagerClass.instance;
-    }
-}
-```
-
-## Event System
-
-### EventBus Architecture (events/EventBus.ts)
-
-The EventBus provides type-safe, centralized event communication:
-
-#### Event Types (EventBus.ts:1-51)
-
-```typescript
-export enum GameEvent {
-    // Scene events
-    SCENE_CHANGE = 'scene:change',
-    SCENE_START = 'scene:start',
-    
-    // Player events
-    PLAYER_JUMP = 'player:jump',
-    PLAYER_DAMAGE = 'player:damage',
-    
-    // Animation events
-    ANIMATION_PLAY = 'animation:play',
-    
-    // Audio events
-    BGM_PLAY = 'bgm:play',
-    SOUND_EFFECT_PLAY = 'sound:play',
-    
-    // Game events
-    ITEM_COLLECT = 'item:collect',
-    GOAL_REACHED = 'goal:reached'
-}
-```
-
-#### Event Data Interface (EventBus.ts:53-180)
-
-```typescript
-export interface EventData {
-    [GameEvent.PLAYER_JUMP]: {
-        player: any;
-        velocity: number;
-    };
-    [GameEvent.ITEM_COLLECT]: {
-        item: any;
-        type: string;
-        value?: number;
-    };
-}
-```
-
-#### Usage Example
-
-```typescript
-// Emit event
-eventBus.emit(GameEvent.PLAYER_JUMP, {
-    player: this,
-    velocity: -500
-});
-
-// Listen to event
-eventBus.on(GameEvent.PLAYER_JUMP, (data) => {
-    console.log(`Player jumped with velocity: ${data.velocity}`);
+    },
+    scene: [Boot, Preloader, MainMenu, Game, GameOver, Victory]
 });
 ```
-
-## Scene Management
 
 ### Scene Lifecycle
+1. **Boot**: Initial setup, basic assets
+2. **Preloader**: Load all game assets
+3. **MainMenu**: Title screen and navigation
+4. **Game**: Main gameplay loop
+5. **GameOver/Victory**: End states
 
-Each scene extends `Phaser.Scene` and follows this lifecycle:
+## 🎯 Sprite System
 
-1. **constructor()**: Initialize scene key
-2. **init()**: Receive data from previous scene
-3. **preload()**: Load assets
-4. **create()**: Set up game objects
-5. **update()**: Game loop (60fps)
+### Base Sprite Architecture
 
-### Boot Scene (scenes/Boot.ts)
-
+#### Player Class
 ```typescript
-export class Boot extends Scene {
-    preload() {
-        // Load minimal assets for preloader
-        this.load.image('background', 'assets/bg.png');
-    }
+export class Player extends Phaser.Physics.Arcade.Sprite {
+    // Core properties
+    private health: number = 3;
+    private maxHealth: number = 3;
+    private moveSpeed: number = 200;
+    private jumpSpeed: number = 500;
     
-    create() {
-        this.scene.start('Preloader');
-    }
-}
-```
-
-### Preloader Scene (scenes/Preloader.ts)
-
-Handles all asset loading with dynamic tilemap parsing:
-
-```typescript
-private loadAllAssets() {
-    // Parse tilemap JSON
-    let tilemapJsonObj = JSON.parse(tilemapJsonRaw);
-    let tilesets = tilemapJsonObj["tilesets"];
+    // Advanced mechanics
+    private jumpCount: number = 0;
+    private maxJumps: number = 2;
+    private isCharging: boolean = false;
+    private chargeTime: number = 0;
     
-    tilesets.forEach((tileset: any) => {
-        // Check if tileset is atlas
-        let isAtlas = tileset.tiles?.[0]?.properties
-            ?.find((p: any) => p.name === "atlas")?.value;
-        
-        if (isAtlas) {
-            this.load.atlas(name, imageUri, atlasJsonUri);
-            this.load.json(`${name}_animations`, animationConfigUri);
-        } else {
-            this.load.image(name, imageUri);
+    constructor(scene: Scene, tiledObject: TiledObject) {
+        // Read properties from tilemap
+        const properties = tiledObject.properties as any[];
+        if (properties) {
+            const maxHealthProp = properties.find(prop => prop.name === 'max_health');
+            if (maxHealthProp) {
+                this.maxHealth = maxHealthProp.value;
+                this.health = this.maxHealth;
+            }
         }
-    });
+    }
 }
 ```
 
-### Game Scene (scenes/Game.ts)
+#### Enemy Class
+```typescript
+export class Enemy extends Phaser.Physics.Arcade.Sprite {
+    private moveMethod: string;
+    private moveSpeed: number = 50;
+    private damage: number = 1;
+    
+    // AI behaviors
+    private updateAI(): void {
+        switch(this.moveMethod) {
+            case 'patrol': this.patrol(); break;
+            case 'follow': this.followPlayer(); break;
+            case 'jump': this.jumpBehavior(); break;
+        }
+    }
+}
+```
 
-Main gameplay scene with tilemap-driven object creation:
+### Sprite Properties Configuration
+All sprites can be configured via tilemap properties:
+```json
+{
+    "name": "enemy_sprite",
+    "type": "enemy",
+    "properties": [
+        {"name": "uuid", "value": "enemy-001"},
+        {"name": "move_method", "value": "patrol"},
+        {"name": "move_speed", "value": 100},
+        {"name": "patrol_distance", "value": 200},
+        {"name": "damage", "value": 1}
+    ]
+}
+```
+
+## 🎛️ Manager Systems
+
+### AnimationManager
+Singleton manager for all sprite animations.
 
 ```typescript
-export class Game extends Scene {
-    private createObjectsFromTilemap() {
-        this.map.getObjectLayerNames().forEach((layerName) => {
-            let objectLayer = this.map.getObjectLayer(layerName);
-            objectLayer?.objects.forEach((obj) => {
+class AnimationManager {
+    private static instance: AnimationManager;
+    private animations: Map<string, AnimationConfig>;
+    
+    static getInstance(): AnimationManager {
+        if (!this.instance) {
+            this.instance = new AnimationManager();
+        }
+        return this.instance;
+    }
+    
+    createAnimationsForAtlas(atlasKey: string): void {
+        // Auto-generate animations from atlas
+    }
+    
+    playAnimation(sprite: Sprite, atlas: string, animKey: string): void {
+        // Play animation with fallback
+    }
+}
+```
+
+### GameObjectManager
+UUID-based object registry.
+
+```typescript
+class GameObjectManager {
+    private gameObjects: Map<string, GameObjectWithUUID>;
+    
+    registerObject(uuid: string, object: GameObject, type: string): void {
+        // Register object with UUID
+    }
+    
+    getObjectByUUID(uuid: string): GameObjectWithUUID | undefined {
+        // Retrieve object by UUID
+    }
+    
+    getObjectsByType(type: string): GameObjectWithUUID[] {
+        // Get all objects of type
+    }
+}
+```
+
+### BGMPlayer & SoundEffectPlayer
+Audio management systems.
+
+```typescript
+class BGMPlayer {
+    private config: BGMConfig;
+    private currentBGM: string | null;
+    
+    async loadAndPlayBGM(sceneName: string): Promise<void> {
+        // Scene-based BGM playback
+    }
+}
+
+class SoundEffectPlayer {
+    private soundMappings: Map<string, string[]>;
+    
+    playAnimationSound(atlas: string, animation: string): void {
+        // Animation-synchronized SFX
+    }
+}
+```
+
+## 📡 Event System
+
+### EventBus Architecture
+Central communication hub for all game systems.
+
+```typescript
+// Event types
+export enum GameEvent {
+    SCENE_START = 'scene-start',
+    PLAYER_HIT = 'player-hit',
+    ENEMY_DEFEATED = 'enemy-defeated',
+    ITEM_COLLECTED = 'item-collected',
+    // ... 50+ event types
+}
+
+// Event data interfaces
+interface PlayerHitData {
+    damage: number;
+    source: string;
+    knockback: Vector2;
+}
+
+// Usage
+eventBus.emit(GameEvent.PLAYER_HIT, {
+    damage: 1,
+    source: 'enemy',
+    knockback: { x: -200, y: -100 }
+});
+
+eventBus.on(GameEvent.PLAYER_HIT, (data: PlayerHitData) => {
+    // Handle player hit
+});
+```
+
+### Event Flow Patterns
+1. **Scene Events**: Scene transitions and lifecycle
+2. **Combat Events**: Damage, death, victory
+3. **Collection Events**: Items, score, achievements
+4. **UI Events**: Menu interactions, HUD updates
+5. **Audio Events**: Music changes, sound triggers
+
+## 🎬 Scene Management
+
+### Scene Structure
+```typescript
+export class Game extends Phaser.Scene {
+    // Core properties
+    private player: Player;
+    private enemies: Phaser.Physics.Arcade.Group;
+    private triggers: Trigger[];
+    private gameObjectManager: GameObjectManager;
+    
+    create(): void {
+        // 1. Setup world
+        this.createTilemap();
+        
+        // 2. Create objects from tilemap
+        this.createObjectsFromTilemap();
+        
+        // 3. Setup collisions
+        this.createOverlapEvents();
+        
+        // 4. Initialize UI
+        this.createUI();
+    }
+    
+    private createObjectsFromTilemap(): void {
+        // Parse tilemap objects
+        // Create triggers last to ensure targets exist
+        const triggers: TiledObject[] = [];
+        
+        this.map.getObjectLayer('Objects').objects.forEach(obj => {
+            if (obj.type === 'trigger') {
+                triggers.push(obj);
+            } else {
                 this.createObject(obj);
-            });
+            }
+        });
+        
+        // Create triggers after all objects
+        triggers.forEach(obj => this.createObject(obj));
+    }
+}
+```
+
+## 🆔 UUID System
+
+### Implementation Details
+Every game object has a unique identifier for cross-referencing.
+
+```typescript
+// UUID Generation
+export class UUIDGenerator {
+    static generate(): string {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+}
+
+// Object Registration
+const uuid = properties.find(p => p.name === 'uuid')?.value || UUIDGenerator.generate();
+gameObjectManager.registerObject(uuid, sprite, 'enemy');
+
+// Object Retrieval
+const target = gameObjectManager.getObjectByUUID(targetUUID);
+```
+
+### UUID Usage Patterns
+1. **Trigger Targets**: Triggers reference objects by UUID
+2. **Cross-References**: Objects can reference each other
+3. **Save System**: UUIDs enable save/load functionality
+4. **Debug Tracking**: Track object relationships
+
+## 🎯 Trigger System
+
+### Trigger Architecture
+Invisible zones that activate events when players enter.
+
+```typescript
+export class Trigger extends Phaser.GameObjects.Zone {
+    private eventType: 'move' | 'scale';
+    private targetUUID: string;
+    private triggered: boolean = false;
+    
+    activate(player: Player): void {
+        if (this.triggered && !this.repeat) return;
+        
+        this.scene.time.delayedCall(this.delay, () => {
+            this.executeTriggerEvent();
         });
     }
     
-    private createObject(obj: TiledObject) {
-        switch (obj.type) {
-            case "player":
-                this.createPlayerFromTilemap(obj);
-                break;
-            case "enemy":
-                this.createEnemyFromTilemap(obj);
-                break;
-            case "collectible":
-                this.createCollectibleFromTilemap(obj);
-                break;
-        }
-    }
-}
-```
-
-## Entity System
-
-### Base Sprite Pattern
-
-All game entities extend `Phaser.Physics.Arcade.Sprite`:
-
-```typescript
-export class EntityClass extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene: Scene, tiledObject: TiledObject) {
-        const x = tiledObject.x || 0;
-        const y = tiledObject.y || 0;
-        const texture = tiledObject.name || 'default';
-        
-        super(scene, x, y - 32, texture); // Y offset for Tiled
-        
-        scene.add.existing(this);
-        scene.physics.add.existing(this);
-        
-        this.extractProperties(tiledObject);
-    }
-    
-    private extractProperties(tiledObject: TiledObject): void {
-        // Extract custom properties from tilemap
-    }
-}
-```
-
-### Player Implementation (sprites/Player.ts)
-
-#### Movement System (Player.ts:84-145)
-
-```typescript
-update(): void {
-    const velocity = this.body?.velocity;
-    const onGround = this.body?.blocked.down || false;
-    
-    // Horizontal movement
-    if (this.cursors.left.isDown) {
-        this.setVelocityX(-this.moveSpeed);
-        this.setFlipX(true);
-        this.playAnimation('walk');
-    }
-    
-    // Jump mechanics
-    if (justPressedUp && this.jumpCount < this.maxJumps) {
-        this.setVelocityY(-this.jumpSpeed);
-        this.jumpCount++;
-    }
-}
-```
-
-#### Advanced Movement Features
-
-- **Double Jump** (Player.ts:213-231)
-- **Wall Jump** (Player.ts:198-210)
-- **Charge Jump** (Player.ts:153-191)
-
-### Enemy System (sprites/Enemy.ts)
-
-#### Dynamic Movement Methods (Enemy.ts:209-241)
-
-```typescript
-update(time: number, delta: number): void {
-    switch (this.moveMethod) {
-        case 'patrol':
-            this.updatePatrol();
-            break;
-        case 'jump':
-            this.updateJump(time);
-            break;
-        case 'follow':
-            this.updateFollow();
-            break;
-    }
-}
-```
-
-#### Property Extraction System (Enemy.ts:80-110)
-
-```typescript
-private extractProperties(enemyObject: TiledObject): void {
-    // Get properties from tileset
-    const gid = enemyObject.gid;
-    const tilemap = this.scene.cache.tilemap.get('tilemap');
-    
-    // Find tileset containing this GID
-    for (const tileset of tilesetData) {
-        if (gid >= tileset.firstgid && 
-            gid < tileset.firstgid + tileset.tilecount) {
-            // Extract tile properties
-            const tileProperties = tileset.tiles[tileId].properties;
-            for (const prop of tileProperties) {
-                this.setProperty(prop.name, prop.value);
-            }
-        }
-    }
-}
-```
-
-### Collectible System (sprites/Collectible.ts)
-
-#### Collection Mechanics (Collectible.ts:145-194)
-
-```typescript
-collect(): void {
-    if (this.collected) return;
-    this.collected = true;
-    
-    // Emit collection event
-    eventBus.emit(GameEvent.ITEM_COLLECT, {
-        item: this,
-        type: this.collectibleType,
-        value: this.score
-    });
-    
-    // Animation and particles
-    this.scene.tweens.add({
-        targets: this,
-        y: this.y - 50,
-        alpha: 0,
-        scale: 1.5,
-        duration: 500,
-        onComplete: () => this.destroy()
-    });
-}
-```
-
-## Manager Systems
-
-### AnimationManager (managers/AnimationManager.ts)
-
-Centralized animation management with atlas support:
-
-#### Animation Creation (AnimationManager.ts:156-227)
-
-```typescript
-private createAnimation(atlasKey: string, config: AnimationConfig): void {
-    const animKey = `${atlasKey}_${config.key}`;
-    
-    // Generate frames
-    frames = this.scene.anims.generateFrameNames(atlasKey, {
-        prefix: config.prefix,
-        start: config.start,
-        end: config.end,
-        zeroPad: config.zeroPad
-    });
-    
-    // Create animation
-    this.scene.anims.create({
-        key: animKey,
-        frames: frames,
-        frameRate: config.frameRate || 10,
-        repeat: config.repeat || -1
-    });
-}
-```
-
-### BGMPlayer (managers/BGMPlayer.ts)
-
-Background music management with scene tracking:
-
-#### Scene-Based Music (BGMPlayer.ts:199-224)
-
-```typescript
-private onSceneChange(sceneName: string): void {
-    const sceneConfig = this.bgmConfig.scenes[sceneName];
-    
-    if (!sceneConfig) {
-        this.stopCurrentBGM();
-        return;
-    }
-    
-    // Don't restart same BGM
-    if (this.currentBGM === sceneConfig.bgm && 
-        this.currentBGMSound?.isPlaying) {
-        return;
-    }
-    
-    this.stopCurrentBGM();
-    this.playBGM(sceneConfig.bgm, sceneConfig.loop, sceneConfig.volume);
-}
-```
-
-### SoundEffectPlayer (managers/SoundEffectPlayer.ts)
-
-Animation-linked sound effects:
-
-#### Sound Mapping System (SoundEffectPlayer.ts:134-150)
-
-```typescript
-private buildAnimationSoundMap(): void {
-    for (const [atlasKey, animations] of Object.entries(this.config)) {
-        for (const [animationName, sounds] of Object.entries(animations)) {
-            const animKey = `${atlasKey}_${animationName}`;
-            this.animationToSounds.set(animKey, sounds);
-        }
-    }
-}
-```
-
-### CollectedItemsManager (managers/CollectedItemsManager.ts)
-
-Item collection tracking and validation:
-
-```typescript
-export class CollectedItemsManager {
-    private items: Map<string, CollectedItemData> = new Map();
-    private mustCollectItems: Set<string> = new Set();
-    
-    collectItem(name: string, type: string, score: number): void {
-        if (!this.items.has(name)) {
-            this.items.set(name, {
-                name, type, count: 0, score: 0
+    private executeMoveEvent(target: GameObject): void {
+        // Handle static vs dynamic bodies differently
+        if (isStatic) {
+            // Animate position for static bodies
+            this.scene.tweens.add({
+                targets: target,
+                x: target.x + moveX,
+                y: target.y + moveY,
+                duration: this.duration
             });
-        }
-        
-        const itemData = this.items.get(name)!;
-        itemData.count++;
-        itemData.score += score;
-        this.totalScore += score;
-    }
-    
-    hasCollectedAllRequired(): boolean {
-        for (const required of this.mustCollectItems) {
-            if (!this.collectedMustHaveItems.has(required)) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-```
-
-## UI System
-
-### HealthUI (ui/HealthUI.ts)
-
-Dynamic health display with animations:
-
-```typescript
-export class HealthUI {
-    private hearts: Phaser.GameObjects.Graphics[] = [];
-    
-    updateHealth(health: number): void {
-        for (let i = 0; i < this.maxHealth; i++) {
-            if (i < health) {
-                this.drawHeart(heart, x, y, true);  // Filled
-            } else {
-                this.drawHeart(heart, x, y, false); // Empty
-                if (oldHealth > health && i === health) {
-                    this.createHeartBreakEffect(x, y);
-                }
-            }
-        }
-    }
-}
-```
-
-## Asset Pipeline
-
-### Asset Loading Strategy
-
-1. **Boot Scene**: Minimal assets for preloader
-2. **Preloader**: All game assets with progress bar
-3. **Dynamic Loading**: Parse tilemap for required assets
-4. **Atlas Support**: Automatic detection and loading
-
-### Tilemap Asset Discovery (Preloader.ts:65-118)
-
-```typescript
-private loadAllAssets() {
-    const tilemapJson = JSON.parse(this.cache.text.get('tilemap_json_raw'));
-    
-    tilemapJson.tilesets.forEach((tileset: any) => {
-        // Check for atlas property
-        const isAtlas = tileset.tiles?.[0]?.properties
-            ?.find((p: any) => p.name === "atlas")?.value;
-        
-        if (isAtlas) {
-            // Load as atlas with animations
-            this.load.atlas(tileset.name, tileset.image, jsonPath);
-            this.load.json(`${tileset.name}_animations`, animPath);
         } else {
-            // Load as single image
-            this.load.image(tileset.name, tileset.image);
+            // Set velocity for dynamic bodies
+            target.setVelocity(this.velocityX, this.velocityY);
         }
-    });
-}
-```
-
-## Development Workflow
-
-### Setting Up Development Environment
-
-```bash
-# Install dependencies
-npm install
-
-# Start dev server with hot reload
-npm run dev
-
-# Development without logging
-npm run dev-nolog
-```
-
-### Adding New Features
-
-#### 1. Create New Sprite Type
-
-```typescript
-// sprites/NewEntity.ts
-export class NewEntity extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene: Scene, obj: TiledObject) {
-        super(scene, obj.x, obj.y, obj.name);
-        // Initialize
     }
 }
 ```
 
-#### 2. Register in Game Scene
+### Trigger Properties
+```json
+{
+    "type": "trigger",
+    "properties": [
+        {"name": "event_type", "value": "move|scale"},
+        {"name": "target_uuid", "value": "object-uuid"},
+        {"name": "velocity_x", "value": 0},
+        {"name": "velocity_y", "value": -1000},
+        {"name": "scale_x", "value": 2.0},
+        {"name": "scale_y", "value": 2.0},
+        {"name": "duration", "value": 1500},
+        {"name": "delay", "value": 200},
+        {"name": "repeat", "value": true},
+        {"name": "return_to_origin", "value": false}
+    ]
+}
+```
 
+## 🎨 Animation System
+
+### Animation Configuration
+```json
+{
+    "anims": [
+        {
+            "key": "idle",
+            "frames": [0, 1, 2, 3],
+            "frameRate": 10,
+            "repeat": -1
+        },
+        {
+            "key": "walk",
+            "frames": [4, 5, 6, 7, 8, 9],
+            "frameRate": 15,
+            "repeat": -1
+        }
+    ]
+}
+```
+
+### Animation Manager Usage
 ```typescript
-// scenes/Game.ts
-private createObject(obj: TiledObject) {
-    switch (obj.type) {
-        case "new_entity":
-            this.createNewEntityFromTilemap(obj);
-            break;
+// Create animations from atlas
+animationManager.createAnimationsForAtlas('player');
+
+// Play animation
+animationManager.playAnimation(sprite, 'player', 'walk');
+
+// Animation events
+eventBus.emit(GameEvent.ANIMATION_PLAY, {
+    sprite: this,
+    atlas: 'player',
+    animation: 'jump'
+});
+```
+
+## 🔊 Audio System
+
+### Background Music System
+```typescript
+// Configuration
+{
+    "MainMenu": "menu-theme.mp3",
+    "Game": "level-1.mp3",
+    "Victory": "victory-fanfare.mp3"
+}
+
+// Usage
+bgmPlayer.startMonitoring(scene);
+// Automatically plays appropriate music per scene
+```
+
+### Sound Effects System
+```typescript
+// Configuration
+{
+    "player": {
+        "jump": ["jump1.mp3", "jump2.mp3"],
+        "hit": ["hurt.mp3"],
+        "shoot": ["laser.mp3"]
     }
 }
+
+// Animation-triggered SFX
+eventBus.on(GameEvent.ANIMATION_PLAY, (data) => {
+    soundEffectPlayer.playAnimationSound(data.atlas, data.animation);
+});
 ```
 
-#### 3. Add Event Support
+## 🚀 Extension Guide
 
-```typescript
-// events/EventBus.ts
-export enum GameEvent {
-    NEW_ENTITY_ACTION = 'new_entity:action'
-}
+### Adding New Sprite Types
+1. Create class extending `Phaser.Physics.Arcade.Sprite`
+2. Add property parsing in constructor
+3. Register type in `Game.createObject()`
+4. Add to tilemap with properties
 
-// Emit event
-eventBus.emit(GameEvent.NEW_ENTITY_ACTION, { data });
-```
+### Adding New Trigger Events
+1. Add event type to Trigger class
+2. Implement execute method
+3. Add properties parsing
+4. Document in configuration guide
 
-### Testing Workflow
-
-1. **Unit Testing**: Test individual components
-2. **Integration Testing**: Test scene transitions
-3. **Physics Testing**: Enable debug mode
-4. **Performance Testing**: Monitor FPS and memory
-
-## Extension Guide
+### Adding New Managers
+1. Create singleton class
+2. Initialize in Boot or Preloader
+3. Add event listeners if needed
+4. Document public API
 
 ### Adding New Scenes
+1. Create scene class extending `Phaser.Scene`
+2. Add to game config scenes array
+3. Implement create/update methods
+4. Add BGM configuration
 
-```typescript
-// scenes/NewScene.ts
-export class NewScene extends Scene {
-    constructor() {
-        super('NewScene');
-    }
-    
-    create() {
-        // Scene setup
-        eventBus.emit(GameEvent.SCENE_START, {
-            scene: 'NewScene'
-        });
-    }
-}
+## ⚡ Performance Guidelines
 
-// Register in main.ts
-const config = {
-    scene: [Boot, Preloader, MainMenu, NewScene]
-};
-```
-
-### Creating Custom Managers
-
-```typescript
-export class CustomManager {
-    private static instance: CustomManager;
-    
-    init(scene: Scene): void {
-        // Initialize with scene context
-    }
-    
-    // Manager functionality
-}
-```
-
-### Extending Entity Properties
-
-```typescript
-private extractProperties(obj: TiledObject): void {
-    if (obj.properties) {
-        for (const prop of obj.properties) {
-            switch (prop.name) {
-                case 'custom_property':
-                    this.customValue = prop.value;
-                    break;
-            }
-        }
-    }
-}
-```
-
-## Performance Optimization
-
-### Build Optimization (vite/config.prod.optimized.mjs)
-
-```javascript
-{
-    build: {
-        sourcemap: false,           // Disable for production
-        target: 'es2020',          // Modern browsers
-        rollupOptions: {
-            output: {
-                manualChunks: {
-                    phaser: ['phaser']  // Separate Phaser chunk
-                }
-            },
-            treeshake: {
-                preset: 'smallest'      // Aggressive tree shaking
-            }
-        },
-        terserOptions: {
-            compress: {
-                drop_console: true,     // Remove console logs
-                drop_debugger: true     // Remove debugger
-            }
-        }
-    }
-}
-```
-
-### Runtime Optimizations
-
-1. **Object Pooling**: Reuse sprites instead of creating new ones
-2. **Texture Atlases**: Combine sprites to reduce draw calls
-3. **Physics Optimization**: Use static bodies where possible
-4. **Event Cleanup**: Remove listeners when not needed
-
-```typescript
-// Object pooling example
-class BulletPool {
-    private pool: Bullet[] = [];
-    
-    get(): Bullet {
-        return this.pool.pop() || new Bullet();
-    }
-    
-    release(bullet: Bullet): void {
-        bullet.reset();
-        this.pool.push(bullet);
-    }
-}
-```
-
-## Debugging Guide
-
-### EventBus Debugger (utils/EventBusDebugger.ts)
-
-```typescript
-export class EventBusDebugger {
-    enable(): void {
-        eventBus.setDebugMode(true);
-        // Logs all events
-    }
-    
-    logEventStats(): void {
-        console.log('Total listeners:', eventBus.getListenerCount());
-    }
-}
-```
-
-### Physics Debug Mode
-
-```typescript
-// Enable in config
-physics: {
-    arcade: {
-        debug: true  // Shows collision boxes
-    }
-}
-```
+### Optimization Strategies
+1. **Object Pooling**: Reuse bullets and particles
+2. **Texture Atlases**: Combine sprites for batch rendering
+3. **Event Cleanup**: Remove listeners when not needed
+4. **Culling**: Disable off-screen objects
+5. **LOD System**: Reduce detail for distant objects
 
 ### Performance Monitoring
-
 ```typescript
-// Add to Game scene update
-update(time: number, delta: number) {
-    // Monitor FPS
-    const fps = Math.round(1000 / delta);
-    if (fps < 30) {
-        console.warn('Low FPS:', fps);
-    }
-    
-    // Monitor object count
-    const objectCount = this.children.length;
-    if (objectCount > 1000) {
-        console.warn('High object count:', objectCount);
-    }
+// FPS monitoring
+this.game.loop.actualFps
+
+// Object count
+this.children.length
+
+// Physics bodies
+this.physics.world.bodies.entries.length
+```
+
+## 🐛 Debugging Tools
+
+### EventBus Debugger
+```typescript
+// Enable in development
+if (import.meta.env.DEV) {
+    eventBusDebugger.enable();
 }
 ```
 
-### Console Commands for Debugging
+### UUID Registry Debug
+```typescript
+// Press 'U' key to log all objects
+gameObjectManager.debugLogObjects();
+```
 
+### Trigger Visualization
+```typescript
+// Uncomment in Trigger constructor
+if (import.meta.env.DEV) {
+    this.createDebugVisualization();
+}
+```
+
+### Console Commands
 ```javascript
-// Access game instance
-const game = window.game;
+// Get player
+game.scene.scenes[3].player
 
-// Get current scene
-const scene = game.scene.getScenes(true)[0];
+// List all UUIDs
+GameObjectManager.getInstance().getAllObjects()
 
-// Pause physics
-scene.physics.world.pause();
-
-// Enable debug draw
-scene.physics.world.drawDebug = true;
-
-// List all animations
-scene.anims.anims.entries;
-
-// Trigger events manually
-eventBus.emit(GameEvent.PLAYER_JUMP, { player: null, velocity: -500 });
+// Trigger event manually
+eventBus.emit('player-hit', {damage: 1})
 ```
 
-## Best Practices
+## 📚 API Reference
 
-### Code Organization
-
-1. **Single Responsibility**: Each class handles one concern
-2. **Event-Driven**: Use EventBus for loose coupling
-3. **Type Safety**: Leverage TypeScript for compile-time checks
-4. **Configuration-Driven**: Keep logic separate from data
-
-### Memory Management
-
-1. **Destroy unused objects**: Call `destroy()` on sprites
-2. **Remove event listeners**: Use `off()` or `removeAllListeners()`
-3. **Clear references**: Set to null when done
-4. **Texture cleanup**: Unload unused textures
-
-### Error Handling
-
+### Player API
 ```typescript
-try {
-    // Risky operation
-    this.loadAsset(key);
-} catch (error) {
-    console.error(`Failed to load asset ${key}:`, error);
-    // Fallback behavior
-    this.useDefaultAsset();
-}
-```
-
-## Common Patterns
-
-### State Machine Pattern
-
-```typescript
-enum State {
-    IDLE, WALKING, JUMPING, ATTACKING
-}
-
-class StateMachine {
-    private state: State = State.IDLE;
+class Player {
+    // Properties
+    health: number;
+    maxHealth: number;
     
-    transition(newState: State): void {
-        if (this.canTransition(this.state, newState)) {
-            this.exitState(this.state);
-            this.state = newState;
-            this.enterState(newState);
-        }
-    }
+    // Methods
+    takeDamage(damage: number): void;
+    heal(amount: number): void;
+    shoot(): void;
+    jump(): void;
+    getHealth(): number;
+    getMaxHealth(): number;
 }
 ```
 
-### Component Pattern
-
+### Enemy API
 ```typescript
-interface Component {
-    update(delta: number): void;
-}
-
-class Entity {
-    private components: Component[] = [];
+class Enemy {
+    // Properties
+    moveMethod: string;
+    damage: number;
     
-    addComponent(component: Component): void {
-        this.components.push(component);
-    }
-    
-    update(delta: number): void {
-        this.components.forEach(c => c.update(delta));
-    }
+    // Methods
+    takeDamage(damage: number): void;
+    getDamage(): number;
+    setMoveMethod(method: string): void;
 }
 ```
 
-### Factory Pattern
-
+### GameObjectManager API
 ```typescript
-class EntityFactory {
-    static create(type: string, scene: Scene, data: any): Sprite {
-        switch (type) {
-            case 'player':
-                return new Player(scene, data);
-            case 'enemy':
-                return new Enemy(scene, data);
-            default:
-                throw new Error(`Unknown entity type: ${type}`);
-        }
-    }
+class GameObjectManager {
+    // Methods
+    registerObject(uuid: string, object: GameObject, type: string): void;
+    getObjectByUUID(uuid: string): GameObjectWithUUID | undefined;
+    getObjectsByType(type: string): GameObjectWithUUID[];
+    removeObject(uuid: string): boolean;
+    hasObject(uuid: string): boolean;
+    getAllObjects(): GameObjectWithUUID[];
 }
 ```
 
-## Troubleshooting
+### EventBus API
+```typescript
+class EventBus {
+    // Methods
+    emit(event: GameEvent, data?: any): void;
+    on(event: GameEvent, callback: Function): void;
+    once(event: GameEvent, callback: Function): void;
+    off(event: GameEvent, callback: Function): void;
+    removeAllListeners(event?: GameEvent): void;
+}
+```
 
-### Common Issues and Solutions
+## 🔄 Development Workflow
 
-1. **Assets not loading**
-   - Check file paths in tilemap
-   - Verify assets exist in public folder
-   - Check browser console for 404 errors
-
-2. **Animations not playing**
-   - Verify animation config JSON
-   - Check atlas frame names match
-   - Ensure animation is created before playing
-
-3. **Physics not working**
-   - Enable debug mode to visualize
-   - Check collision layers in tilemap
-   - Verify physics bodies are enabled
-
-4. **Memory leaks**
-   - Remove event listeners
-   - Destroy unused sprites
-   - Clear tweens and timers
-
-5. **Build failures**
-   - Check TypeScript errors
-   - Verify JSON syntax
-   - Clear node_modules and reinstall
-
-## Resources
-
-### Phaser Documentation
-- [Phaser 3 API](https://photonstorm.github.io/phaser3-docs/)
-- [Phaser Examples](https://phaser.io/examples)
-
-### Tools
-- [Tiled Map Editor](https://www.mapeditor.org/)
-- [TexturePacker](https://www.codeandweb.com/texturepacker)
-- [Phaser Editor](https://phasereditor2d.com/)
-
-### Community
-- [Phaser Discord](https://discord.gg/phaser)
-- [HTML5 Game Devs Forum](https://www.html5gamedevs.com/)
-
-## Contributing
-
-### Code Style
-
-- Use TypeScript strict mode
-- Follow existing patterns
-- Add JSDoc comments for public APIs
-- Write self-documenting code
-
-### Pull Request Process
-
-1. Create feature branch
-2. Implement with tests
-3. Update documentation
-4. Submit PR with description
-5. Address review feedback
-
-### Version Control
-
+### Setup
 ```bash
-# Feature branch
-git checkout -b feature/new-feature
-
-# Commit with meaningful message
-git commit -m "feat: add new enemy type with patrol behavior"
-
-# Push and create PR
-git push origin feature/new-feature
+npm install
+npm run dev
 ```
+
+### Build Process
+```bash
+# Development build
+npm run dev
+
+# Production build
+npm run build
+
+# Build without logs
+npm run build-nolog
+```
+
+### Testing Checklist
+- [ ] Player controls responsive
+- [ ] Enemies behave correctly
+- [ ] Triggers activate properly
+- [ ] Audio plays correctly
+- [ ] UI updates properly
+- [ ] Performance acceptable (60 FPS)
+
+### Deployment
+1. Run production build
+2. Test dist/ locally
+3. Deploy to static host
+4. Verify all assets load
+
+## 📝 Best Practices
+
+1. **Always use TypeScript types**
+2. **Configure via JSON, not hardcoded values**
+3. **Use event bus for communication**
+4. **Register objects with UUIDs**
+5. **Clean up resources in destroy()**
+6. **Test on multiple browsers**
+7. **Profile performance regularly**
+8. **Document configuration options**
+
+---
+
+For questions or contributions, please refer to the main README or create an issue on GitHub.

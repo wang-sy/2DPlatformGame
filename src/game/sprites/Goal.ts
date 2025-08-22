@@ -1,9 +1,11 @@
 import { Scene } from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
+import { AnimationManager } from '../managers/AnimationManager';
 
 export class Goal extends Phaser.Physics.Arcade.Sprite {
-    // private goalType: string;
+    private goalName: string;
     private collected: boolean = false;
+    private animationManager: AnimationManager;
 
     constructor(scene: Scene, goalObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = goalObject.x || 0;
@@ -16,7 +18,8 @@ export class Goal extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this, true);
         
         this.setOrigin(0.5, 0.5);
-        // this.goalType = goalObject.name || 'flag';
+        this.goalName = goalObject.name || 'goal';
+        this.animationManager = AnimationManager.getInstance();
         
         this.setSize(40, 56);
         this.setOffset(12, 8);
@@ -37,6 +40,23 @@ export class Goal extends Phaser.Physics.Arcade.Sprite {
     }
 
     private playIdleAnimation(): void {
+        // Try to play idle animation using AnimationManager
+        const atlasKey = this.goalName;
+        
+        // First check if animations exist for this atlas/texture
+        if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+            this.animationManager.playAnimation(this, atlasKey, 'idle');
+        } else {
+            // Try to create animations if they don't exist
+            this.animationManager.createAnimationsForAtlas(atlasKey);
+            
+            // Check again after attempting to create
+            if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+                this.animationManager.playAnimation(this, atlasKey, 'idle');
+            }
+        }
+        
+        // Also add scaling animation
         this.scene.tweens.add({
             targets: this,
             scaleX: 1.1,

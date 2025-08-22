@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
+import { AnimationManager } from '../managers/AnimationManager';
 
 /**
  * Generic Enemy sprite class
@@ -42,6 +43,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // Animation state
     private currentAnimation: string = '';
     private hasAtlas: boolean = false;
+    private animationManager: AnimationManager;
 
     constructor(scene: Scene, enemyObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = enemyObject.x || 0;
@@ -55,6 +57,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         this.setOrigin(0.5, 0.5);
         this.enemyName = enemyObject.name || 'enemy';
+        this.animationManager = AnimationManager.getInstance();
         
         // Store starting position for patrol
         this.startX = this.x;
@@ -72,6 +75,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // Extract properties from tilemap
         this.extractProperties(enemyObject);
+        
+        // Try to play idle animation
+        this.tryPlayIdleAnimation();
         
         // Start initial movement
         this.initializeMovement();
@@ -152,27 +158,46 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         switch (this.moveMethod) {
             case 'patrol':
                 this.setVelocityX(this.moveSpeed * this.direction);
-                this.playAnimation('walk');
+                this.playEnemyAnimation('walk');
                 break;
             case 'jump':
-                this.playAnimation('idle');
+                this.playEnemyAnimation('idle');
                 break;
             case 'move_and_jump':
-                this.playAnimation('idle');
+                this.playEnemyAnimation('idle');
                 break;
             case 'patrol_jump':
                 this.setVelocityX(this.moveSpeed * this.direction);
-                this.playAnimation('walk');
+                this.playEnemyAnimation('walk');
                 break;
             case 'static':
             default:
                 this.setVelocityX(0);
-                this.playAnimation('idle');
+                this.playEnemyAnimation('idle');
                 break;
         }
     }
     
-    private playAnimation(animType: string): void {
+    private tryPlayIdleAnimation(): void {
+        const atlasKey = this.enemyName;
+        
+        // First check if animations exist for this atlas/texture
+        if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+            this.animationManager.playAnimation(this, atlasKey, 'idle');
+            this.hasAtlas = true;
+        } else {
+            // Try to create animations if they don't exist
+            this.animationManager.createAnimationsForAtlas(atlasKey);
+            
+            // Check again after attempting to create
+            if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+                this.animationManager.playAnimation(this, atlasKey, 'idle');
+                this.hasAtlas = true;
+            }
+        }
+    }
+    
+    private playEnemyAnimation(animType: string): void {
         if (!this.hasAtlas) return;
         
         // Emit animation play event - the AnimationManager will handle fallback logic
@@ -257,7 +282,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // Update animation
         if (this.isGrounded && Math.abs(this.body?.velocity.x || 0) > 10) {
-            this.playAnimation('walk');
+            this.playEnemyAnimation('walk');
         }
     }
     
@@ -266,7 +291,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.isGrounded && time - this.lastJumpTime > this.jumpInterval) {
             this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
-            this.playAnimation('jump');
+            this.playEnemyAnimation('jump');
             
             // Play jump sound through event
             eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
@@ -277,7 +302,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             });
         } else if (this.isGrounded) {
             this.setVelocityX(0);
-            this.playAnimation('idle');
+            this.playEnemyAnimation('idle');
         }
     }
     
@@ -289,7 +314,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.isGrounded && time - this.lastJumpTime > this.jumpInterval) {
             this.setVelocityY(-this.jumpPower);
             this.lastJumpTime = time;
-            this.playAnimation('jump');
+            this.playEnemyAnimation('jump');
             
             // Play jump sound through event
             eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
@@ -312,7 +337,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             // Jump forward in current direction
             this.setVelocity(this.moveSpeed * this.direction, -this.jumpPower);
             this.lastJumpTime = time;
-            this.playAnimation('jump');
+            this.playEnemyAnimation('jump');
             
             // Play jump sound through event
             eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
@@ -324,7 +349,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         } else if (this.isGrounded) {
             // Stop horizontal movement when on ground (waiting to jump)
             this.setVelocityX(0);
-            this.playAnimation('idle');
+            this.playEnemyAnimation('idle');
         }
     }
     
@@ -340,15 +365,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             
             if (Math.abs(dx) > 10) {
                 this.setVelocityX(this.moveSpeed * this.direction);
-                this.playAnimation('walk');
+                this.playEnemyAnimation('walk');
             } else {
                 this.setVelocityX(0);
-                this.playAnimation('idle');
+                this.playEnemyAnimation('idle');
             }
         } else {
             // Stop when player is out of range
             this.setVelocityX(0);
-            this.playAnimation('idle');
+            this.playEnemyAnimation('idle');
         }
     }
     
@@ -361,7 +386,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             if (dy < -50) {
                 this.setVelocityY(-this.jumpPower);
                 this.lastJumpTime = time;
-                this.playAnimation('jump');
+                this.playEnemyAnimation('jump');
                 
                 // Play jump sound through event
                 eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {

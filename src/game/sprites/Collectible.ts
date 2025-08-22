@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
+import { AnimationManager } from '../managers/AnimationManager';
 
 /**
  * Collectible sprite class
@@ -22,6 +23,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
     private shouldRotate: boolean = false;
     private particleColor: number = 0xFFFFFF;
     private properties: any = {};
+    private animationManager: AnimationManager;
 
     constructor(scene: Scene, collectibleObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = collectibleObject.x || 0;
@@ -36,6 +38,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
         this.setOrigin(0.5, 0.5);
         this.collectibleName = collectibleObject.name || 'collectible';
         this.collectibleType = 'misc'; // Default type
+        this.animationManager = AnimationManager.getInstance();
         
         this.setSize(40, 40);
         this.setOffset(12, 12);
@@ -44,7 +47,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
         this.extractProperties(collectibleObject);
         
         this.createAnimations();
-        this.playIdleAnimation();
+        this.tryPlayIdleAnimation();
     }
     
     private extractProperties(collectibleObject: Phaser.Types.Tilemaps.TiledObject): void {
@@ -106,6 +109,26 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+
+    private tryPlayIdleAnimation(): void {
+        // Try to play idle animation using AnimationManager
+        const atlasKey = this.collectibleName;
+        
+        // First check if animations exist for this atlas/texture
+        if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+            this.animationManager.playAnimation(this, atlasKey, 'idle');
+        } else {
+            // Try to create animations if they don't exist
+            this.animationManager.createAnimationsForAtlas(atlasKey);
+            
+            // Check again after attempting to create
+            if (this.animationManager.hasAnimation(atlasKey, 'idle')) {
+                this.animationManager.playAnimation(this, atlasKey, 'idle');
+            }
+            // If still no idle animation, it will just display as static image
+        }
+    }
+
     private createAnimations(): void {
         // Floating animation
         this.scene.tweens.add({
@@ -127,10 +150,8 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
                 repeat: -1
             });
         }
-    }
-
-    private playIdleAnimation(): void {
-        // Pulsing animation
+        
+        // Pulsing animation (for both atlas and static images)
         this.scene.tweens.add({
             targets: this,
             scaleX: 1.1,

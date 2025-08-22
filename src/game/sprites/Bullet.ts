@@ -3,7 +3,6 @@ import { eventBus, GameEvent } from '../events/EventBus';
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
     private horizontalSpeed: number = 500;
-    private bounceVelocity: number = 300;
     private gravity: number = 800;
     private bounceCount: number = 0;
     private lifetime: number = 5000;

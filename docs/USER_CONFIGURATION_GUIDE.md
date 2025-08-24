@@ -260,6 +260,35 @@ public/
 | delay | int | 0 | Activation delay (ms) |
 | repeat | bool | false | Can trigger multiple times |
 | return_to_origin | bool | true | Return to original state |
+| texture_key | string | - | Sprite/image texture for visual trigger |
+| active_texture | string | - | Texture when trigger is activated |
+| inactive_texture | string | - | Texture when trigger is inactive |
+| use_sprite | bool | false | Use animated sprite instead of static image |
+| visual_scale | float | 1 | Scale of the visual representation |
+
+### Visual Trigger Example (Switch)
+```json
+{
+  "type": "trigger",
+  "name": "switch",
+  "width": 64,
+  "height": 64,
+  "properties": [
+    {"name": "uuid", "value": "switch-001"},
+    {"name": "event_type", "value": "move"},
+    {"name": "target_uuid", "value": "door-001"},
+    {"name": "texture_key", "value": "switch_off"},
+    {"name": "active_texture", "value": "switch_on"},
+    {"name": "inactive_texture", "value": "switch_off"},
+    {"name": "use_sprite", "value": false},
+    {"name": "visual_scale", "value": 1.0},
+    {"name": "velocity_y", "value": -500},
+    {"name": "duration", "value": 3000},
+    {"name": "repeat", "value": true},
+    {"name": "return_to_origin", "value": true}
+  ]
+}
+```
 
 ### Trigger Use Cases
 1. **Spike Traps**: Spikes that pop up when player approaches
@@ -267,6 +296,10 @@ public/
 3. **Boss Transformations**: Enemies that grow when player enters arena
 4. **Environmental Hazards**: Falling rocks, rising lava
 5. **Puzzle Elements**: Doors, switches, mechanisms
+6. **Visual Switches**: Interactive buttons that change appearance when pressed
+7. **Pressure Plates**: Floor tiles that depress when stepped on
+8. **Levers**: Toggle switches with on/off states
+9. **Interactive Decorations**: Objects that react to player presence
 
 ## 🎬 Animation Configuration
 

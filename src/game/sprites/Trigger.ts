@@ -16,6 +16,14 @@ export class Trigger extends Phaser.GameObjects.Zone {
     private originalVelocity?: Phaser.Math.Vector2;
     private originalScale?: Phaser.Math.Vector2;
     private debugGraphics?: Phaser.GameObjects.Rectangle;
+    
+    // Visual representation properties
+    private sprite?: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
+    private textureKey?: string;
+    private activeTextureKey?: string;  // Texture to show when activated
+    private inactiveTextureKey?: string;  // Texture to show when inactive
+    private useSprite: boolean = false;  // Whether to use Sprite (animated) or Image (static)
+    private visualScale: number = 1;  // Scale for the visual representation
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = tiledObject.x || 0;
@@ -31,9 +39,12 @@ export class Trigger extends Phaser.GameObjects.Zone {
         // Parse properties from tilemap
         this.parseProperties(tiledObject);
         
+        // Create visual representation if texture is specified
+        this.createVisualRepresentation(scene, x + width/2, y + height/2);
+        
         // Debug visualization - disabled by default
         // Uncomment the following lines to see trigger areas in development
-        // if (import.meta.env.DEV) {
+        // if (import.meta.env.DEV && !this.sprite) {
         //     this.createDebugVisualization();
         // }
     }
@@ -74,8 +85,49 @@ export class Trigger extends Phaser.GameObjects.Zone {
                 case 'return_to_origin':
                     this.returnToOrigin = prop.value;
                     break;
+                case 'texture':
+                case 'texture_key':
+                    this.textureKey = prop.value;
+                    this.inactiveTextureKey = prop.value;  // Default inactive texture
+                    break;
+                case 'active_texture':
+                case 'texture_active':
+                    this.activeTextureKey = prop.value;
+                    break;
+                case 'inactive_texture':
+                case 'texture_inactive':
+                    this.inactiveTextureKey = prop.value;
+                    break;
+                case 'use_sprite':
+                    this.useSprite = prop.value;
+                    break;
+                case 'visual_scale':
+                    this.visualScale = prop.value;
+                    break;
             }
         });
+    }
+    
+    private createVisualRepresentation(scene: Phaser.Scene, x: number, y: number) {
+        if (!this.textureKey && !this.inactiveTextureKey) {
+            return;  // No texture specified, remain invisible
+        }
+        
+        const texture = this.inactiveTextureKey || this.textureKey;
+        
+        if (this.useSprite) {
+            // Create animated sprite
+            this.sprite = scene.add.sprite(x, y, texture!);
+        } else {
+            // Create static image
+            this.sprite = scene.add.image(x, y, texture!);
+        }
+        
+        if (this.sprite) {
+            this.sprite.setScale(this.visualScale);
+            // Set depth to be above ground but below player
+            this.sprite.setDepth(1);
+        }
     }
     
     private createDebugVisualization() {
@@ -107,6 +159,9 @@ export class Trigger extends Phaser.GameObjects.Zone {
         }
         
         this.triggered = true;
+        
+        // Update visual state if sprite exists
+        this.updateVisualState(true);
         
         // Apply delay if specified
         if (this.delay > 0) {
@@ -241,6 +296,7 @@ export class Trigger extends Phaser.GameObjects.Zone {
                                 // Reset triggered state if repeatable
                                 if (this.repeat) {
                                     this.triggered = false;
+                                    this.updateVisualState(false);
                                 }
                             }
                         });
@@ -250,6 +306,7 @@ export class Trigger extends Phaser.GameObjects.Zone {
                             // Wait for a bit before allowing re-trigger
                             this.scene.time.delayedCall(1000, () => {
                                 this.triggered = false;
+                                this.updateVisualState(false);
                             });
                         }
                     }
@@ -281,6 +338,7 @@ export class Trigger extends Phaser.GameObjects.Zone {
                 
                 if (this.repeat) {
                     this.triggered = false;
+                    this.updateVisualState(false);
                 }
             });
         }
@@ -335,6 +393,7 @@ export class Trigger extends Phaser.GameObjects.Zone {
                             // Reset triggered state if repeatable
                             if (this.repeat) {
                                 this.triggered = false;
+                                this.updateVisualState(false);
                             }
                         }
                     });
@@ -343,10 +402,30 @@ export class Trigger extends Phaser.GameObjects.Zone {
         });
     }
     
+    private updateVisualState(active: boolean) {
+        if (!this.sprite) return;
+        
+        if (active && this.activeTextureKey) {
+            this.sprite.setTexture(this.activeTextureKey);
+            // Optional: Add visual feedback like scale bounce
+            this.scene.tweens.add({
+                targets: this.sprite,
+                scaleX: this.visualScale * 1.1,
+                scaleY: this.visualScale * 1.1,
+                duration: 100,
+                yoyo: true,
+                ease: 'Power2'
+            });
+        } else if (!active && this.inactiveTextureKey) {
+            this.sprite.setTexture(this.inactiveTextureKey);
+        }
+    }
+    
     reset() {
         this.triggered = false;
         this.originalVelocity = undefined;
         this.originalScale = undefined;
+        this.updateVisualState(false);
     }
     
     isTriggered(): boolean {
@@ -356,6 +435,9 @@ export class Trigger extends Phaser.GameObjects.Zone {
     destroy() {
         if (this.debugGraphics) {
             this.debugGraphics.destroy();
+        }
+        if (this.sprite) {
+            this.sprite.destroy();
         }
         super.destroy();
     }

@@ -97,6 +97,15 @@ export class Trigger extends Phaser.GameObjects.Zone {
             return;
         }
         
+        // Early check if target still exists before triggering
+        if (this.targetUUID) {
+            const targetObj = GameObjectManager.getInstance().getObjectByUUID(this.targetUUID);
+            if (!targetObj || !targetObj.object || !targetObj.object.active) {
+                console.warn(`Cannot activate trigger: target object ${this.targetUUID} is not available`);
+                return;
+            }
+        }
+        
         this.triggered = true;
         
         // Apply delay if specified
@@ -132,6 +141,16 @@ export class Trigger extends Phaser.GameObjects.Zone {
             return;
         }
         
+        // Check if the object is still active and not destroyed
+        if (!targetObj.object || !targetObj.object.active) {
+            console.warn(`Target object with UUID ${this.targetUUID} has been destroyed or is inactive`);
+            // Reset trigger state if repeatable
+            if (this.repeat) {
+                this.triggered = false;
+            }
+            return;
+        }
+        
         switch (this.eventType) {
             case 'move':
                 this.executeMoveEvent(targetObj.object);
@@ -145,6 +164,15 @@ export class Trigger extends Phaser.GameObjects.Zone {
     }
     
     private executeMoveEvent(target: Phaser.GameObjects.GameObject) {
+        // Safety check: ensure target still exists and is active
+        if (!target || !target.active) {
+            console.warn('Target object no longer exists or is inactive');
+            if (this.repeat) {
+                this.triggered = false;
+            }
+            return;
+        }
+        
         const physicsTarget = target as any;
         if (!physicsTarget.body) {
             console.warn('Target object has no physics body for movement');
@@ -172,12 +200,25 @@ export class Trigger extends Phaser.GameObjects.Zone {
                 duration: this.duration,
                 ease: 'Power2.InOut',
                 onUpdate: () => {
+                    // Check if target still exists before updating
+                    if (!physicsTarget || !physicsTarget.active) {
+                        this.scene.tweens.killTweensOf(physicsTarget);
+                        return;
+                    }
                     // Update static body position
                     if (physicsTarget.body && physicsTarget.body.updateFromGameObject) {
                         physicsTarget.body.updateFromGameObject();
                     }
                 },
                 onComplete: () => {
+                    // Check if target still exists before returning to origin
+                    if (!physicsTarget || !physicsTarget.active) {
+                        if (this.repeat) {
+                            this.triggered = false;
+                        }
+                        return;
+                    }
+                    
                     if (this.returnToOrigin) {
                         // Return to original position
                         this.scene.tweens.add({
@@ -187,6 +228,11 @@ export class Trigger extends Phaser.GameObjects.Zone {
                             duration: this.duration,
                             ease: 'Power2.InOut',
                             onUpdate: () => {
+                                // Check if target still exists during return animation
+                                if (!physicsTarget || !physicsTarget.active) {
+                                    this.scene.tweens.killTweensOf(physicsTarget);
+                                    return;
+                                }
                                 if (physicsTarget.body && physicsTarget.body.updateFromGameObject) {
                                     physicsTarget.body.updateFromGameObject();
                                 }
@@ -221,7 +267,15 @@ export class Trigger extends Phaser.GameObjects.Zone {
             physicsTarget.setVelocity(this.velocityX, this.velocityY);
             
             this.scene.time.delayedCall(this.duration, () => {
-                if (this.originalVelocity) {
+                // Check if target still exists before resetting velocity
+                if (!physicsTarget || !physicsTarget.active) {
+                    if (this.repeat) {
+                        this.triggered = false;
+                    }
+                    return;
+                }
+                
+                if (this.originalVelocity && physicsTarget.setVelocity) {
                     physicsTarget.setVelocity(this.originalVelocity.x, this.originalVelocity.y);
                 }
                 
@@ -233,6 +287,15 @@ export class Trigger extends Phaser.GameObjects.Zone {
     }
     
     private executeScaleEvent(target: Phaser.GameObjects.GameObject) {
+        // Safety check: ensure target still exists and is active
+        if (!target || !target.active) {
+            console.warn('Target object no longer exists or is inactive');
+            if (this.repeat) {
+                this.triggered = false;
+            }
+            return;
+        }
+        
         const scaleTarget = target as any;
         
         // Store original scale if this is the first time
@@ -253,6 +316,14 @@ export class Trigger extends Phaser.GameObjects.Zone {
             onComplete: () => {
                 // Keep the new scale for the specified duration
                 this.scene.time.delayedCall(this.duration, () => {
+                    // Check if target still exists before animating back
+                    if (!target || !target.active) {
+                        if (this.repeat) {
+                            this.triggered = false;
+                        }
+                        return;
+                    }
+                    
                     // Animate back to original scale
                     this.scene.tweens.add({
                         targets: target,

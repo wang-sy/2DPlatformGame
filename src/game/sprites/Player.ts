@@ -2,12 +2,33 @@ import Phaser from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { Bullet } from './Bullet';
 
+interface PlayerAbilities {
+    canJump: boolean;
+    canDoubleJump: boolean;
+    canWallJump: boolean;
+    canWallSlide: boolean;
+    canChargeJump: boolean;
+    canShoot: boolean;
+    canMove: boolean;
+}
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
     private moveSpeed: number = 200;
     private jumpSpeed: number = 500;
     private currentAnimation: string = '';
     private key: string = '';
+    
+    // Ability configuration
+    private abilities: PlayerAbilities = {
+        canJump: true,
+        canDoubleJump: true,
+        canWallJump: true,
+        canWallSlide: true,
+        canChargeJump: true,
+        canShoot: true,
+        canMove: true
+    };
     
     // Double jump
     private jumpCount: number = 0;
@@ -55,14 +76,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.key = key;
         
-        // Read max health from tilemap properties
+        // Read properties from tilemap
         const properties = tiledObject.properties as any[];
         if (properties) {
+            // Health configuration
             const maxHealthProp = properties.find(prop => prop.name === 'max_health');
             if (maxHealthProp && maxHealthProp.value > 0) {
                 this.maxHealth = maxHealthProp.value;
                 this.health = this.maxHealth;
             }
+            
+            // Ability configuration
+            this.parseAbilityProperties(properties);
         }
 
         scene.add.existing(this);
@@ -100,6 +125,48 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Play initial animation using AnimationManager
         this.playAnimation('idle');
+    }
+    
+    private parseAbilityProperties(properties: any[]) {
+        // Parse each ability from properties
+        properties.forEach(prop => {
+            switch (prop.name) {
+                case 'can_jump':
+                    this.abilities.canJump = prop.value;
+                    break;
+                case 'can_double_jump':
+                    this.abilities.canDoubleJump = prop.value;
+                    if (!prop.value) {
+                        this.maxJumps = 1; // Disable double jump
+                    }
+                    break;
+                case 'can_wall_jump':
+                    this.abilities.canWallJump = prop.value;
+                    break;
+                case 'can_wall_slide':
+                    this.abilities.canWallSlide = prop.value;
+                    break;
+                case 'can_charge_jump':
+                    this.abilities.canChargeJump = prop.value;
+                    break;
+                case 'can_shoot':
+                    this.abilities.canShoot = prop.value;
+                    break;
+                case 'can_move':
+                    this.abilities.canMove = prop.value;
+                    break;
+                // Additional ability parameters
+                case 'move_speed':
+                    this.moveSpeed = prop.value;
+                    break;
+                case 'jump_speed':
+                    this.jumpSpeed = prop.value;
+                    break;
+                case 'max_jumps':
+                    this.maxJumps = prop.value;
+                    break;
+            }
+        });
     }
 
     private playAnimation(animName: string): void {
@@ -176,34 +243,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Horizontal movement
-        if (this.cursors.left.isDown) {
-            this.setVelocityX(-this.moveSpeed);
-            this.setFlipX(true);
-            
-            if (onGround) {
-                this.playAnimation('walk');
+        if (this.abilities.canMove) {
+            if (this.cursors.left.isDown) {
+                this.setVelocityX(-this.moveSpeed);
+                this.setFlipX(true);
+                
+                if (onGround) {
+                    this.playAnimation('walk');
+                }
+                
+                // Emit player move event
+                eventBus.emit(GameEvent.PLAYER_MOVE, {
+                    player: this,
+                    direction: 'left',
+                    velocity: -this.moveSpeed
+                });
+            } else if (this.cursors.right.isDown) {
+                this.setVelocityX(this.moveSpeed);
+                this.setFlipX(false);
+                
+                if (onGround) {
+                    this.playAnimation('walk');
+                }
+                
+                // Emit player move event
+                eventBus.emit(GameEvent.PLAYER_MOVE, {
+                    player: this,
+                    direction: 'right',
+                    velocity: this.moveSpeed
+                });
+            } else {
+                this.setVelocityX(0);
+                if (onGround) {
+                    this.playAnimation('idle');
+                }
             }
-            
-            // Emit player move event
-            eventBus.emit(GameEvent.PLAYER_MOVE, {
-                player: this,
-                direction: 'left',
-                velocity: -this.moveSpeed
-            });
-        } else if (this.cursors.right.isDown) {
-            this.setVelocityX(this.moveSpeed);
-            this.setFlipX(false);
-            
-            if (onGround) {
-                this.playAnimation('walk');
-            }
-            
-            // Emit player move event
-            eventBus.emit(GameEvent.PLAYER_MOVE, {
-                player: this,
-                direction: 'right',
-                velocity: this.moveSpeed
-            });
         } else {
             this.setVelocityX(0);
             
@@ -225,7 +299,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Charge jump (hold space while on ground)
         const spaceKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         
-        if (spaceKey?.isDown && onGround && !this.isCharging) {
+        if (this.abilities.canChargeJump && spaceKey?.isDown && onGround && !this.isCharging) {
             this.isCharging = true;
             this.chargeTime = 0;
             this.playAnimation('duck');
@@ -243,7 +317,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Release charge jump
-        if (this.isCharging && spaceKey?.isUp) {
+        if (this.abilities.canChargeJump && this.isCharging && spaceKey?.isUp) {
             if (this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
                 const jumpVelocity = -this.jumpSpeed * chargeMultiplier;

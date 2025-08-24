@@ -60,6 +60,41 @@
               "name": "max_health",
               "type": "int",
               "value": 1
+            },
+            {
+              "name": "can_jump",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_double_jump",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_wall_jump",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_wall_slide",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_charge_jump",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_shoot",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "can_move",
+              "type": "bool",
+              "value": true
             }
           ]
         },

@@ -81,6 +81,15 @@ export class GameObjectManager {
     removeObject(uuid: string): boolean {
         return this.gameObjects.delete(uuid);
     }
+    
+    /**
+     * Unregister an object from the manager (alias for removeObject)
+     * @param uuid The UUID of the object to unregister
+     * @returns True if the object was removed, false if not found
+     */
+    unregisterObject(uuid: string): boolean {
+        return this.removeObject(uuid);
+    }
 
     /**
      * Clear all registered objects

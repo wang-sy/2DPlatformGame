@@ -348,6 +348,7 @@ export class Game extends Scene
                 );
             });
         }
+        
     }
 
     private handlePlayerHazardCollision(player: any, hazard: any) {
@@ -592,8 +593,7 @@ export class Game extends Scene
         
         this.cameras.main.shake(50, 0.003);
     }
-    
-    private handlePlayerTriggerCollision(player: any, trigger: any) {
+private handlePlayerTriggerCollision(player: any, trigger: any) {
         const playerInstance = player as Player;
         const triggerInstance = trigger as Trigger;
         
@@ -626,7 +626,6 @@ export class Game extends Scene
             this.restartGame();
         }
     }
-    
     restartGame() {
         // Pause physics world
         this.physics.world.pause();

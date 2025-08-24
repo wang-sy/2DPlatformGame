@@ -76,16 +76,96 @@ public/
       "name": "max_health",
       "type": "int",
       "value": 3
+    },
+    {
+      "name": "can_jump",
+      "type": "bool",
+      "value": true
+    },
+    {
+      "name": "can_double_jump",
+      "type": "bool",
+      "value": false
+    },
+    {
+      "name": "can_shoot",
+      "type": "bool",
+      "value": true
     }
   ]
 }
 ```
 
-### Configurable Parameters
+### Ability Configuration
+Control which abilities the player has in each level:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| can_jump | bool | true | Basic jumping ability |
+| can_double_jump | bool | true | Mid-air second jump |
+| can_wall_jump | bool | true | Jump off walls |
+| can_wall_slide | bool | true | Slide slowly down walls |
+| can_charge_jump | bool | true | Hold SPACE for super jump |
+| can_shoot | bool | true | X key shooting ability |
+| can_move | bool | true | Left/right movement |
+
+### Movement Parameters
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | uuid | string | auto | Unique identifier |
 | max_health | int | 3 | Maximum life points |
+| move_speed | float | 200 | Horizontal movement speed |
+| jump_speed | float | 500 | Jump velocity |
+| max_jumps | int | 2 | Total jumps allowed (1=no double jump) |
+
+### Level Design Examples
+
+#### Tutorial Level (Limited Abilities)
+```json
+{
+  "type": "player",
+  "name": "character_purple",
+  "properties": [
+    {"name": "can_jump", "value": true},
+    {"name": "can_double_jump", "value": false},
+    {"name": "can_wall_jump", "value": false},
+    {"name": "can_shoot", "value": false},
+    {"name": "can_charge_jump", "value": false}
+  ]
+}
+```
+
+#### Platforming Challenge (No Combat)
+```json
+{
+  "type": "player",
+  "name": "character_purple",
+  "properties": [
+    {"name": "can_jump", "value": true},
+    {"name": "can_double_jump", "value": true},
+    {"name": "can_wall_jump", "value": true},
+    {"name": "can_wall_slide", "value": true},
+    {"name": "can_shoot", "value": false}
+  ]
+}
+```
+
+#### Combat Arena (Full Abilities)
+```json
+{
+  "type": "player",
+  "name": "character_purple",
+  "properties": [
+    {"name": "can_jump", "value": true},
+    {"name": "can_double_jump", "value": true},
+    {"name": "can_wall_jump", "value": true},
+    {"name": "can_charge_jump", "value": true},
+    {"name": "can_shoot", "value": true},
+    {"name": "jump_speed", "value": 600},
+    {"name": "max_jumps", "value": 3}
+  ]
+}
+```
 
 ### Player Sprite Requirements
 - Format: PNG with transparency

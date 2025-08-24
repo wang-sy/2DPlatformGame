@@ -365,6 +365,131 @@
               "value": true
             }
           ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 44,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 384,
+          "y": 896,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "f3c4d5e6-8f9a-0b1c-e2f3-4a5b6c7d8e9f"
+            },
+            {
+              "name": "destructible",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "health",
+              "type": "int",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 45,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 448,
+          "y": 896,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "a4d5e6f7-9a0b-1c2d-f3e4-5b6c7d8e9f0a"
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 46,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 448,
+          "y": 832,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "b5e6f7a8-0b1c-2d3e-e4f5-6c7d8e9f0a1b"
+            },
+            {
+              "name": "destructible",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "health",
+              "type": "int",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 47,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 960,
+          "y": 640,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "c6f7a8b9-1c2d-3e4f-f5e6-7d8e9f0a1b2c"
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 48,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 1024,
+          "y": 640,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "d7a8b9c0-2d3e-4f5a-e6f7-8e9f0a1b2c3d"
+            },
+            {
+              "name": "destructible",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "health",
+              "type": "int",
+              "value": 1
+            }
+          ]
         }
       ],
       "opacity": 1,
@@ -593,6 +718,18 @@
                 }
             ]
         }]
+    },
+    {
+      "firstgid": 9,
+      "image": "assets/obstacle/block_empty.png",
+      "imageheight": 64,
+      "imagewidth": 64,
+      "margin": 0,
+      "name": "block_empty",
+      "spacing": 0,
+      "tilecount": 1,
+      "tileheight": 64,
+      "tilewidth": 64
     }
   ],
   "tilewidth": 64,

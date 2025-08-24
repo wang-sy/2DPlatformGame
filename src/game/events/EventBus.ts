@@ -47,7 +47,10 @@ export enum GameEvent {
     // Enemy events
     ENEMY_SPAWN = 'enemy:spawn',
     ENEMY_DEATH = 'enemy:death',
-    ENEMY_ATTACK = 'enemy:attack'
+    ENEMY_ATTACK = 'enemy:attack',
+    
+    // Obstacle events
+    OBSTACLE_DESTROYED = 'obstacle:destroyed'
 }
 
 export interface EventData {
@@ -176,6 +179,12 @@ export interface EventData {
     [GameEvent.ENEMY_ATTACK]: {
         enemy: any;
         target: any;
+    };
+    
+    [GameEvent.OBSTACLE_DESTROYED]: {
+        x: number;
+        y: number;
+        type: string;
     };
 }
 

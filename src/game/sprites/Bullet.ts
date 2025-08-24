@@ -10,6 +10,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     private direction: number;
     private minBounceVelocity: number = 250;
     private maxBounceVelocity: number = 350;
+    private needsImmediateCheck: boolean = false;
     
     constructor(scene: Phaser.Scene, x: number, y: number, direction: number, playerVelocity?: { x: number, y: number }) {
         super(scene, x, y, 'bullet');
@@ -224,5 +225,13 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         }
         
         this.destroy();
+    }
+    
+    setImmediateCollisionCheck(value: boolean): void {
+        this.needsImmediateCheck = value;
+    }
+    
+    getNeedsImmediateCheck(): boolean {
+        return this.needsImmediateCheck;
     }
 }

@@ -6,6 +6,7 @@ import { Collectible } from '../sprites/Collectible';
 import { Enemy } from '../sprites/Enemy';
 import { Bullet } from '../sprites/Bullet';
 import { Trigger } from '../sprites/Trigger';
+import { Obstacle } from '../sprites/Obstacle';
 import { HealthUI } from '../ui/HealthUI';
 import { CollectedItemsManager } from '../managers/CollectedItemsManager';
 import { GameObjectManager } from '../managers/GameObjectManager';
@@ -27,6 +28,7 @@ export class Game extends Scene
     collectibles: Phaser.Physics.Arcade.StaticGroup;
     enemies: Phaser.Physics.Arcade.Group;
     triggers: Trigger[];
+    obstacles: Phaser.Physics.Arcade.StaticGroup;
     restartKey: Phaser.Input.Keyboard.Key;
     isVictory: boolean = false;
     healthUI: HealthUI;
@@ -165,6 +167,9 @@ export class Game extends Scene
             case "trigger":
                 this.createTriggerFromTilemap(obj, uuid);
                 return
+            case "obstacle":
+                this.createObstacleFromTilemap(obj, uuid);
+                return
             default:
                 console.log("unknown object type", obj.type);
         }
@@ -269,6 +274,18 @@ export class Game extends Scene
         // Register trigger with UUID
         this.gameObjectManager.registerObject(uuid, trigger, 'trigger', triggerObject.name);
     }
+    
+    private createObstacleFromTilemap(obstacleObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
+        if (!this.obstacles) {
+            this.obstacles = this.physics.add.staticGroup();
+        }
+        
+        const obstacle = new Obstacle(this, obstacleObject);
+        this.obstacles.add(obstacle);
+        
+        // Register obstacle with UUID
+        this.gameObjectManager.registerObject(uuid, obstacle, 'obstacle', obstacleObject.name);
+    }
 
     private createOverleapEvents() {
         // Setup player vs hazards overlap detection
@@ -328,6 +345,11 @@ export class Game extends Scene
             });
         }
         
+        // Setup player vs obstacles collision (not overlap)
+        if (this.player && this.obstacles) {
+            this.physics.add.collider(this.player, this.obstacles);
+        }
+        
         // Setup bullets vs enemies collision
         if (this.player && this.enemies) {
             this.physics.add.overlap(
@@ -347,8 +369,23 @@ export class Game extends Scene
                     layer
                 );
             });
+            
+            // Setup bullets vs obstacles collision with damage handling
+            if (this.obstacles) {
+                this.physics.add.collider(
+                    this.player.getBullets(),
+                    this.obstacles,
+                    this.handleBulletObstacleCollision,
+                    undefined,
+                    this
+                );
+            }
         }
         
+        // Setup enemies vs obstacles collision
+        if (this.enemies && this.obstacles) {
+            this.physics.add.collider(this.enemies, this.obstacles);
+        }
     }
 
     private handlePlayerHazardCollision(player: any, hazard: any) {
@@ -593,7 +630,21 @@ export class Game extends Scene
         
         this.cameras.main.shake(50, 0.003);
     }
-private handlePlayerTriggerCollision(player: any, trigger: any) {
+    
+    private handleBulletObstacleCollision(bullet: any, obstacle: any) {
+        const bulletInstance = bullet as Bullet;
+        const obstacleInstance = obstacle as Obstacle;
+        
+        console.log(`[Game] Bullet hit obstacle at (${obstacleInstance.x}, ${obstacleInstance.y}), destructible: ${obstacleInstance.getIsDestructible()}`);
+        
+        bulletInstance.hitEnemy();
+        
+        if (obstacleInstance.getIsDestructible()) {
+            obstacleInstance.takeDamage(1);
+        }
+    }
+    
+    private handlePlayerTriggerCollision(player: any, trigger: any) {
         const playerInstance = player as Player;
         const triggerInstance = trigger as Trigger;
         
@@ -619,6 +670,24 @@ private handlePlayerTriggerCollision(player: any, trigger: any) {
     update() {
         if (this.player) {
             this.player.update();
+            
+            // Check for bullets that need immediate collision check
+            if (this.obstacles) {
+                this.player.getBullets().children.entries.forEach((bullet: any) => {
+                    const bulletInstance = bullet as Bullet;
+                    if (bulletInstance.getNeedsImmediateCheck && bulletInstance.getNeedsImmediateCheck()) {
+                        // Check collision with obstacles
+                        this.physics.world.overlap(bulletInstance, this.obstacles, 
+                            (b: any, o: any) => {
+                                this.handleBulletObstacleCollision(b, o);
+                            }, 
+                            undefined, 
+                            this
+                        );
+                        bulletInstance.setImmediateCollisionCheck(false);
+                    }
+                });
+            }
         }
         
         // Check restart key

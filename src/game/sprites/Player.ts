@@ -405,8 +405,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.lastShootTime = currentTime;
         
         const direction = this.flipX ? -1 : 1;
-        const bulletX = this.x + (direction * 20);
-        const bulletY = this.y;
+        
+        // Calculate bullet spawn position based on player's body bounds
+        const playerBody = this.body as Phaser.Physics.Arcade.Body;
+        const bulletOffset = 25; // Distance from player center
+        
+        // Use player's body edge as reference point
+        const bulletX = this.x + (direction * bulletOffset);
+        const bulletY = this.y - 5; // Slightly above center to avoid ground collision
         
         // Pass player's current velocity to the bullet
         const playerVelocity = {
@@ -416,6 +422,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         const bullet = new Bullet(this.scene, bulletX, bulletY, direction, playerVelocity);
         this.bullets.add(bullet);
+        
+        // Check immediate collision with obstacles after bullet creation
+        bullet.setImmediateCollisionCheck(true);
         
         eventBus.emit(GameEvent.SOUND_EFFECT_PLAY, {
             key: 'player_shoot',

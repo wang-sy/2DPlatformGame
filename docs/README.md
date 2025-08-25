@@ -1,48 +1,22 @@
-# 🎮 Advanced Phaser 3 Platform Game Framework
+# Phaser 3 Platform Game Framework
 
-An enterprise-grade 2D platform game framework built with Phaser 3, TypeScript, and modern web technologies. Features a revolutionary UUID-based object management system, trigger-based event system, and fully configurable game mechanics.
+## Project Overview
 
-## ✨ Core Features
+A production-ready 2D platform game framework built with **Phaser 3** and **TypeScript**. This template provides a complete foundation for creating platform games, featuring advanced player controls, enemy AI, collectibles, trigger systems, and more. The modular architecture makes it easy to extend and customize for your specific needs.
 
-### 🏃 Advanced Player Mechanics
-- **Multi-Jump System**: Double jump, wall jump, charged jump
-- **Combat System**: Shooting with physics-based bullets and recoil
-- **Health System**: Configurable max health, damage system with invulnerability frames
-- **Smart Collision**: Automatic terrain stuck detection and recovery
+### Core Features
 
-### 🤖 Intelligent Enemy AI
-- **8 Movement Patterns**: Static, patrol, jump, follow, and combinations
-- **Dynamic Behaviors**: Player detection, pathfinding, customizable properties
-- **Visual Effects**: Death animations with particles, shockwaves, and screen shake
+- 🎮 **Complete Game Loop**: Main menu, gameplay, victory/game over scenes
+- 🏃 **Advanced Player Controls**: Jump, double jump, wall jump, charged jump, shooting
+- 🎯 **Intelligent Enemy System**: Multiple AI behaviors (patrol, follow, jump patterns)
+- 💎 **Collection System**: Required items, scoring, visual feedback
+- ⚡ **Trigger Mechanism**: Configurable event-based interactions
+- 🎵 **Audio Management**: Centralized BGM and sound effects system
+- 🎨 **Animation System**: Atlas-based sprite animations with fallback
+- 📦 **Tilemap Support**: Create levels using Tiled map editor
+- 🆔 **UUID Management**: Unique object identification and referencing
 
-### 🎯 Revolutionary Trigger System
-- **Event Triggers**: Place invisible zones that activate game events
-- **Movement Events**: Make objects move, float, or follow paths
-- **Scale Events**: Dynamic object scaling for dramatic effects
-- **Configurable Properties**: Delay, duration, repeat, return-to-origin
-
-### 🆔 UUID-Based Object Management
-- **Unique Identification**: Every game object has a persistent UUID
-- **Cross-Reference System**: Triggers can target any object by UUID
-- **Debug Tools**: Object tracking and relationship visualization
-
-### 🎵 Dynamic Audio System
-- **Background Music**: Scene-based BGM with smooth transitions
-- **Sound Effects**: Animation-synchronized SFX with fallback system
-- **Configuration-Driven**: JSON-based audio mapping
-
-### 💎 Collectibles & Progression
-- **Item Types**: Coins, keys, gems with custom properties
-- **Must-Collect System**: Required items for level completion
-- **Score Tracking**: Persistent score and collection statistics
-- **Visual Feedback**: Floating, rotating, pulsing animations
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 16+ and npm
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- [Tiled Map Editor](https://www.mapeditor.org/) (for level design)
+## Quick Start
 
 ### Installation
 ```bash
@@ -60,206 +34,202 @@ npm run dev
 npm run build
 ```
 
-### Quick Play
-1. Open `http://localhost:8081` in your browser
-2. Use arrow keys to move
-3. Press SPACE to jump (hold for charged jump)
-4. Press X to shoot
-5. Press R to restart
-6. Collect all keys to unlock the goal!
+### Game Controls
 
-## 🎮 Game Controls
+| Key | Action | Notes |
+|-----|--------|-------|
+| ← → | Move left/right | Configurable speed |
+| ↑ | Jump | Press again for double jump |
+| ↓ | Duck | Also charges jump when held |
+| SPACE | Charged jump | Hold and release |
+| X | Shoot | Has cooldown |
+| R | Restart level | Quick restart |
 
-| Key | Action | Special |
-|-----|--------|---------|
-| ← → | Move left/right | - |
-| ↑ | Jump | Hold for charged jump |
-| ↓ | Duck | - |
-| SPACE | Alternative jump | Double-tap for double jump |
-| X | Shoot | Limited by cooldown |
-| R | Restart level | - |
-| ESC | Pause (when implemented) | - |
+## Project Structure
 
-### Advanced Techniques
-- **Wall Jump**: Jump while touching a wall
-- **Charged Jump**: Hold jump button, release for super jump
-- **Stomp Attack**: Jump on enemies to defeat them
-- **Bullet Physics**: Bullets inherit player momentum
+```
+template-vite-ts/
+├── src/
+│   ├── main.ts                 # Application entry point
+│   └── game/
+│       ├── main.ts             # Game configuration
+│       ├── scenes/             # Game scenes
+│       │   ├── Boot.ts         # Initial setup
+│       │   ├── Preloader.ts    # Asset loading
+│       │   ├── MainMenu.ts     # Main menu
+│       │   ├── Game.ts         # Core gameplay
+│       │   ├── GameOver.ts     # Game over screen
+│       │   └── Victory.ts      # Victory screen
+│       ├── sprites/            # Game objects
+│       │   ├── Player.ts       # Player character
+│       │   ├── Enemy.ts        # Enemy entities
+│       │   ├── Collectible.ts  # Collectible items
+│       │   ├── Trigger.ts      # Event triggers
+│       │   ├── Obstacle.ts     # Obstacles (static/movable/destructible)
+│       │   ├── Bullet.ts       # Projectiles
+│       │   ├── Goal.ts         # Level goals
+│       │   └── StaticHazard.ts # Hazards (spikes, etc.)
+│       ├── managers/           # System managers
+│       │   ├── AnimationManager.ts     # Animation handling
+│       │   ├── BGMPlayer.ts            # Background music
+│       │   ├── SoundEffectPlayer.ts    # Sound effects
+│       │   ├── GameObjectManager.ts    # Object registry
+│       │   └── CollectedItemsManager.ts # Collection tracking
+│       ├── events/             # Event system
+│       │   └── EventBus.ts     # Global event bus
+│       ├── ui/                 # UI components
+│       │   └── HealthUI.ts     # Health display
+│       └── utils/              # Utilities
+│           ├── UUIDGenerator.ts        # UUID generation
+│           └── EventBusDebugger.ts     # Event debugging
+├── public/
+│   └── assets/                # Game assets
+│       ├── player/            # Player sprites
+│       ├── enemy/             # Enemy sprites
+│       ├── collectible/       # Item sprites
+│       ├── obstacle/          # Obstacle sprites
+│       ├── tilemap/           # Level maps
+│       │   └── scenes/        # Tilemap JSON files
+│       └── audio/             # Audio files
+│           ├── bgm/           # Background music
+│           └── sound_effect/  # Sound effects
+└── docs/                      # Documentation
+    ├── README.md              # This file
+    ├── architecture.md        # System architecture
+    ├── components.md          # Component reference
+    ├── resources.md           # Asset configuration
+    ├── tilemap-guide.md       # Level editing guide
+    └── modification-guide.md  # Customization guide
+```
 
-## 🗺️ Level Design
+## Core Concepts
 
-### Using Tiled Editor
-1. Open `public/assets/tilemap/scenes/tilemap.json`
-2. Edit tile layers for terrain
-3. Add objects for entities
-4. Configure properties for behaviors
-5. Save and refresh the game
+### 1. Scene System
 
-### Object Properties
+The game uses Phaser's scene system to manage different game states:
 
-#### Player Configuration
-```json
+- **Boot**: Initialize core systems
+- **Preloader**: Load all game assets with progress display
+- **MainMenu**: Interactive main menu with options
+- **Game**: Core gameplay scene
+- **GameOver/Victory**: End game states with statistics
+
+### 2. GameObject Management
+
+All game objects are managed through a centralized **GameObjectManager** using UUIDs:
+
+```typescript
+// Register an object
+gameObjectManager.registerObject(uuid, object, type, name);
+
+// Retrieve an object
+const target = gameObjectManager.getObjectByUUID(uuid);
+```
+
+### 3. Event System
+
+Global event communication through **EventBus**:
+
+```typescript
+// Emit an event
+eventBus.emit(GameEvent.PLAYER_JUMP, { velocity: -500 });
+
+// Listen for events
+eventBus.on(GameEvent.PLAYER_JUMP, (data) => {
+    console.log('Player jumped with velocity:', data.velocity);
+});
+```
+
+### 4. Tilemap Integration
+
+Levels are created using Tiled editor with support for:
+
+- Multiple terrain layers
+- Object layers for entities
+- Custom properties per object
+- Collision configuration
+- Trigger zones
+
+## Key Systems
+
+### Player System
+
+The player supports multiple configurable abilities:
+
+```typescript
+// Configurable in tilemap
 {
-  "type": "player",
-  "properties": [
-    {"name": "uuid", "value": "unique-id"},
-    {"name": "max_health", "value": 3}
-  ]
+  "can_jump": true,
+  "can_double_jump": true,
+  "can_wall_jump": true,
+  "can_shoot": true,
+  "max_health": 3,
+  "move_speed": 200,
+  "jump_speed": 500
 }
 ```
 
-#### Enemy Configuration
-```json
-{
-  "type": "enemy",
-  "properties": [
-    {"name": "uuid", "value": "unique-id"},
-    {"name": "move_method", "value": "patrol"},
-    {"name": "move_speed", "value": 100},
-    {"name": "damage", "value": 1}
-  ]
-}
-```
+### Enemy AI Patterns
 
-#### Trigger Configuration
-```json
+Enemies support 8 different movement patterns:
+
+- **static**: No movement
+- **patrol**: Back and forth movement
+- **jump**: Periodic jumping
+- **move_and_jump**: Frog-like movement
+- **patrol_jump**: Patrol with jumps
+- **follow**: Track player
+- **follow_jump**: Track and jump
+- **custom**: Combination patterns
+
+### Trigger System
+
+Create interactive events without code:
+
+```typescript
+// Example: Moving platform trigger
 {
   "type": "trigger",
-  "properties": [
-    {"name": "event_type", "value": "move"},
-    {"name": "target_uuid", "value": "target-object-id"},
-    {"name": "velocity_y", "value": -1000},
-    {"name": "duration", "value": 1500},
-    {"name": "return_to_origin", "value": false}
-  ]
+  "event_type": "move",
+  "target_uuid": "platform-001",
+  "velocity_y": -200,
+  "duration": 1000,
+  "return_to_origin": true
 }
 ```
 
-## 🏗️ Project Structure
+### Collection System
 
-```
-├── src/
-│   ├── game/
-│   │   ├── scenes/        # Game scenes (Menu, Game, Victory)
-│   │   ├── sprites/       # Game entities (Player, Enemy, etc.)
-│   │   ├── managers/      # System managers (Animation, Audio, UUID)
-│   │   ├── events/        # Event bus system
-│   │   └── utils/         # Utilities (UUID generator, debugger)
-│   └── main.ts           # Entry point
-├── public/
-│   └── assets/
-│       ├── player/       # Player sprites and animations
-│       ├── enemy/        # Enemy sprites and animations
-│       ├── tilemap/      # Level maps and tilesets
-│       └── audio/        # Music and sound effects
-├── vite/                 # Build configurations
-└── docs/                 # Documentation
-```
+Track and manage collectibles:
 
-## 🔧 Configuration Files
+- Required items for level completion
+- Score tracking
+- Visual feedback
+- Persistent between scenes
 
-### Animation Configuration (`*.json`)
-```json
-{
-  "anims": [
-    {
-      "key": "idle",
-      "frames": [0, 1, 2, 3],
-      "frameRate": 10,
-      "repeat": -1
-    }
-  ]
-}
-```
+## Documentation
 
-### Audio Configuration (`bgm-config.json`)
-```json
-{
-  "MainMenu": "Attic Secrets.mp3",
-  "Game": "Baltic Levity.mp3",
-  "volume": 0.5
-}
-```
+- 🏗️ [Architecture](./architecture.md) - System design and patterns
+- 🧩 [Components](./components.md) - Detailed component API
+- 🎨 [Resources](./resources.md) - Asset configuration guide
+- 🗺️ [Tilemap Guide](./tilemap-guide.md) - Level creation tutorial
+- 🔧 [Modification Guide](./modification-guide.md) - Common customizations
 
-### Sound Effects Configuration (`config.json`)
-```json
-{
-  "player": {
-    "jump": ["sfx_jump.mp3"],
-    "hit": ["sfx_hurt.mp3"],
-    "shoot": ["sfx_throw.mp3"]
-  }
-}
-```
+## Technology Stack
 
-## 📊 Performance Optimization
+- **Phaser 3.86+** - Game engine
+- **TypeScript 5.6+** - Type-safe JavaScript
+- **Vite 6.0+** - Fast build tool
+- **Tiled** - Map editor (external)
 
-- **Object Pooling**: Bullets and particles are recycled
-- **Lazy Loading**: Assets load on-demand
-- **Event Delegation**: Central event bus reduces listeners
-- **Culling**: Off-screen objects are deactivated
-- **Texture Atlas**: Sprites use atlases for batch rendering
+## Performance Considerations
 
-## 🐛 Debug Mode
+- Object pooling for bullets and particles
+- Automatic off-screen culling
+- Texture atlases for batch rendering
+- Event delegation pattern
+- Lazy asset loading
 
-Enable debug features in development:
-- Press `U` to show UUID registry (when enabled)
-- View trigger zones by uncommenting debug visualization
-- Event bus debugger shows all events
-- Console logs for state changes
-
-## 🚢 Deployment
-
-### Production Build
-```bash
-# Optimized build
-npm run build
-
-# Build without console logs
-npm run build-nolog
-
-# Deploy dist/ folder to any static host
-```
-
-### Hosting Options
-- **GitHub Pages**: Free static hosting
-- **Netlify**: Automatic deploys from Git
-- **Vercel**: Zero-config deployment
-- **Custom Server**: Serve dist/ with any web server
-
-## 📚 Documentation
-
-- [Developer Documentation](./DEVELOPER_DOCUMENTATION.md) - Architecture and API reference
-- [Configuration Guide](./USER_CONFIGURATION_GUIDE.md) - Customization without coding
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your feature
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
+## License
 
 MIT License - See LICENSE file for details
-
-## 🙏 Credits
-
-- **Framework**: [Phaser 3](https://phaser.io/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Level Editor**: [Tiled](https://www.mapeditor.org/)
-
-## 💡 Tips & Tricks
-
-- Hold jump button before landing for immediate charged jump
-- Shoot downward while jumping for extra height
-- Wall jump timing: Jump immediately after touching wall
-- Enemies can be used as platforms after defeating them
-- Triggers can create complex chain reactions
-- UUID system allows for dynamic level scripting
-
----
-
-Built with ❤️ using Phaser 3 and TypeScript

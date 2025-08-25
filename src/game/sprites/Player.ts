@@ -113,6 +113,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setBounce(0.1);
         this.setGravityY(800);
         
+        // Player should not be pushable by other objects (e.g., movable boxes)
+        this.setPushable(false);
+        
         this.cursors = scene.input.keyboard!.createCursorKeys();
         
         this.shootKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);

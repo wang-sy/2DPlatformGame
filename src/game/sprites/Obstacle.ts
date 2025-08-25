@@ -7,6 +7,7 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     private health: number;
     private maxHealth: number;
     private isDestroyed: boolean = false;
+    private isMovable: boolean;
 
     constructor(scene: Scene, obstacleObject: Phaser.Types.Tilemaps.TiledObject) {
         const x = obstacleObject.x || 0;
@@ -15,21 +16,13 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
         
         super(scene, x, y - 32, texture);
         
-        scene.add.existing(this);
-        scene.physics.add.existing(this, true);
-        
-        this.setOrigin(0.5, 0.5);
-        this.obstacleType = obstacleObject.name || 'block_empty';
-        
-        this.setSize(64, 64);
-        this.setOffset(0, 0);
-        
-        // Parse properties from array format
+        // Parse properties from array format first to determine if movable
         const properties = obstacleObject.properties as any[];
         console.log(`[Obstacle] Properties: ${JSON.stringify(properties)}`);
         
         // Default values
         this.isDestructible = false;
+        this.isMovable = false;
         this.maxHealth = 3;
         
         // Extract properties from array
@@ -39,17 +32,59 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
                     this.isDestructible = prop.value;
                 } else if (prop.name === 'health') {
                     this.maxHealth = prop.value;
+                } else if (prop.name === 'movable') {
+                    this.isMovable = prop.value;
                 }
             });
         }
         
         this.health = this.maxHealth;
         
-        console.log(`[Obstacle] Created at (${this.x}, ${this.y}), destructible: ${this.isDestructible}, health: ${this.health}/${this.maxHealth}`);
+        scene.add.existing(this);
         
-        if (this.body && typeof this.body.updateFromGameObject === 'function') {
-            (this.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+        // Add physics based on movable property
+        if (this.isMovable) {
+            // Dynamic body for movable obstacles
+            scene.physics.add.existing(this, false);
+            const body = this.body as Phaser.Physics.Arcade.Body;
+            
+            // Configure physics properties for movable box
+            body.setGravityY(800);
+            body.setBounce(0, 0);  // No bouncing
+            body.setDrag(800, 0);  // Moderate drag for gradual stop when not pushed
+            body.setFriction(0.5, 1);  // Moderate friction
+            body.setMass(3); // Lighter mass for more responsive pushing
+            body.setMaxVelocityX(200); // Match player max speed
+            body.setCollideWorldBounds(true);
+            
+            // Prevent rotation which can cause weird collision issues
+            body.setAllowRotation(false);
+            
+            // Enable pushable with customizable settings
+            body.pushable = true;  // Can be pushed by other objects
+            body.immovable = false; // Make sure it's movable
+            
+            // Use slideFactor to control sliding behavior
+            body.slideFactor.set(0.5, 0); // Moderate slide for momentum
+            
+            // Set a smaller hitbox to prevent overlap issues
+            this.setSize(56, 56);
+            this.setOffset(4, 4);
+        } else {
+            // Static body for non-movable obstacles
+            scene.physics.add.existing(this, true);
+            this.setSize(64, 64);
+            this.setOffset(0, 0);
+            
+            if (this.body && typeof this.body.updateFromGameObject === 'function') {
+                (this.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+            }
         }
+        
+        this.setOrigin(0.5, 0.5);
+        this.obstacleType = obstacleObject.name || 'block_empty';
+        
+        console.log(`[Obstacle] Created at (${this.x}, ${this.y}), destructible: ${this.isDestructible}, movable: ${this.isMovable}, health: ${this.health}/${this.maxHealth}`);
     }
 
     getObstacleType(): string {
@@ -58,6 +93,10 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
 
     getIsDestructible(): boolean {
         return this.isDestructible;
+    }
+    
+    getIsMovable(): boolean {
+        return this.isMovable;
     }
 
     takeDamage(damage: number = 1): void {
@@ -83,7 +122,8 @@ export class Obstacle extends Phaser.Physics.Arcade.Sprite {
     }
 
     private showDamageEffect(): void {
-        const originalTint = this.tint;
+        // Store original tint (default white)
+        const originalTint = 0xffffff;
         
         this.setTint(0xff0000);
         

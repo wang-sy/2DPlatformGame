@@ -29,6 +29,7 @@ export class Game extends Scene
     enemies: Phaser.Physics.Arcade.Group;
     triggers: Trigger[];
     obstacles: Phaser.Physics.Arcade.StaticGroup;
+    movableObstacles: Phaser.Physics.Arcade.Group;
     restartKey: Phaser.Input.Keyboard.Key;
     isVictory: boolean = false;
     healthUI: HealthUI;
@@ -276,12 +277,27 @@ export class Game extends Scene
     }
     
     private createObstacleFromTilemap(obstacleObject: Phaser.Types.Tilemaps.TiledObject, uuid: string) {
-        if (!this.obstacles) {
-            this.obstacles = this.physics.add.staticGroup();
-        }
-        
         const obstacle = new Obstacle(this, obstacleObject);
-        this.obstacles.add(obstacle);
+        
+        // Add to appropriate group based on movable property
+        if (obstacle.getIsMovable()) {
+            if (!this.movableObstacles) {
+                this.movableObstacles = this.physics.add.group({
+                    collideWorldBounds: true
+                });
+            }
+            this.movableObstacles.add(obstacle);
+            
+            // Setup collisions with tilemap layers for movable obstacles
+            this.layers.forEach(layer => {
+                this.physics.add.collider(obstacle, layer);
+            });
+        } else {
+            if (!this.obstacles) {
+                this.obstacles = this.physics.add.staticGroup();
+            }
+            this.obstacles.add(obstacle);
+        }
         
         // Register obstacle with UUID
         this.gameObjectManager.registerObject(uuid, obstacle, 'obstacle', obstacleObject.name);
@@ -345,9 +361,18 @@ export class Game extends Scene
             });
         }
         
-        // Setup player vs obstacles collision (not overlap)
+        // Setup player vs static obstacles collision
         if (this.player && this.obstacles) {
             this.physics.add.collider(this.player, this.obstacles);
+        }
+        
+        // Setup player vs movable obstacles collision with custom handling
+        if (this.player && this.movableObstacles) {
+            this.physics.add.collider(this.player, this.movableObstacles, 
+                this.handlePlayerBoxCollision, 
+                undefined, 
+                this
+            );
         }
         
         // Setup bullets vs enemies collision
@@ -370,7 +395,7 @@ export class Game extends Scene
                 );
             });
             
-            // Setup bullets vs obstacles collision with damage handling
+            // Setup bullets vs static obstacles collision with damage handling
             if (this.obstacles) {
                 this.physics.add.collider(
                     this.player.getBullets(),
@@ -380,11 +405,36 @@ export class Game extends Scene
                     this
                 );
             }
+            
+            // Setup bullets vs movable obstacles collision with damage handling
+            if (this.movableObstacles) {
+                this.physics.add.collider(
+                    this.player.getBullets(),
+                    this.movableObstacles,
+                    this.handleBulletObstacleCollision,
+                    undefined,
+                    this
+                );
+            }
         }
         
-        // Setup enemies vs obstacles collision
+        // Setup enemies vs static obstacles collision
         if (this.enemies && this.obstacles) {
             this.physics.add.collider(this.enemies, this.obstacles);
+        }
+        
+        // Setup enemies vs movable obstacles collision
+        if (this.enemies && this.movableObstacles) {
+            this.physics.add.collider(this.enemies, this.movableObstacles);
+        }
+        
+        // Setup movable obstacles vs movable obstacles collision with custom handling
+        if (this.movableObstacles) {
+            this.physics.add.collider(this.movableObstacles, this.movableObstacles,
+                this.handleBoxBoxCollision,
+                undefined,
+                this
+            );
         }
     }
 
@@ -651,6 +701,106 @@ export class Game extends Scene
         triggerInstance.activate(playerInstance);
     }
     
+    private handlePlayerBoxCollision(player: any, box: any) {
+        const playerInstance = player as Player;
+        const boxInstance = box as Obstacle;
+        
+        // Ensure proper separation to prevent overlap
+        const playerBody = playerInstance.body as Phaser.Physics.Arcade.Body;
+        const boxBody = boxInstance.body as Phaser.Physics.Arcade.Body;
+        
+        // Check if player is overlapping with box (shouldn't happen but safety check)
+        if (this.physics.world.overlap(playerInstance, boxInstance)) {
+            // Calculate separation direction
+            const dx = playerInstance.x - boxInstance.x;
+            const dy = playerInstance.y - boxInstance.y;
+            
+            // Push player away from box center
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal separation
+                if (dx > 0) {
+                    playerInstance.x = boxInstance.x + 32 + playerBody.width / 2;
+                } else {
+                    playerInstance.x = boxInstance.x - 32 - playerBody.width / 2;
+                }
+            } else {
+                // Vertical separation
+                if (dy > 0) {
+                    playerInstance.y = boxInstance.y + 32 + playerBody.height / 2;
+                } else {
+                    playerInstance.y = boxInstance.y - 32 - playerBody.height / 2;
+                }
+            }
+        }
+        
+        // Implement gradual acceleration when pushing
+        const playerVx = playerBody.velocity.x;
+        const boxVx = boxBody.velocity.x;
+        
+        // Only apply push force if player is actually moving into the box
+        if (Math.abs(playerVx) > 10) {
+            // Calculate the target velocity (player's velocity)
+            const targetVx = playerVx * 0.95; // Slightly slower than player
+            
+            // Gradually accelerate box towards target velocity
+            const acceleration = 0.15; // How quickly box matches player speed (0-1)
+            const newBoxVx = boxVx + (targetVx - boxVx) * acceleration;
+            
+            boxBody.setVelocityX(newBoxVx);
+        }
+    }
+    
+    private handleBoxBoxCollision(box1: any, box2: any) {
+        const box1Instance = box1 as Obstacle;
+        const box2Instance = box2 as Obstacle;
+        
+        const box1Body = box1Instance.body as Phaser.Physics.Arcade.Body;
+        const box2Body = box2Instance.body as Phaser.Physics.Arcade.Body;
+        
+        // Check if boxes are overlapping (shouldn't happen but safety check)
+        if (this.physics.world.overlap(box1Instance, box2Instance)) {
+            // Calculate separation direction
+            const dx = box1Instance.x - box2Instance.x;
+            const dy = box1Instance.y - box2Instance.y;
+            
+            // Determine separation distance
+            const separationDist = 30; // Half box size + small gap
+            
+            // Push boxes apart
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal separation
+                if (dx > 0) {
+                    box1Instance.x = box2Instance.x + separationDist;
+                    box2Instance.x = box1Instance.x - separationDist;
+                } else {
+                    box1Instance.x = box2Instance.x - separationDist;
+                    box2Instance.x = box1Instance.x + separationDist;
+                }
+            } else {
+                // Vertical separation
+                if (dy > 0) {
+                    box1Instance.y = box2Instance.y + separationDist;
+                    box2Instance.y = box1Instance.y - separationDist;
+                } else {
+                    box1Instance.y = box2Instance.y - separationDist;
+                    box2Instance.y = box1Instance.y + separationDist;
+                }
+            }
+            
+            // Update physics bodies after position change
+            box1Body.updateFromGameObject();
+            box2Body.updateFromGameObject();
+        }
+        
+        // Transfer momentum between boxes when pushing
+        const avgVx = (box1Body.velocity.x + box2Body.velocity.x) * 0.5;
+        const avgVy = (box1Body.velocity.y + box2Body.velocity.y) * 0.5;
+        
+        // Apply averaged velocity with damping
+        box1Body.setVelocity(avgVx * 0.9, avgVy);
+        box2Body.setVelocity(avgVx * 0.9, avgVy);
+    }
+    
     private updateScoreDisplay() {
         if (this.scoreText) {
             const score = this.collectedItemsManager.getTotalScore();
@@ -671,19 +821,35 @@ export class Game extends Scene
         if (this.player) {
             this.player.update();
             
+            // No longer forcing boxes to stop - let physics handle natural deceleration
+            
             // Check for bullets that need immediate collision check
-            if (this.obstacles) {
+            if (this.obstacles || this.movableObstacles) {
                 this.player.getBullets().children.entries.forEach((bullet: any) => {
                     const bulletInstance = bullet as Bullet;
                     if (bulletInstance.getNeedsImmediateCheck && bulletInstance.getNeedsImmediateCheck()) {
-                        // Check collision with obstacles
-                        this.physics.world.overlap(bulletInstance, this.obstacles, 
-                            (b: any, o: any) => {
-                                this.handleBulletObstacleCollision(b, o);
-                            }, 
-                            undefined, 
-                            this
-                        );
+                        // Check collision with static obstacles
+                        if (this.obstacles) {
+                            this.physics.world.overlap(bulletInstance, this.obstacles, 
+                                (b: any, o: any) => {
+                                    this.handleBulletObstacleCollision(b, o);
+                                }, 
+                                undefined, 
+                                this
+                            );
+                        }
+                        
+                        // Check collision with movable obstacles
+                        if (this.movableObstacles) {
+                            this.physics.world.overlap(bulletInstance, this.movableObstacles, 
+                                (b: any, o: any) => {
+                                    this.handleBulletObstacleCollision(b, o);
+                                }, 
+                                undefined, 
+                                this
+                            );
+                        }
+                        
                         bulletInstance.setImmediateCollisionCheck(false);
                     }
                 });

@@ -459,6 +459,11 @@
               "name": "uuid",
               "type": "string",
               "value": "c6f7a8b9-1c2d-3e4f-f5e6-7d8e9f0a1b2c"
+            },
+            {
+              "name": "movable",
+              "type": "bool",
+              "value": true
             }
           ]
         },
@@ -488,6 +493,64 @@
               "name": "health",
               "type": "int",
               "value": 1
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 49,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 256,
+          "y": 896,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "e8f9a0b1-3d4e-5f6a-f7e8-9f0a1b2c3d4e"
+            },
+            {
+              "name": "movable",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "destructible",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "health",
+              "type": "int",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "gid": 9,
+          "height": 64,
+          "id": 50,
+          "name": "block_empty",
+          "rotation": 0,
+          "type": "obstacle",
+          "visible": true,
+          "width": 64,
+          "x": 800,
+          "y": 896,
+          "properties": [
+            {
+              "name": "uuid",
+              "type": "string",
+              "value": "f9a0b1c2-4e5f-6a7b-e8f9-0a1b2c3d4e5f"
+            },
+            {
+              "name": "movable",
+              "type": "bool",
+              "value": true
             }
           ]
         }

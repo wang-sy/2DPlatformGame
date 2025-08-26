@@ -195,17 +195,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Keep player within horizontal bounds only
         // Use the actual physics body size for more accurate boundary detection
-        const bodyWidth = this.body.width;
-        const bodyOffset = this.body.offset.x;
+        const bodyWidth = this.body?.width || this.width;
+        const bodyOffset = this.body?.offset.x || 0;
         const leftEdge = this.x - this.displayOriginX + bodyOffset;
         const rightEdge = leftEdge + bodyWidth;
         
         if (leftEdge < worldBounds.left) {
             this.x = worldBounds.left - bodyOffset + this.displayOriginX;
-            this.setVelocityX(Math.max(0, this.body.velocity.x));
+            this.setVelocityX(Math.max(0, this.body?.velocity.x || 0));
         } else if (rightEdge > worldBounds.right) {
             this.x = worldBounds.right - bodyWidth - bodyOffset + this.displayOriginX;
-            this.setVelocityX(Math.min(0, this.body.velocity.x));
+            this.setVelocityX(Math.min(0, this.body?.velocity.x || 0));
         }
         
         // Check if player falls below the bottom boundary - trigger death
@@ -294,58 +294,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         
-        // Duck
-        if (this.cursors.down.isDown && onGround && !this.isCharging) {
-            this.playAnimation('duck');
-        }
+        // Duck state
+        const isDucking = this.cursors.down.isDown && onGround;
         
-        // Charge jump (hold space while on ground)
+        // Jump keys setup
         const spaceKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        const upKey = this.cursors.up;
         
-        if (this.abilities.canChargeJump && spaceKey?.isDown && onGround && !this.isCharging) {
-            this.isCharging = true;
-            this.chargeTime = 0;
-            this.playAnimation('duck');
-        }
+        // Check if either jump key is pressed
+        const jumpKeyPressed = spaceKey?.isDown || upKey.isDown;
+        const jumpKeyJustPressed = Phaser.Input.Keyboard.JustDown(spaceKey!) || Phaser.Input.Keyboard.JustDown(upKey);
+        const jumpKeyJustReleased = Phaser.Input.Keyboard.JustUp(spaceKey!) || Phaser.Input.Keyboard.JustUp(upKey);
         
-        if (this.isCharging && spaceKey?.isDown) {
-            this.chargeTime += this.scene.game.loop.delta;
-            if (this.chargeTime > this.maxChargeTime) {
-                this.chargeTime = this.maxChargeTime;
-            }
-            // Visual feedback for charging (tint color based on charge level)
-            const chargePercent = this.chargeTime / this.maxChargeTime;
-            const tintValue = 0xffffff - Math.floor(chargePercent * 0x008888);
-            this.setTint(tintValue);
-        }
-        
-        // Release charge jump
-        if (this.abilities.canChargeJump && this.isCharging && spaceKey?.isUp) {
-            if (this.chargeTime >= this.minChargeTime) {
-                const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
-                const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
-                this.setVelocityY(jumpVelocity);
-                this.jumpCount = 1;
-                
-                // Emit charge jump event
-                eventBus.emit(GameEvent.PLAYER_CHARGE_JUMP, {
-                    player: this,
-                    chargeTime: this.chargeTime,
-                    velocity: jumpVelocity
-                });
-            }
-            this.isCharging = false;
-            this.chargeTime = 0;
-            this.clearTint();
-            this.playAnimation('jump');
-        }
-        
-        // Normal jump and double jump
-        const justPressedUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
-        
-        if (justPressedUp && !this.isCharging) {
+        // Handle jump logic
+        if (jumpKeyJustPressed && !this.isCharging) {
             // Wall jump
-            if (this.isTouchingWall && this.wallJumpCooldown <= 0) {
+            if (this.isTouchingWall && this.wallJumpCooldown <= 0 && this.abilities.canWallJump) {
                 const wallJumpX = touchingLeft ? this.wallJumpSpeed : -this.wallJumpSpeed;
                 this.setVelocityX(wallJumpX);
                 this.setVelocityY(-this.jumpSpeed * 0.9);
@@ -359,27 +323,110 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     direction: touchingLeft ? 'right' : 'left'
                 });
             }
-            // Normal jump and double jump
-            else if (this.jumpCount < this.maxJumps) {
-                const jumpPower = this.jumpCount === 0 ? this.jumpSpeed : this.jumpSpeed * 0.85;
+            // Double jump (in air)
+            else if (!onGround && this.jumpCount < this.maxJumps && this.abilities.canDoubleJump) {
+                const jumpPower = this.jumpSpeed * 0.85;
                 this.setVelocityY(-jumpPower);
                 
-                // Emit appropriate jump event
-                if (this.jumpCount === 0) {
-                    eventBus.emit(GameEvent.PLAYER_JUMP, {
-                        player: this,
-                        velocity: -jumpPower
-                    });
-                } else {
-                    eventBus.emit(GameEvent.PLAYER_DOUBLE_JUMP, {
-                        player: this,
-                        jumpCount: this.jumpCount + 1
-                    });
-                }
+                eventBus.emit(GameEvent.PLAYER_DOUBLE_JUMP, {
+                    player: this,
+                    jumpCount: this.jumpCount + 1
+                });
                 
                 this.jumpCount++;
                 this.playAnimation('jump');
             }
+            // Check if we should start charging (ducking + jump key pressed)
+            else if (onGround && isDucking && this.abilities.canChargeJump) {
+                // Start charging when ducking
+                this.isCharging = true;
+                this.chargeTime = 0;
+                // Keep duck animation
+            }
+            // Normal jump (on ground, not ducking)
+            else if (onGround && !isDucking && this.jumpCount < this.maxJumps && this.abilities.canJump) {
+                const jumpPower = this.jumpSpeed;
+                this.setVelocityY(-jumpPower);
+                
+                eventBus.emit(GameEvent.PLAYER_JUMP, {
+                    player: this,
+                    velocity: -jumpPower
+                });
+                
+                this.jumpCount++;
+                this.playAnimation('jump');
+            }
+        }
+        
+        // Continue charging if jump key is held while ducking
+        if (this.isCharging && jumpKeyPressed && isDucking) {
+            this.chargeTime += this.scene.game.loop.delta;
+            if (this.chargeTime > this.maxChargeTime) {
+                this.chargeTime = this.maxChargeTime;
+            }
+            
+            // Visual feedback for charging (tint color based on charge level)
+            const chargePercent = this.chargeTime / this.maxChargeTime;
+            const tintValue = 0xffffff - Math.floor(chargePercent * 0x008888);
+            this.setTint(tintValue);
+            
+            // Keep showing duck animation
+            if (this.anims.currentAnim?.key !== 'duck') {
+                this.playAnimation('duck');
+            }
+        }
+        
+        // Cancel charging if not ducking anymore or left ground
+        if (this.isCharging && (!isDucking || !onGround)) {
+            // If we have enough charge and released jump key, perform charged jump
+            if (!jumpKeyPressed && this.chargeTime >= this.minChargeTime) {
+                const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
+                const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
+                this.setVelocityY(jumpVelocity);
+                this.jumpCount = 1;
+                
+                // Emit charge jump event
+                eventBus.emit(GameEvent.PLAYER_CHARGE_JUMP, {
+                    player: this,
+                    chargeTime: this.chargeTime,
+                    velocity: jumpVelocity
+                });
+                
+                this.playAnimation('jump');
+            }
+            
+            // Clear charging state
+            this.isCharging = false;
+            this.chargeTime = 0;
+            this.clearTint();
+        }
+        
+        // Release charged jump when releasing jump key while still ducking and charging
+        if (jumpKeyJustReleased && this.isCharging && isDucking) {
+            if (this.chargeTime >= this.minChargeTime) {
+                const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
+                const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
+                this.setVelocityY(jumpVelocity);
+                this.jumpCount = 1;
+                
+                // Emit charge jump event
+                eventBus.emit(GameEvent.PLAYER_CHARGE_JUMP, {
+                    player: this,
+                    chargeTime: this.chargeTime,
+                    velocity: jumpVelocity
+                });
+                
+                this.playAnimation('jump');
+            }
+            
+            this.isCharging = false;
+            this.chargeTime = 0;
+            this.clearTint();
+        }
+        
+        // Show duck animation when ducking and not charging
+        if (isDucking && !this.isCharging) {
+            this.playAnimation('duck');
         }
         
         // Wall slide effect
@@ -410,7 +457,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const direction = this.flipX ? -1 : 1;
         
         // Calculate bullet spawn position based on player's body bounds
-        const playerBody = this.body as Phaser.Physics.Arcade.Body;
         const bulletOffset = 25; // Distance from player center
         
         // Use player's body edge as reference point

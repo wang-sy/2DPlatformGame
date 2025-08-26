@@ -40,9 +40,10 @@ npm run build
 | Key | Action | Notes |
 |-----|--------|-------|
 | ← → | Move left/right | Configurable speed |
-| ↑ | Jump | Press again for double jump |
-| ↓ | Duck | Also charges jump when held |
-| SPACE | Charged jump | Hold and release |
+| ↑ / SPACE | Jump | Normal jump when standing |
+| ↑ / SPACE | Double jump | Press again in air |
+| ↓ | Duck/Crouch | Hold to crouch |
+| ↓ + ↑/SPACE | Charged jump | Crouch first, then hold jump to charge |
 | X | Shoot | Has cooldown |
 | R | Restart level | Quick restart |
 

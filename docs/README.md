@@ -15,6 +15,7 @@ A production-ready 2D platform game framework built with **Phaser 3** and **Type
 - 🎨 **Animation System**: Atlas-based sprite animations with fallback
 - 📦 **Tilemap Support**: Create levels using Tiled map editor
 - 🆔 **UUID Management**: Unique object identification and referencing
+- 📱 **Responsive UI System**: Automatic scaling and layout adaptation for all screen sizes
 
 ## Quick Start
 
@@ -74,7 +75,8 @@ template-vite-ts/
 │       │   ├── BGMPlayer.ts            # Background music
 │       │   ├── SoundEffectPlayer.ts    # Sound effects
 │       │   ├── GameObjectManager.ts    # Object registry
-│       │   └── CollectedItemsManager.ts # Collection tracking
+│       │   ├── CollectedItemsManager.ts # Collection tracking
+│       │   └── UIManager.ts            # Responsive UI management
 │       ├── events/             # Event system
 │       │   └── EventBus.ts     # Global event bus
 │       ├── ui/                 # UI components
@@ -207,6 +209,42 @@ Track and manage collectibles:
 - Visual feedback
 - Persistent between scenes
 
+### UI System
+
+Responsive UI management with **UIManager**:
+
+```typescript
+// Create responsive UI layout
+const uiConfig: UILayoutConfig = {
+  baseWidth: 1024,
+  baseHeight: 768,
+  scalingMode: 'fit',
+  elements: {
+    title: {
+      type: 'text',
+      text: 'Game Title',
+      position: { x: '50%', y: '30%' }
+    },
+    playButton: {
+      type: 'button',
+      text: 'PLAY',
+      position: { x: '50%', y: '60%' },
+      onClick: () => startGame()
+    }
+  }
+};
+
+const uiManager = new UIManager(scene, uiConfig);
+uiManager.createUI();
+```
+
+Features:
+- Percentage-based positioning
+- Automatic scaling for different screen sizes
+- Built-in button interactions
+- Animation support
+- Multiple element types (text, image, button, container)
+
 ## Documentation
 
 - 🏗️ [Architecture](./architecture.md) - System design and patterns
@@ -214,6 +252,7 @@ Track and manage collectibles:
 - 🎨 [Resources](./resources.md) - Asset configuration guide
 - 🗺️ [Tilemap Guide](./tilemap-guide.md) - Level creation tutorial
 - 🔧 [Modification Guide](./modification-guide.md) - Common customizations
+- 📱 [UI System Guide](./ui-system-guide.md) - Responsive UI development
 
 ## Technology Stack
 

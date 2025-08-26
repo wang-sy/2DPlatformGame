@@ -499,6 +499,185 @@ stopAll(): void
 
 ---
 
+### UIManager
+
+**Location**: `src/game/managers/UIManager.ts`
+
+Responsive UI management system with automatic scaling and layout adaptation.
+
+#### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| scene | Scene | Phaser scene reference |
+| config | UILayoutConfig | UI configuration |
+| elements | Map | Managed UI elements |
+| currentScale | number | Current scaling factor |
+
+#### Configuration
+
+```typescript
+interface UILayoutConfig {
+    elements: { [key: string]: UIElement };
+    responsive?: boolean;              // Enable responsive scaling
+    baseWidth?: number;                // Base resolution width (default: 1920)
+    baseHeight?: number;               // Base resolution height (default: 1080)
+    scalingMode?: 'fit' | 'fill' | 'stretch' | 'none';
+    minAspectRatio?: number;           // Minimum aspect ratio support
+    maxAspectRatio?: number;           // Maximum aspect ratio support
+}
+```
+
+#### Element Types
+
+```typescript
+// Text Element
+interface TextElementConfig {
+    type: 'text';
+    text: string;
+    position: UIPosition;
+    style?: Phaser.Types.GameObjects.Text.TextStyle;
+    origin?: { x: number; y: number };
+    // ... common properties
+}
+
+// Image Element
+interface ImageElementConfig {
+    type: 'image';
+    texture: string;
+    position: UIPosition;
+    frame?: string | number;
+    tint?: number;
+    // ... common properties
+}
+
+// Button Element
+interface ButtonElementConfig {
+    type: 'button';
+    text?: string;
+    texture?: string;
+    position: UIPosition;
+    onClick?: () => void;
+    onHover?: () => void;
+    onOut?: () => void;
+    hoverScale?: number;
+    clickScale?: number;
+    textStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+    // ... common properties
+}
+
+// Container Element
+interface ContainerElementConfig {
+    type: 'container';
+    position: UIPosition;
+    children?: UIElement[];
+    // ... common properties
+}
+```
+
+#### Methods
+
+```typescript
+// Constructor
+constructor(scene: Scene, config: UILayoutConfig)
+
+// Create all UI elements
+createUI(): void
+
+// Get element by key
+getElement(key: string): GameObjects.GameObject | undefined
+
+// Update element properties
+updateElement(key: string, updates: Partial<UIElement>): void
+
+// Animate element with tween
+animateElement(key: string, tweenConfig: Phaser.Types.Tweens.TweenBuilderConfig): void
+
+// Get current scale factor
+getScale(): number
+
+// Get screen dimensions
+getScreenSize(): { width: number; height: number }
+
+// Get current aspect ratio
+getAspectRatio(): number
+
+// Clean up and destroy
+destroy(): void
+```
+
+#### Usage Example
+
+```typescript
+// Create UI configuration
+const uiConfig: UILayoutConfig = {
+    baseWidth: 1024,
+    baseHeight: 768,
+    scalingMode: 'fit',
+    responsive: true,
+    elements: {
+        title: {
+            type: 'text',
+            text: 'Game Title',
+            position: { x: '50%', y: '20%' },
+            origin: { x: 0.5, y: 0.5 },
+            style: {
+                fontSize: '48px',
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 8
+            }
+        },
+        playButton: {
+            type: 'button',
+            text: 'PLAY',
+            position: { x: '50%', y: '60%' },
+            onClick: () => this.startGame(),
+            hoverScale: 1.1,
+            clickScale: 0.95
+        }
+    }
+};
+
+// Create and initialize UI
+this.uiManager = new UIManager(this, uiConfig);
+this.uiManager.createUI();
+
+// Animate elements
+this.uiManager.animateElement('title', {
+    scale: { from: 0, to: 1 },
+    duration: 500,
+    ease: 'Back.easeOut'
+});
+
+// Update element
+this.uiManager.updateElement('playButton', {
+    visible: false
+});
+
+// Clean up
+this.uiManager.destroy();
+```
+
+#### Position System
+
+Positions support multiple formats:
+
+- **Percentage**: `"50%"` - Relative to screen dimensions
+- **Pixels**: `100` or `"100px"` - Absolute positioning (scaled)
+- **Mixed**: Combine both for flexible layouts
+
+```typescript
+interface UIPosition {
+    x?: number | string;    // X position (pixels or percentage)
+    y?: number | string;    // Y position (pixels or percentage)
+    anchorX?: number;       // X anchor point (0-1)
+    anchorY?: number;       // Y anchor point (0-1)
+}
+```
+
+---
+
 ### CollectedItemsManager
 
 **Location**: `src/game/managers/CollectedItemsManager.ts`

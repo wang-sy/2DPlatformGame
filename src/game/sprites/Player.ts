@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { Bullet } from './Bullet';
+import { TouchInputManager, TouchControls } from '../managers/TouchInputManager';
 
 interface PlayerAbilities {
     canJump: boolean;
@@ -14,6 +15,8 @@ interface PlayerAbilities {
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+    private touchInputManager?: TouchInputManager;
+    private touchControls?: TouchControls;
     private moveSpeed: number = 200;
     private jumpSpeed: number = 500;
     private currentAnimation: string = '';
@@ -33,6 +36,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Double jump
     private jumpCount: number = 0;
     private maxJumps: number = 2;
+    private previousJumpState: boolean = false;
+    private previousShootState: boolean = false;
     
     // Wall jump
     private isTouchingWall: boolean = false;
@@ -120,6 +125,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         this.shootKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X);
         
+        // Initialize touch input manager
+        this.touchInputManager = new TouchInputManager(scene);
+        
         this.bullets = scene.physics.add.group({
             classType: Bullet,
             runChildUpdate: true,
@@ -190,22 +198,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const velocity = this.body?.velocity;
         if (!velocity) return;
         
+        // Get touch controls if available
+        if (this.touchInputManager?.isActive()) {
+            this.touchControls = this.touchInputManager.getControls();
+        }
+        
         // Manual world bounds check
         const worldBounds = this.scene.physics.world.bounds;
         
         // Keep player within horizontal bounds only
         // Use the actual physics body size for more accurate boundary detection
-        const bodyWidth = this.body.width;
-        const bodyOffset = this.body.offset.x;
+        const bodyWidth = this.body?.width ?? 0;
+        const bodyOffset = this.body?.offset.x ?? 0;
         const leftEdge = this.x - this.displayOriginX + bodyOffset;
         const rightEdge = leftEdge + bodyWidth;
         
         if (leftEdge < worldBounds.left) {
             this.x = worldBounds.left - bodyOffset + this.displayOriginX;
-            this.setVelocityX(Math.max(0, this.body.velocity.x));
+            this.setVelocityX(Math.max(0, this.body?.velocity.x ?? 0));
         } else if (rightEdge > worldBounds.right) {
             this.x = worldBounds.right - bodyWidth - bodyOffset + this.displayOriginX;
-            this.setVelocityX(Math.min(0, this.body.velocity.x));
+            this.setVelocityX(Math.min(0, this.body?.velocity.x ?? 0));
         }
         
         // Check if player falls below the bottom boundary - trigger death
@@ -247,7 +260,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Horizontal movement
         if (this.abilities.canMove) {
-            if (this.cursors.left.isDown) {
+            // Use joystick for smoother movement on mobile
+            const joystickX = this.touchControls?.joystickX ?? 0;
+            const leftPressed = this.cursors.left.isDown || (this.touchControls?.left ?? false);
+            const rightPressed = this.cursors.right.isDown || (this.touchControls?.right ?? false);
+            
+            // Apply joystick movement if active (allows for variable speed)
+            if (Math.abs(joystickX) > 0.1) {
+                const velocity = this.moveSpeed * joystickX;
+                this.setVelocityX(velocity);
+                this.setFlipX(joystickX < 0);
+                
+                if (onGround) {
+                    this.playAnimation('walk');
+                }
+                
+                // Emit player move event
+                eventBus.emit(GameEvent.PLAYER_MOVE, {
+                    player: this,
+                    direction: joystickX < 0 ? 'left' : 'right',
+                    velocity: velocity
+                });
+            } else if (leftPressed) {
                 this.setVelocityX(-this.moveSpeed);
                 this.setFlipX(true);
                 
@@ -261,7 +295,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     direction: 'left',
                     velocity: -this.moveSpeed
                 });
-            } else if (this.cursors.right.isDown) {
+            } else if (rightPressed) {
                 this.setVelocityX(this.moveSpeed);
                 this.setFlipX(false);
                 
@@ -295,19 +329,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Duck
-        if (this.cursors.down.isDown && onGround && !this.isCharging) {
+        const downPressed = this.cursors.down.isDown || (this.touchControls?.down ?? false);
+        if (downPressed && onGround && !this.isCharging) {
             this.playAnimation('duck');
         }
         
-        // Charge jump (hold space while on ground)
+        // Charge jump (hold space while on ground for keyboard, or use touch charge)
         const spaceKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        const touchCharging = this.touchControls?.isChargingJump ?? false;
+        const touchChargeTime = this.touchControls?.jumpChargeTime ?? 0;
         
+        // Start charging (keyboard)
         if (this.abilities.canChargeJump && spaceKey?.isDown && onGround && !this.isCharging) {
             this.isCharging = true;
             this.chargeTime = 0;
             this.playAnimation('duck');
         }
         
+        // Start charging (touch) 
+        if (this.abilities.canChargeJump && touchCharging && onGround && !this.isCharging) {
+            this.isCharging = true;
+            this.chargeTime = 0;
+            this.playAnimation('duck');
+        }
+        
+        // Continue charging (keyboard)
         if (this.isCharging && spaceKey?.isDown) {
             this.chargeTime += this.scene.game.loop.delta;
             if (this.chargeTime > this.maxChargeTime) {
@@ -319,7 +365,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.setTint(tintValue);
         }
         
-        // Release charge jump
+        // Continue charging (touch)
+        if (this.isCharging && touchCharging) {
+            this.chargeTime = touchChargeTime;
+            if (this.chargeTime > this.maxChargeTime) {
+                this.chargeTime = this.maxChargeTime;
+            }
+            // Visual feedback for charging (tint color based on charge level)
+            const chargePercent = this.chargeTime / this.maxChargeTime;
+            const tintValue = 0xffffff - Math.floor(chargePercent * 0x008888);
+            this.setTint(tintValue);
+        }
+        
+        // Release charge jump (keyboard)
         if (this.abilities.canChargeJump && this.isCharging && spaceKey?.isUp) {
             if (this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
@@ -340,8 +398,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.playAnimation('jump');
         }
         
+        // Handle touch jump release (charge jump if held, normal jump if tap)
+        const touchJumpRelease = !touchCharging && this.previousJumpState && touchChargeTime > 0;
+        if (this.abilities.canChargeJump && touchJumpRelease && this.isCharging) {
+            if (this.chargeTime >= this.minChargeTime) {
+                const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
+                const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
+                this.setVelocityY(jumpVelocity);
+                this.jumpCount = 1;
+                
+                // Emit charge jump event
+                eventBus.emit(GameEvent.PLAYER_CHARGE_JUMP, {
+                    player: this,
+                    chargeTime: this.chargeTime,
+                    velocity: jumpVelocity
+                });
+            }
+            this.isCharging = false;
+            this.chargeTime = 0;
+            this.clearTint();
+            this.playAnimation('jump');
+        }
+        
         // Normal jump and double jump
-        const justPressedUp = Phaser.Input.Keyboard.JustDown(this.cursors.up);
+        const justPressedUp = Phaser.Input.Keyboard.JustDown(this.cursors.up) || 
+                           (this.touchControls?.jump && !this.previousJumpState && touchChargeTime < 200);
+        this.previousJumpState = this.touchControls?.jump ?? false;
         
         if (justPressedUp && !this.isCharging) {
             // Wall jump
@@ -394,7 +476,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Shooting
-        if (Phaser.Input.Keyboard.JustDown(this.shootKey) && this.canShoot) {
+        const shootPressed = Phaser.Input.Keyboard.JustDown(this.shootKey) || 
+                           (this.touchControls?.shoot && !this.previousShootState);
+        this.previousShootState = this.touchControls?.shoot ?? false;
+        
+        if (shootPressed && this.canShoot && this.abilities.canShoot) {
             this.shoot();
         }
     }
@@ -410,7 +496,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const direction = this.flipX ? -1 : 1;
         
         // Calculate bullet spawn position based on player's body bounds
-        const playerBody = this.body as Phaser.Physics.Arcade.Body;
         const bulletOffset = 25; // Distance from player center
         
         // Use player's body edge as reference point

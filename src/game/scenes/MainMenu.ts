@@ -24,6 +24,20 @@ export class MainMenu extends Scene
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
         }).setOrigin(0.5);
+        
+        const startText = this.add.text(512, 550, 'Tap or Click to Start', {
+            fontFamily: 'Arial', fontSize: 24, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: startText,
+            alpha: { from: 1, to: 0.5 },
+            duration: 1000,
+            yoyo: true,
+            repeat: -1
+        });
 
         // Emit scene start event
         eventBus.emit(GameEvent.SCENE_START, {

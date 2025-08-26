@@ -13,6 +13,7 @@ import { GameObjectManager } from '../managers/GameObjectManager';
 import { UUIDGenerator } from '../utils/UUIDGenerator';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { eventBusDebugger } from '../utils/EventBusDebugger';
+import { OrientationOverlay } from '../ui/OrientationOverlay';
 
 export class Game extends Scene
 {
@@ -36,6 +37,7 @@ export class Game extends Scene
     scoreText: Phaser.GameObjects.Text;
     collectedItemsManager: CollectedItemsManager;
     gameObjectManager: GameObjectManager;
+    orientationOverlay?: OrientationOverlay;
 
     constructor ()
     {
@@ -98,6 +100,9 @@ export class Game extends Scene
         
         // Setup restart key (R key)
         this.restartKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        
+        // Add orientation overlay for mobile devices
+        this.orientationOverlay = new OrientationOverlay(this);
         
         // Create health UI
         this.healthUI = new HealthUI(this, 50, 50);

@@ -12,9 +12,9 @@ import { CollectedItemsManager } from '../managers/CollectedItemsManager';
 import { GameObjectManager } from '../managers/GameObjectManager';
 import { UUIDGenerator } from '../utils/UUIDGenerator';
 import { eventBus, GameEvent } from '../events/EventBus';
-import { eventBusDebugger } from '../utils/EventBusDebugger';
 import { DeviceDetector } from '../utils/DeviceDetector';
 import { FullscreenManager } from '../managers/FullscreenManager';
+import { MobileControls } from '../ui/MobileControls';
 
 export class Game extends Scene
 {
@@ -38,6 +38,7 @@ export class Game extends Scene
     scoreText: Phaser.GameObjects.Text;
     collectedItemsManager: CollectedItemsManager;
     gameObjectManager: GameObjectManager;
+    mobileControls: MobileControls | null = null;
 
     constructor ()
     {
@@ -120,6 +121,16 @@ export class Game extends Scene
         // Add fullscreen button for mobile devices
         if (DeviceDetector.isMobile() && DeviceDetector.isFullscreenSupported()) {
             FullscreenManager.getInstance().createFullscreenButton(this);
+        }
+        
+        // Create mobile controls for mobile devices
+        if (DeviceDetector.isMobile()) {
+            this.mobileControls = new MobileControls(this);
+            
+            // Pass mobile controls to player
+            if (this.player) {
+                this.player.setMobileControls(this.mobileControls);
+            }
         }
     }
 

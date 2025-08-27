@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { Bullet } from './Bullet';
+import { MobileControls } from '../ui/MobileControls';
 
 interface PlayerAbilities {
     canJump: boolean;
@@ -65,6 +66,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private shootCooldown: number = 500;
     private lastShootTime: number = 0;
     private bullets: Phaser.Physics.Arcade.Group;
+    
+    // Mobile controls
+    private mobileControls: MobileControls | null = null;
+    private mobileJumpPressed: boolean = false;
+    private mobileShootPressed: boolean = false;
+    private mobileJumpJustPressed: boolean = false;
+    private mobileJumpJustReleased: boolean = false;
+    
+    // Auto-jump and progressive jump
+    private autoJumpEnabled: boolean = false;
+    private progressiveJumpCount: number = 0;
+    private maxProgressiveJumps: number = 5;
+    private progressiveJumpMultiplier: number = 0.15; // Each jump adds 15% more height
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -185,6 +199,47 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
         }
     }
+    
+    setMobileControls(controls: MobileControls): void {
+        this.mobileControls = controls;
+        
+        // Setup jump callbacks
+        controls.setJumpCallbacks(
+            // On press
+            () => {
+                if (!this.mobileJumpPressed) {
+                    this.mobileJumpJustPressed = true;
+                    this.mobileJumpPressed = true;
+                }
+            },
+            // On release
+            (duration: number) => {
+                this.mobileJumpPressed = false;
+                this.mobileJumpJustReleased = true;
+                
+                // Reset progressive jump and auto-jump when button released
+                this.progressiveJumpCount = 0;
+                this.autoJumpEnabled = false;
+                this.clearTint(); // Clear visual feedback
+            },
+            // On hold (for charge indicator)
+            (duration: number) => {
+                // Charging feedback handled in update
+            }
+        );
+        
+        // Setup shoot callbacks
+        controls.setShootCallbacks(
+            // On press
+            () => {
+                this.mobileShootPressed = true;
+            },
+            // On release
+            () => {
+                this.mobileShootPressed = false;
+            }
+        );
+    }
 
     update(): void {
         const velocity = this.body?.velocity;
@@ -243,12 +298,58 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Reset jump count when on ground
         if (onGround) {
             this.jumpCount = 0;
+            
+            // Handle auto-jump for mobile
+            if (this.autoJumpEnabled && this.mobileJumpPressed && this.mobileControls) {
+                // Auto jump when landing while button is held
+                const progressiveMultiplier = 1 + (this.progressiveJumpCount * this.progressiveJumpMultiplier);
+                const jumpPower = this.jumpSpeed * Math.min(progressiveMultiplier, 2.0); // Cap at 2x normal jump
+                this.setVelocityY(-jumpPower);
+                
+                // Increment progressive jump counter
+                if (this.progressiveJumpCount < this.maxProgressiveJumps) {
+                    this.progressiveJumpCount++;
+                }
+                
+                // Visual feedback for progressive jumps
+                const tintValue = 0xffffff - Math.floor((this.progressiveJumpCount / this.maxProgressiveJumps) * 0x008888);
+                this.setTint(tintValue);
+                
+                // Update jump button visual
+                const progressLevel = this.progressiveJumpCount / this.maxProgressiveJumps;
+                this.mobileControls.updateJumpButtonProgress(progressLevel);
+                
+                eventBus.emit(GameEvent.PLAYER_JUMP, {
+                    player: this,
+                    velocity: -jumpPower,
+                    progressiveCount: this.progressiveJumpCount
+                });
+                
+                this.jumpCount++;
+                this.playAnimation('jump');
+                this.autoJumpEnabled = false; // Reset to prevent immediate re-trigger
+            }
+        } else if (!onGround && this.mobileJumpPressed && this.mobileControls) {
+            // Re-enable auto-jump when in air and button still held
+            this.autoJumpEnabled = true;
         }
         
-        // Horizontal movement
+        // Get mobile input if available
+        let mobileX = 0;
+        let mobileY = 0;
+        if (this.mobileControls) {
+            const joystickForce = this.mobileControls.getJoystickForce();
+            mobileX = joystickForce.x;
+            mobileY = joystickForce.y;
+        }
+        
+        // Horizontal movement (keyboard or mobile)
         if (this.abilities.canMove) {
-            if (this.cursors.left.isDown) {
-                this.setVelocityX(-this.moveSpeed);
+            const leftPressed = this.cursors.left.isDown || mobileX < -0.3;
+            const rightPressed = this.cursors.right.isDown || mobileX > 0.3;
+            
+            if (leftPressed) {
+                this.setVelocityX(-this.moveSpeed * (mobileX !== 0 ? Math.abs(mobileX) : 1));
                 this.setFlipX(true);
                 
                 if (onGround) {
@@ -261,8 +362,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     direction: 'left',
                     velocity: -this.moveSpeed
                 });
-            } else if (this.cursors.right.isDown) {
-                this.setVelocityX(this.moveSpeed);
+            } else if (rightPressed) {
+                this.setVelocityX(this.moveSpeed * (mobileX !== 0 ? Math.abs(mobileX) : 1));
                 this.setFlipX(false);
                 
                 if (onGround) {
@@ -294,17 +395,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         
-        // Duck state
-        const isDucking = this.cursors.down.isDown && onGround;
+        // Duck state (keyboard or mobile joystick down)
+        const isDucking = (this.cursors.down.isDown || mobileY > 0.5) && onGround;
         
         // Jump keys setup
         const spaceKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         const upKey = this.cursors.up;
         
-        // Check if either jump key is pressed
-        const jumpKeyPressed = spaceKey?.isDown || upKey.isDown;
-        const jumpKeyJustPressed = Phaser.Input.Keyboard.JustDown(spaceKey!) || Phaser.Input.Keyboard.JustDown(upKey);
-        const jumpKeyJustReleased = Phaser.Input.Keyboard.JustUp(spaceKey!) || Phaser.Input.Keyboard.JustUp(upKey);
+        // Check if either jump key is pressed (keyboard or mobile)
+        const jumpKeyPressed = spaceKey?.isDown || upKey.isDown || this.mobileJumpPressed;
+        const jumpKeyJustPressed = Phaser.Input.Keyboard.JustDown(spaceKey!) || Phaser.Input.Keyboard.JustDown(upKey) || 
+                                  this.mobileJumpJustPressed;
+        const jumpKeyJustReleased = Phaser.Input.Keyboard.JustUp(spaceKey!) || Phaser.Input.Keyboard.JustUp(upKey) || 
+                                   this.mobileJumpJustReleased;
         
         // Handle jump logic
         if (jumpKeyJustPressed && !this.isCharging) {
@@ -336,17 +439,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.jumpCount++;
                 this.playAnimation('jump');
             }
-            // Check if we should start charging (ducking + jump key pressed)
-            else if (onGround && isDucking && this.abilities.canChargeJump) {
-                // Start charging when ducking
+            // Check if we should start charging (ducking + jump for keyboard only)
+            else if (onGround && isDucking && !this.mobileControls && this.abilities.canChargeJump) {
+                // Start charging when ducking (keyboard only)
                 this.isCharging = true;
                 this.chargeTime = 0;
-                // Keep duck animation
+                this.playAnimation('duck');
             }
-            // Normal jump (on ground, not ducking)
-            else if (onGround && !isDucking && this.jumpCount < this.maxJumps && this.abilities.canJump) {
+            // Normal jump (always for mobile, non-ducking for keyboard)
+            else if (onGround && (!isDucking || this.mobileControls) && this.jumpCount < this.maxJumps && this.abilities.canJump) {
                 const jumpPower = this.jumpSpeed;
                 this.setVelocityY(-jumpPower);
+                
+                // For mobile, start progressive jump tracking
+                if (this.mobileControls) {
+                    this.progressiveJumpCount = 0;
+                    this.autoJumpEnabled = true;
+                    
+                    // Start button visual feedback
+                    this.mobileControls.updateJumpButtonProgress(0);
+                }
                 
                 eventBus.emit(GameEvent.PLAYER_JUMP, {
                     player: this,
@@ -358,8 +470,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         
-        // Continue charging if jump key is held while ducking
-        if (this.isCharging && jumpKeyPressed && isDucking) {
+        // Continue charging if jump key is held (keyboard only, while ducking)
+        if (this.isCharging && jumpKeyPressed && isDucking && !this.mobileControls) {
             this.chargeTime += this.scene.game.loop.delta;
             if (this.chargeTime > this.maxChargeTime) {
                 this.chargeTime = this.maxChargeTime;
@@ -370,14 +482,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const tintValue = 0xffffff - Math.floor(chargePercent * 0x008888);
             this.setTint(tintValue);
             
-            // Keep showing duck animation
-            if (this.anims.currentAnim?.key !== 'duck') {
+            // Keep showing duck animation if ducking
+            if (isDucking && this.anims.currentAnim?.key !== 'duck') {
                 this.playAnimation('duck');
             }
         }
         
-        // Cancel charging if not ducking anymore or left ground
-        if (this.isCharging && (!isDucking || !onGround)) {
+        // Cancel charging if not ducking anymore (keyboard) or left ground
+        if (this.isCharging && ((!isDucking && !this.mobileControls) || !onGround)) {
             // If we have enough charge and released jump key, perform charged jump
             if (!jumpKeyPressed && this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
@@ -401,8 +513,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.clearTint();
         }
         
-        // Release charged jump when releasing jump key while still ducking and charging
-        if (jumpKeyJustReleased && this.isCharging && isDucking) {
+        // Release charged jump when releasing jump key while charging (keyboard only)
+        if (jumpKeyJustReleased && this.isCharging && isDucking && !this.mobileControls) {
             if (this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
                 const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
@@ -440,10 +552,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.playAnimation('jump');
         }
         
-        // Shooting
-        if (Phaser.Input.Keyboard.JustDown(this.shootKey) && this.canShoot) {
+        // Shooting (keyboard or mobile)
+        const shootPressed = Phaser.Input.Keyboard.JustDown(this.shootKey) || 
+                            (this.mobileShootPressed && this.mobileControls && this.canShoot);
+        if (shootPressed && this.abilities.canShoot && this.canShoot) {
             this.shoot();
         }
+        
+        // Reset mobile input flags at end of frame
+        this.mobileJumpJustPressed = false;
+        this.mobileJumpJustReleased = false;
     }
     
     private shoot(): void {
@@ -453,6 +571,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         this.lastShootTime = currentTime;
+        this.canShoot = false;
+        
+        // Reset canShoot after cooldown
+        this.scene.time.delayedCall(this.shootCooldown, () => {
+            this.canShoot = true;
+        });
         
         const direction = this.flipX ? -1 : 1;
         

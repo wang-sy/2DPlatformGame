@@ -11,7 +11,7 @@ class VirtualJoystick {
     private isDragging: boolean = false;
     private distance: number = 0;
     private angle: number = 0;
-    private maxDistance: number = 60;
+    private maxDistance: number;
     private isHidden: boolean;
     private startX: number = 0;
     private startY: number = 0;
@@ -20,9 +20,14 @@ class VirtualJoystick {
     public forceX: number = 0;
     public forceY: number = 0;
     
-    constructor(scene: Scene, x: number, y: number, hidden: boolean = true) {
+    constructor(scene: Scene, x: number, y: number, hidden: boolean = true, size?: number) {
         this.scene = scene;
         this.isHidden = hidden;
+        
+        // Calculate joystick size based on screen or use provided size
+        const screenSize = Math.min(scene.cameras.main.width, scene.cameras.main.height);
+        const baseSize = size || screenSize * 0.08;
+        this.maxDistance = baseSize;
         
         // Create container
         this.container = scene.add.container(x, y);
@@ -33,8 +38,9 @@ class VirtualJoystick {
         this.base = scene.add.circle(0, 0, this.maxDistance, 0x000000, 0.3);
         this.base.setStrokeStyle(3, 0xffffff, 0.5);
         
-        // Create joystick stick
-        this.stick = scene.add.circle(0, 0, 25, 0xffffff, 0.5);
+        // Create joystick stick (proportional to base size)
+        const stickSize = this.maxDistance * 0.4;
+        this.stick = scene.add.circle(0, 0, stickSize, 0xffffff, 0.5);
         this.stick.setStrokeStyle(2, 0xffffff, 0.8);
         
         // Add to container
@@ -391,30 +397,58 @@ export class MobileControls {
     private createControls(): void {
         const { width, height } = this.scene.cameras.main;
         
+        // Mixed strategy: percentage as base, with pixel adjustments for safety margins
+        const edgeMargin = 80;  // Safety margin from edges
+        const bottomMargin = 120;  // Safety margin from bottom
+        
+        // Calculate positions - percentage based with safety margins
+        // Joystick: 15% from left + ensure safety margin
+        const joystickX = Math.max(width * 0.15, edgeMargin);
+        const joystickY = height - Math.max(height * 0.2, bottomMargin);
+        
+        // Jump button: 85% position - ensure safety margin from right
+        const jumpButtonX = width - Math.max(width * 0.15, edgeMargin);
+        const jumpButtonY = height - Math.max(height * 0.2, bottomMargin);
+        
+        // Shoot button: 25% from right, slightly below jump
+        const shootButtonX = width - Math.max(width * 0.25, edgeMargin + 80);
+        const shootButtonY = height - Math.max(height * 0.15, bottomMargin - 30);
+        
+        // Calculate sizes - percentage based with min/max constraints
+        const screenMin = Math.min(width, height);
+        const baseButtonSize = Math.max(
+            screenMin * 0.08,  // 8% of smaller dimension
+            60  // Minimum 60px
+        );
+        const jumpButtonSize = Math.min(baseButtonSize * 1.2, 90);  // Jump button larger, max 90px
+        const shootButtonSize = Math.min(baseButtonSize, 75);  // Regular size, max 75px
+        const joystickSize = Math.min(baseButtonSize * 0.9, 70);  // Joystick size, max 70px
+        
         // Create joystick on the left side (visible by default for better discovery)
         this.joystick = new VirtualJoystick(
             this.scene,
-            150,
-            height - 150,
-            false // visible mode - change to true for hidden mode
+            joystickX,
+            joystickY,
+            false, // visible mode - change to true for hidden mode
+            joystickSize
         );
         
         // Create jump button on the right
         this.jumpButton = new MobileButton(
             this.scene,
-            width - 80,
-            height - 150,
+            jumpButtonX,
+            jumpButtonY,
             '⬆',
-            70
+            jumpButtonSize
         );
         
         // Create shoot button on the right
         this.shootButton = new MobileButton(
             this.scene,
-            width - 160,
-            height - 120,
+            shootButtonX,
+            shootButtonY,
             '🔫',
-            60
+            shootButtonSize
         );
     }
     

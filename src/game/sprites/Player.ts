@@ -73,12 +73,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private mobileShootPressed: boolean = false;
     private mobileJumpJustPressed: boolean = false;
     private mobileJumpJustReleased: boolean = false;
-    
-    // Auto-jump and progressive jump
-    private autoJumpEnabled: boolean = false;
-    private progressiveJumpCount: number = 0;
-    private maxProgressiveJumps: number = 5;
-    private progressiveJumpMultiplier: number = 0.15; // Each jump adds 15% more height
 
     constructor(scene: Phaser.Scene, tiledObject: Phaser.Types.Tilemaps.TiledObject) {
         let x = tiledObject.x ?? 0;
@@ -216,11 +210,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             (duration: number) => {
                 this.mobileJumpPressed = false;
                 this.mobileJumpJustReleased = true;
-                
-                // Reset progressive jump and auto-jump when button released
-                this.progressiveJumpCount = 0;
-                this.autoJumpEnabled = false;
-                this.clearTint(); // Clear visual feedback
             },
             // On hold (for charge indicator)
             (duration: number) => {
@@ -298,40 +287,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Reset jump count when on ground
         if (onGround) {
             this.jumpCount = 0;
-            
-            // Handle auto-jump for mobile
-            if (this.autoJumpEnabled && this.mobileJumpPressed && this.mobileControls) {
-                // Auto jump when landing while button is held
-                const progressiveMultiplier = 1 + (this.progressiveJumpCount * this.progressiveJumpMultiplier);
-                const jumpPower = this.jumpSpeed * Math.min(progressiveMultiplier, 2.0); // Cap at 2x normal jump
-                this.setVelocityY(-jumpPower);
-                
-                // Increment progressive jump counter
-                if (this.progressiveJumpCount < this.maxProgressiveJumps) {
-                    this.progressiveJumpCount++;
-                }
-                
-                // Visual feedback for progressive jumps
-                const tintValue = 0xffffff - Math.floor((this.progressiveJumpCount / this.maxProgressiveJumps) * 0x008888);
-                this.setTint(tintValue);
-                
-                // Update jump button visual
-                const progressLevel = this.progressiveJumpCount / this.maxProgressiveJumps;
-                this.mobileControls.updateJumpButtonProgress(progressLevel);
-                
-                eventBus.emit(GameEvent.PLAYER_JUMP, {
-                    player: this,
-                    velocity: -jumpPower,
-                    progressiveCount: this.progressiveJumpCount
-                });
-                
-                this.jumpCount++;
-                this.playAnimation('jump');
-                this.autoJumpEnabled = false; // Reset to prevent immediate re-trigger
-            }
-        } else if (!onGround && this.mobileJumpPressed && this.mobileControls) {
-            // Re-enable auto-jump when in air and button still held
-            this.autoJumpEnabled = true;
         }
         
         // Get mobile input if available
@@ -439,26 +394,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.jumpCount++;
                 this.playAnimation('jump');
             }
-            // Check if we should start charging (ducking + jump for keyboard only)
-            else if (onGround && isDucking && !this.mobileControls && this.abilities.canChargeJump) {
-                // Start charging when ducking (keyboard only)
+            // Check if we should start charging (ducking + jump for both mobile and keyboard)
+            else if (onGround && isDucking && this.abilities.canChargeJump) {
+                // Start charging when ducking
                 this.isCharging = true;
                 this.chargeTime = 0;
                 this.playAnimation('duck');
             }
-            // Normal jump (always for mobile, non-ducking for keyboard)
-            else if (onGround && (!isDucking || this.mobileControls) && this.jumpCount < this.maxJumps && this.abilities.canJump) {
+            // Normal jump (not ducking)
+            else if (onGround && !isDucking && this.jumpCount < this.maxJumps && this.abilities.canJump) {
                 const jumpPower = this.jumpSpeed;
                 this.setVelocityY(-jumpPower);
-                
-                // For mobile, start progressive jump tracking
-                if (this.mobileControls) {
-                    this.progressiveJumpCount = 0;
-                    this.autoJumpEnabled = true;
-                    
-                    // Start button visual feedback
-                    this.mobileControls.updateJumpButtonProgress(0);
-                }
                 
                 eventBus.emit(GameEvent.PLAYER_JUMP, {
                     player: this,
@@ -470,8 +416,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         
-        // Continue charging if jump key is held (keyboard only, while ducking)
-        if (this.isCharging && jumpKeyPressed && isDucking && !this.mobileControls) {
+        // Continue charging if jump key is held while ducking
+        if (this.isCharging && jumpKeyPressed && isDucking) {
             this.chargeTime += this.scene.game.loop.delta;
             if (this.chargeTime > this.maxChargeTime) {
                 this.chargeTime = this.maxChargeTime;
@@ -482,14 +428,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const tintValue = 0xffffff - Math.floor(chargePercent * 0x008888);
             this.setTint(tintValue);
             
+            // Update jump button visual for mobile
+            if (this.mobileControls) {
+                this.mobileControls.updateJumpButtonProgress(chargePercent);
+            }
+            
             // Keep showing duck animation if ducking
             if (isDucking && this.anims.currentAnim?.key !== 'duck') {
                 this.playAnimation('duck');
             }
         }
         
-        // Cancel charging if not ducking anymore (keyboard) or left ground
-        if (this.isCharging && ((!isDucking && !this.mobileControls) || !onGround)) {
+        // Cancel charging if not ducking anymore or left ground
+        if (this.isCharging && (!isDucking || !onGround)) {
             // If we have enough charge and released jump key, perform charged jump
             if (!jumpKeyPressed && this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
@@ -511,10 +462,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.isCharging = false;
             this.chargeTime = 0;
             this.clearTint();
+            
+            // Reset button visual for mobile
+            if (this.mobileControls) {
+                this.mobileControls.updateJumpButtonProgress(0);
+            }
         }
         
-        // Release charged jump when releasing jump key while charging (keyboard only)
-        if (jumpKeyJustReleased && this.isCharging && isDucking && !this.mobileControls) {
+        // Release charged jump when releasing jump key while charging
+        if (jumpKeyJustReleased && this.isCharging && isDucking) {
             if (this.chargeTime >= this.minChargeTime) {
                 const chargeMultiplier = 1 + (this.chargeTime / this.maxChargeTime) * (this.chargeJumpMultiplier - 1);
                 const jumpVelocity = -this.jumpSpeed * chargeMultiplier;
@@ -534,6 +490,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.isCharging = false;
             this.chargeTime = 0;
             this.clearTint();
+            
+            // Reset button visual for mobile
+            if (this.mobileControls) {
+                this.mobileControls.updateJumpButtonProgress(0);
+            }
         }
         
         // Show duck animation when ducking and not charging

@@ -72,6 +72,7 @@ class VirtualJoystick {
         }
         
         this.container.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            // Only respond if not already being controlled by another touch
             if (this.touchId !== null && this.touchId !== pointer.id) return;
             
             this.touchId = pointer.id;
@@ -129,7 +130,8 @@ class VirtualJoystick {
         });
         
         const resetJoystick = (pointer: Phaser.Input.Pointer) => {
-            if (pointer.id !== this.touchId) return;
+            // Only reset if this pointer was controlling the joystick
+            if (this.touchId === null || pointer.id !== this.touchId) return;
             
             this.isDragging = false;
             this.touchId = null;
@@ -229,6 +231,7 @@ class MobileButton {
         this.button.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
         
         this.button.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            // Only respond if not already being controlled by another touch
             if (this.touchId !== null && this.touchId !== pointer.id) return;
             
             this.touchId = pointer.id;
@@ -253,7 +256,8 @@ class MobileButton {
         });
         
         const handleRelease = (pointer: Phaser.Input.Pointer) => {
-            if (pointer.id !== this.touchId) return;
+            // Only handle release if this pointer was controlling the button
+            if (this.touchId === null || pointer.id !== this.touchId) return;
             
             if (this.isPressed) {
                 const duration = this.scene.time.now - this.pressStartTime;
@@ -386,6 +390,11 @@ export class MobileControls {
     
     constructor(scene: Scene) {
         this.scene = scene;
+        
+        // Enable multi-touch support (support up to 4 simultaneous touches)
+        if (scene.input) {
+            scene.input.addPointer(3); // Default + 3 more = 4 total
+        }
         
         // Create main container
         this.container = scene.add.container(0, 0);

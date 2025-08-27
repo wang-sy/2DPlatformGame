@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { Game } from './Game';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { UIManager, UILayoutConfig } from '../managers/UIManager';
+import { DeviceDetector } from '../utils/DeviceDetector';
+import { FullscreenManager } from '../managers/FullscreenManager';
 
 export class MainMenu extends Scene
 {
@@ -146,6 +148,11 @@ export class MainMenu extends Scene
         this.input.keyboard?.once('keydown', () => {
             this.startGame();
         });
+        
+        // Add fullscreen button for mobile devices
+        if (DeviceDetector.isMobile() && DeviceDetector.isFullscreenSupported()) {
+            FullscreenManager.getInstance().createFullscreenButton(this);
+        }
     }
 
     private startGame(): void {

@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { Game } from './Game';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { UIManager, UILayoutConfig } from '../managers/UIManager';
+import { DeviceDetector } from '../utils/DeviceDetector';
+import { FullscreenManager } from '../managers/FullscreenManager';
 
 export class GameOver extends Scene
 {
@@ -208,6 +210,11 @@ export class GameOver extends Scene
         
         const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         escKey?.once('down', () => this.returnToMenu());
+        
+        // Add fullscreen button for mobile devices
+        if (DeviceDetector.isMobile() && DeviceDetector.isFullscreenSupported()) {
+            FullscreenManager.getInstance().createFullscreenButton(this);
+        }
     }
 
     private getRandomTip(): string {

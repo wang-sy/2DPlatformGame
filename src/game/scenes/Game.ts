@@ -13,6 +13,8 @@ import { GameObjectManager } from '../managers/GameObjectManager';
 import { UUIDGenerator } from '../utils/UUIDGenerator';
 import { eventBus, GameEvent } from '../events/EventBus';
 import { eventBusDebugger } from '../utils/EventBusDebugger';
+import { DeviceDetector } from '../utils/DeviceDetector';
+import { FullscreenManager } from '../managers/FullscreenManager';
 
 export class Game extends Scene
 {
@@ -114,6 +116,11 @@ export class Game extends Scene
         });
         this.scoreText.setScrollFactor(0);
         this.scoreText.setDepth(1000);
+        
+        // Add fullscreen button for mobile devices
+        if (DeviceDetector.isMobile() && DeviceDetector.isFullscreenSupported()) {
+            FullscreenManager.getInstance().createFullscreenButton(this);
+        }
     }
 
     private createObjectsFromTilemap() {

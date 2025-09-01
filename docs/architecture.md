@@ -1,406 +1,502 @@
-# System Architecture
+# Architecture Overview
 
-## Overview
+## 🏗️ System Architecture
 
-This document describes the architecture of the Phaser 3 Platform Game Framework, including design patterns, system interactions, and implementation details.
-
-## Architecture Diagram
+This platform game framework implements a **component-based, event-driven architecture** with clear separation of concerns and modular design patterns.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Application                          │
-├───────────────────┬─────────────────┬───────────────────────┤
-│    Scene Layer    │   Manager Layer  │    Event Layer        │
-├───────────────────┼─────────────────┼───────────────────────┤
-│ • Boot            │ • GameObjectMgr  │ • EventBus            │
-│ • Preloader       │ • AnimationMgr   │ • Event Types         │
-│ • MainMenu        │ • BGMPlayer      │ • Event Debugger      │
-│ • Game            │ • SoundEffectMgr │                       │
-│ • GameOver        │ • CollectionMgr  │                       │
-│ • Victory         │                  │                       │
-├───────────────────┴─────────────────┴───────────────────────┤
-│                      Sprite Layer                            │
-├───────────────────────────────────────────────────────────────┤
-│ Player │ Enemy │ Collectible │ Trigger │ Obstacle │ Bullet │
-└───────────────────────────────────────────────────────────────┘
+│                        Game Entry                            │
+│                     (main.ts / Game.ts)                      │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+        ┌─────────▼─────────┐
+        │   Scene Manager    │
+        │  (Phaser Scenes)   │
+        └─────────┬─────────┘
+                  │
+    ┌─────────────┼─────────────┬──────────────┬──────────────┐
+    ▼             ▼             ▼              ▼              ▼
+┌────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│Systems │  │Managers  │  │Components│  │   UI     │  │  Utils   │
+└────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘
+    │            │             │             │              │
+    └────────────┼─────────────┼─────────────┼──────────────┘
+                 ▼             ▼             ▼
+            ┌─────────────────────────────────┐
+            │        Event Bus System         │
+            │     (Centralized Events)        │
+            └─────────────────────────────────┘
 ```
 
-## Design Patterns
+## 🎯 Core Design Patterns
 
 ### 1. Singleton Pattern
-
-Used for global managers that need single instances throughout the game:
+Global managers that persist across scenes:
 
 ```typescript
-export class GameObjectManager {
-    private static instance: GameObjectManager;
-    
-    static getInstance(): GameObjectManager {
-        if (!GameObjectManager.instance) {
-            GameObjectManager.instance = new GameObjectManager();
-        }
-        return GameObjectManager.instance;
+// AnimationManager.ts
+export class AnimationManager {
+  private static instance: AnimationManager;
+  
+  static getInstance(scene?: Phaser.Scene): AnimationManager {
+    if (!AnimationManager.instance) {
+      AnimationManager.instance = new AnimationManager(scene!);
     }
+    return AnimationManager.instance;
+  }
 }
 ```
 
-**Applied to:**
-- GameObjectManager
-- AnimationManager
-- BGMPlayer
-- SoundEffectPlayer
+**Used in:**
+- `AnimationManager`: Global animation registry
+- `GameObjectManager`: Entity tracking and UUID management
+- `BGMPlayer`: Background music controller
+- `SoundEffectPlayer`: Sound effect pooling
+- `EventBus`: Centralized event system
 
-### 2. Observer Pattern (Event Bus)
-
-Decouples components through event-driven communication:
-
-```typescript
-// Publisher
-eventBus.emit(GameEvent.PLAYER_JUMP, { 
-    player: this, 
-    velocity: -500 
-});
-
-// Subscriber
-eventBus.on(GameEvent.PLAYER_JUMP, (data) => {
-    this.handlePlayerJump(data);
-});
-```
-
-### 3. Factory Pattern
-
-Used for creating game objects from tilemap data:
+### 2. Component Pattern
+Game entities as self-contained components:
 
 ```typescript
-private createObject(obj: Phaser.Types.Tilemaps.TiledObject) {
-    switch (obj.type) {
-        case "player":
-            return this.createPlayerFromTilemap(obj);
-        case "enemy":
-            return this.createEnemyFromTilemap(obj);
-        // ...
-    }
+// Base component structure
+export class GameComponent extends Phaser.Physics.Arcade.Sprite {
+  protected uuid: string;
+  protected config: ComponentConfig;
+  
+  constructor(scene: Phaser.Scene, x: number, y: number) {
+    super(scene, x, y, 'texture');
+    this.uuid = Utils.generateUUID();
+    this.initialize();
+  }
+  
+  protected initialize(): void {
+    // Setup physics, animations, events
+  }
+  
+  update(time: number, delta: number): void {
+    // Frame update logic
+  }
 }
 ```
 
-### 4. Strategy Pattern
-
-Enemy AI behaviors are implemented as strategies:
+### 3. Observer Pattern
+Event-driven communication:
 
 ```typescript
-private updateMovement() {
-    switch (this.moveMethod) {
-        case 'patrol':
-            this.updatePatrol();
-            break;
-        case 'follow':
-            this.updateFollow();
-            break;
-        // Different movement strategies
-    }
+// Event subscription
+EventBus.on('player-damaged', this.handlePlayerDamage, this);
+
+// Event emission
+EventBus.emit('player-damaged', { damage: 10, source: 'enemy' });
+
+// Cleanup
+EventBus.off('player-damaged', this.handlePlayerDamage, this);
+```
+
+### 4. Factory Pattern
+Dynamic object creation from configuration:
+
+```typescript
+// TilemapLoader.ts
+private createObjectFromConfig(config: ObjectConfig): GameObject {
+  switch (config.type) {
+    case 'enemy':
+      return new Enemy(this.scene, config);
+    case 'platform':
+      return new Platform(this.scene, config);
+    case 'trigger':
+      return new Trigger(this.scene, config);
+    default:
+      return new GameObject(this.scene, config);
+  }
 }
 ```
 
-## Core Systems
-
-### Scene Management
-
-The game flow is controlled through Phaser's scene system:
-
-```
-Boot → Preloader → MainMenu → Game → Victory/GameOver
-                       ↑                     ↓
-                       └─────────────────────┘
-```
-
-Each scene has specific responsibilities:
-
-- **Boot**: Initialize game configuration
-- **Preloader**: Load assets and show progress
-- **MainMenu**: Handle menu interactions
-- **Game**: Core gameplay logic
-- **Victory/GameOver**: Display results and statistics
-
-### Object Management System
-
-The UUID-based object management provides:
-
-1. **Unique Identification**: Every object gets a UUID
-2. **Cross-referencing**: Objects can reference each other
-3. **Lifecycle Management**: Track creation and destruction
-4. **Type Registry**: Categorize objects by type
+### 5. Strategy Pattern
+Interchangeable AI behaviors:
 
 ```typescript
-interface RegisteredObject {
-    uuid: string;
-    object: Phaser.GameObjects.GameObject;
-    type: string;
-    name?: string;
+// Enemy AI strategies
+interface AIStrategy {
+  execute(enemy: Enemy, delta: number): void;
+}
+
+class PatrolStrategy implements AIStrategy {
+  execute(enemy: Enemy, delta: number): void {
+    // Patrol logic
+  }
+}
+
+class FollowStrategy implements AIStrategy {
+  execute(enemy: Enemy, delta: number): void {
+    // Follow player logic
+  }
 }
 ```
 
-### Event System Architecture
+## 📁 Module Organization
 
-Events flow through the system in a hierarchical manner:
+### `/src/components/`
+Self-contained game entities with their own physics, rendering, and logic:
 
+- **Player.ts**: Player controller with advanced movement
+- **Enemy.ts**: Enemy with configurable AI behaviors
+- **Platform.ts**: Static and moving platforms
+- **Trigger.ts**: Event-driven interactive objects
+- **Collectible.ts**: Items with scoring and effects
+- **Hazard.ts**: Environmental dangers
+- **Goal.ts**: Level completion objectives
+- **Obstacle.ts**: Physical barriers
+
+### `/src/managers/`
+Global singleton services:
+
+- **AnimationManager.ts**: Centralized animation registry
+- **GameObjectManager.ts**: Entity lifecycle and UUID tracking
+- **BGMPlayer.ts**: Background music with scene transitions
+- **SoundEffectPlayer.ts**: Sound effect pooling and variants
+- **UIManager.ts**: UI component lifecycle
+
+### `/src/systems/`
+Core framework systems:
+
+- **EventBus.ts**: Centralized event dispatcher
+- **DeviceDetector.ts**: Platform and capability detection
+- **FullscreenManager.ts**: Cross-platform fullscreen handling
+- **TilemapLoader.ts**: Tiled map parsing and object creation
+
+### `/src/scenes/`
+Phaser scene implementations:
+
+- **PreloadScene.ts**: Asset loading and initialization
+- **MainMenuScene.ts**: Game menu and navigation
+- **GameScene.ts**: Main gameplay scene
+- **GameOverScene.ts**: Death and retry handling
+- **GameWinScene.ts**: Victory and progression
+
+### `/src/ui/`
+User interface components:
+
+- **MobileControls.ts**: Touch input system
+- **VirtualJoystick.ts**: Analog stick implementation
+- **ActionButton.ts**: Touch buttons with feedback
+- **HealthBar.ts**: Player health display
+- **ScoreDisplay.ts**: Points and collectibles UI
+
+### `/src/utils/`
+Helper functions and utilities:
+
+- **AssetLoader.ts**: Resource management
+- **CollisionHandler.ts**: Physics collision setup
+- **ConfigValidator.ts**: Configuration validation
+- **MathUtils.ts**: Game mathematics helpers
+- **ObjectPool.ts**: Performance optimization
+
+## 🔄 Data Flow
+
+### 1. Initialization Flow
 ```
-User Input → Sprite Action → Event Emission → System Response
-     ↓            ↓               ↓                ↓
-  Keyboard    Player.jump()   PLAYER_JUMP    SoundEffect.play()
-```
-
-**Event Categories:**
-
-1. **Player Events**: Movement, combat, damage
-2. **Game State Events**: Start, pause, game over
-3. **Audio Events**: Play BGM, sound effects
-4. **Animation Events**: Trigger sprite animations
-5. **Collection Events**: Item pickup, score update
-
-### Animation System
-
-The animation system uses a fallback hierarchy:
-
-```
-1. Check for sprite-specific animation
-2. Fall back to animation type default
-3. Fall back to static frame
-```
-
-**Animation Configuration:**
-
-```typescript
-{
-    "animations": [
-        {
-            "name": "idle",
-            "frames": ["idle/frame0000"],
-            "frameRate": 10,
-            "repeat": -1
-        }
-    ]
-}
-```
-
-### Audio Architecture
-
-Audio is managed through two specialized systems:
-
-1. **BGMPlayer**: Handles background music
-   - Scene-based track selection
-   - Volume control
-   - Fade transitions
-
-2. **SoundEffectPlayer**: Manages sound effects
-   - Animation-synchronized playback
-   - Priority system
-   - Pooled audio objects
-
-### Physics System
-
-Built on Phaser's Arcade Physics:
-
-```typescript
-// Physics configuration
-physics: {
-    default: "arcade",
-    arcade: {
-        gravity: { x: 0, y: 600 },
-        debug: false
-    }
-}
-```
-
-**Collision Groups:**
-- Player vs Terrain
-- Player vs Enemies
-- Player vs Collectibles
-- Bullets vs Enemies
-- Triggers vs Player
-
-## Data Flow
-
-### 1. Level Loading
-
-```
-Tilemap JSON → Parser → Object Factory → Game World
-     ↓           ↓            ↓              ↓
-   Tiled     Properties   Create Sprites  Register UUIDs
+main.ts → Game.ts → PreloadScene → MainMenuScene → GameScene
+                         ↓
+                  Load Assets & Config
+                         ↓
+                Initialize Managers
+                         ↓
+                  Setup Event Bus
 ```
 
-### 2. Player Input
-
+### 2. Game Loop Flow
 ```
-Keyboard → Cursors → Player.update() → Physics → Animation
-    ↓         ↓            ↓             ↓          ↓
-  Input    Process     Move/Jump    Collision   Sprite
-```
-
-### 3. Trigger Activation
-
-```
-Player Overlap → Trigger.activate() → Find Target → Execute Event
-       ↓                ↓                  ↓             ↓
-   Detection         Check UUID        GameObject     Action
+Phaser.Game.step() 
+    ↓
+Scene.update(time, delta)
+    ↓
+Components.update(time, delta)
+    ↓
+Physics.world.step()
+    ↓
+Render
 ```
 
-## Memory Management
-
-### Object Pooling
-
-Reusable objects are pooled to reduce garbage collection:
-
-```typescript
-// Bullet pooling
-this.bullets = scene.physics.add.group({
-    classType: Bullet,
-    maxSize: 10,
-    runChildUpdate: true
-});
+### 3. Event Flow
+```
+Component Action → EventBus.emit() → Subscribers.handle()
+                                          ↓
+                                    State Changes
+                                          ↓
+                                    UI Updates
 ```
 
-### Asset Management
-
-Assets are loaded on-demand and cached:
-
-```typescript
-// Preload only essential assets
-this.load.image('player', 'assets/player/character.png');
-
-// Lazy load optional assets
-if (needsAsset && !this.textures.exists(key)) {
-    this.load.image(key, path);
-}
+### 4. Input Flow
+```
+Browser Input → Phaser Input Manager → Device Detection
+                                              ↓
+                                    Desktop: Keyboard
+                                    Mobile: Touch/Virtual Controls
+                                              ↓
+                                    Player Component
+                                              ↓
+                                    Physics/Animation
 ```
 
-## Performance Optimizations
+## 🎮 Component Lifecycle
 
-### 1. Culling
+### Creation Phase
+1. **Instantiation**: Component created with position and config
+2. **UUID Assignment**: Unique identifier generated
+3. **Physics Setup**: Body configuration and collision groups
+4. **Animation Setup**: Register and configure animations
+5. **Event Subscription**: Listen to relevant events
+6. **Manager Registration**: Add to GameObjectManager
 
-Off-screen objects are automatically culled by Phaser.
+### Update Phase
+1. **Input Processing**: Handle controls (per frame)
+2. **Physics Update**: Apply forces and velocities
+3. **Animation Update**: Update current animation
+4. **State Management**: Update component state
+5. **Event Emission**: Notify system of changes
 
-### 2. Batch Rendering
+### Destruction Phase
+1. **Event Cleanup**: Remove all listeners
+2. **Manager Deregistration**: Remove from GameObjectManager
+3. **Physics Cleanup**: Remove from physics world
+4. **Memory Cleanup**: Clear references
 
-Texture atlases enable batch rendering:
+## 🔌 Extension Points
 
-```typescript
-// All frames in one draw call
-this.load.atlas('player', 'player.png', 'player.json');
-```
+### Adding New Components
+1. Extend base component class
+2. Implement required lifecycle methods
+3. Register with GameObjectManager
+4. Add to TilemapLoader factory
 
-### 3. Event Delegation
+### Adding New AI Behaviors
+1. Implement AIStrategy interface
+2. Add to Enemy AI type enum
+3. Register in Enemy strategy map
+4. Configure in enemy config JSON
 
-Single event bus reduces listener overhead.
-
-### 4. Update Loop Optimization
-
-Only active objects run update logic:
-
-```typescript
-// Skip if not active
-if (!this.active) return;
-```
-
-## Extension Points
-
-### Adding New Object Types
-
-1. Create sprite class extending `Phaser.Physics.Arcade.Sprite`
-2. Add factory method in `Game.ts`
-3. Register type in tilemap parser
-4. Add UUID support in `GameObjectManager`
+### Adding New Events
+1. Define event type in EventTypes
+2. Create event payload interface
+3. Emit from source component
+4. Subscribe in target components
 
 ### Adding New Scenes
+1. Extend Phaser.Scene
+2. Implement preload/create/update
+3. Register in game config
+4. Add scene transition logic
 
-1. Create scene class extending `Phaser.Scene`
-2. Register in game config
-3. Add navigation logic
-4. Update event bus if needed
+## 🎯 Performance Optimizations
 
-### Custom AI Behaviors
+### Object Pooling
+```typescript
+class ProjectilePool {
+  private pool: Projectile[] = [];
+  
+  get(): Projectile {
+    return this.pool.pop() || new Projectile();
+  }
+  
+  release(projectile: Projectile): void {
+    projectile.reset();
+    this.pool.push(projectile);
+  }
+}
+```
 
-1. Add new method to Enemy class
-2. Implement movement logic
-3. Add to switch statement
-4. Configure in tilemap properties
+### Texture Atlases
+- Single texture with multiple frames
+- Reduces draw calls
+- Faster loading and rendering
 
-## Security Considerations
+### Event Debouncing
+```typescript
+class DebouncedEmitter {
+  private timeout: number;
+  
+  emit(event: string, data: any, delay: number = 100): void {
+    clearTimeout(this.timeout);
+    this.timeout = setTimeout(() => {
+      EventBus.emit(event, data);
+    }, delay);
+  }
+}
+```
+
+### Culling Strategies
+- Frustum culling for off-screen objects
+- LOD (Level of Detail) for distant objects
+- Disable physics for inactive objects
+
+## 🔐 Security Considerations
 
 ### Input Validation
-
-All tilemap properties are validated:
-
-```typescript
-// Validate numeric properties
-const health = Math.max(1, Math.min(100, prop.value));
-```
+- Sanitize all user inputs
+- Validate configuration files
+- Bounds checking for physics values
 
 ### Asset Security
+- CORS configuration for assets
+- Validate asset URLs
+- Prevent asset injection
 
-Assets are served from controlled paths:
+### State Management
+- Immutable game state
+- Validated state transitions
+- Secure save/load system
 
+## 📊 Metrics and Monitoring
+
+### Performance Metrics
 ```typescript
-// Restrict to assets directory
-const assetPath = '/assets/' + sanitize(filename);
+interface PerformanceMetrics {
+  fps: number;
+  drawCalls: number;
+  activeObjects: number;
+  memoryUsage: number;
+  updateTime: number;
+  renderTime: number;
+}
 ```
 
-## Testing Strategy
+### Debug Overlay
+- FPS counter
+- Object count
+- Physics bodies visualization
+- Event flow monitoring
 
-### Unit Testing
+## 🚀 Scalability Considerations
 
-Test individual components:
-- Sprite behaviors
-- Manager functions
-- Utility methods
+### Scene Management
+- Lazy loading of scene assets
+- Scene pooling for quick transitions
+- Memory cleanup between scenes
 
-### Integration Testing
+### Asset Management
+- Progressive loading
+- Asset compression
+- CDN distribution ready
 
-Test system interactions:
-- Scene transitions
-- Event propagation
-- Object creation
+### Mobile Optimization
+- Adaptive quality settings
+- Touch-optimized controls
+- Responsive scaling
+- Battery usage optimization
 
-### Performance Testing
+## 🔄 State Management
 
-Monitor:
-- Frame rate
-- Memory usage
-- Load times
-
-## Deployment Architecture
-
-### Build Process
-
+### Game State
+```typescript
+interface GameState {
+  level: number;
+  score: number;
+  lives: number;
+  collectibles: string[];
+  checkpoints: Vector2[];
+  settings: GameSettings;
+}
 ```
-TypeScript → Transpile → Bundle → Optimize → Deploy
-    ↓           ↓          ↓         ↓         ↓
-   .ts       ES2015      Vite    Minify    /dist
+
+### Persistence
+- LocalStorage for web
+- Save state serialization
+- Cross-device sync ready
+
+### State Transitions
+```
+Menu → Playing → Paused → Playing → GameOver/Victory
+  ↑                              ↓
+  └──────────────────────────────┘
 ```
 
-### Hosting Requirements
+## 📝 Configuration System
 
-- Static file server
-- HTTPS support (for audio)
-- CORS headers for assets
-- Compression support
+### Hierarchical Configuration
+```
+1. Default Config (hardcoded)
+       ↓
+2. Game Config (gameConfig.ts)
+       ↓
+3. Scene Config (per scene)
+       ↓
+4. Entity Config (JSON files)
+       ↓
+5. Runtime Config (user settings)
+```
 
-## Future Enhancements
+### Hot Reloading
+- Development mode config watching
+- Runtime configuration updates
+- No-restart parameter tuning
 
-### Planned Features
+## 🎨 Rendering Pipeline
 
-1. **Multiplayer Support**: WebRTC integration
-2. **Level Editor**: In-game level creation
-3. **Save System**: Progress persistence
-4. **Mod Support**: Custom content loading
-5. **Analytics**: Player behavior tracking
+### Layer Management
+1. **Background Layer**: Parallax backgrounds
+2. **Tilemap Layer**: Level geometry
+3. **Entity Layer**: Game objects
+4. **Effect Layer**: Particles and VFX
+5. **UI Layer**: HUD and controls
+6. **Debug Layer**: Development overlays
 
-### Architecture Improvements
+### Render Optimizations
+- Batch rendering for similar objects
+- Texture atlasing
+- Render order optimization
+- Camera culling
 
-1. **Component System**: Entity-Component-System pattern
-2. **State Machine**: Formal state management
-3. **Dependency Injection**: Improved testability
-4. **Plugin System**: Modular extensions
+## 🔊 Audio Architecture
 
-## Conclusion
+### Audio Layers
+- **BGM**: Looping background music
+- **SFX**: One-shot sound effects
+- **Ambient**: Environmental sounds
+- **UI**: Interface feedback sounds
 
-The architecture provides a solid foundation for platform games while remaining flexible for customization. The modular design, event-driven communication, and UUID-based object management enable complex interactions while maintaining code clarity and performance.
+### Audio Management
+- Volume control per layer
+- Audio pooling for effects
+- Crossfading for BGM transitions
+- Spatial audio support ready
+
+## 📦 Build System
+
+### Development Build
+- Source maps enabled
+- Hot module replacement
+- Console logging active
+- Debug overlays visible
+
+### Production Build
+- Code minification
+- Tree shaking
+- Asset optimization
+- Console stripping
+
+### Build Variants
+```bash
+vite/
+├── config.dev.mjs         # Development
+├── config.prod.mjs        # Standard production
+└── config.prod.optimized.mjs  # Maximum optimization
+```
+
+## 🎯 Future Architecture Considerations
+
+### Planned Enhancements
+- WebGL 2 renderer optimization
+- WebAssembly physics engine
+- Multiplayer architecture ready
+- Cloud save system
+- Analytics integration
+- Modding support architecture
+
+### Scalability Path
+- Microservices for backend
+- CDN asset delivery
+- Progressive web app
+- Native mobile wrappers
+- Steam/Console deployment ready

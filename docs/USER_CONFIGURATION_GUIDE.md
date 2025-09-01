@@ -1,617 +1,522 @@
-# 🎨 User Configuration Guide
+# User Configuration Guide
 
-Complete guide for game designers, level designers, and artists to customize the game without writing code. All game behavior can be controlled through JSON configuration files and the Tiled map editor.
+## 🎮 Create Games Without Coding!
 
-## 📋 Table of Contents
+This guide helps designers, artists, and hobbyists create complete platform games using visual tools and simple configuration. **No programming required!**
 
-1. [Quick Start](#quick-start)
-2. [Level Design with Tiled](#level-design-with-tiled)
-3. [Player Configuration](#player-configuration)
-4. [Enemy Configuration](#enemy-configuration)
-5. [Collectibles Configuration](#collectibles-configuration)
-6. [Trigger System](#trigger-system)
-7. [Animation Configuration](#animation-configuration)
-8. [Audio Configuration](#audio-configuration)
-9. [Visual Assets](#visual-assets)
-10. [Advanced Techniques](#advanced-techniques)
+## ✨ What You Can Create
 
-## 🚀 Quick Start
+- **Custom Levels**: Design unique worlds with Tiled editor
+- **Player Abilities**: Configure jumping, shooting, wall-climbing
+- **Enemy Behaviors**: Set up 8 different AI patterns
+- **Interactive Objects**: Create triggers, platforms, collectibles
+- **Mobile Games**: Automatic touch controls for phones/tablets
+- **Visual Effects**: Particles, animations, screen effects
 
-### Required Tools
-- [Tiled Map Editor](https://www.mapeditor.org/) - Free level editor
-- Image editor (Photoshop, GIMP, Aseprite)
-- Audio editor (Audacity) - optional
-- Text editor for JSON files
+## 🚀 Quick Start (10 Minutes)
 
-### File Locations
+### Step 1: Install Tools
+
+1. **[Tiled Map Editor](https://www.mapeditor.org/)** (Free)
+   - Visual level designer
+   - No coding needed
+
+2. **Text Editor** (Choose one)
+   - [VS Code](https://code.visualstudio.com/) (Recommended)
+   - Notepad++ (Windows)
+   - TextEdit (Mac)
+
+3. **Image Editor** (Optional)
+   - [Aseprite](https://www.aseprite.org/) (Pixel art)
+   - [GIMP](https://www.gimp.org/) (Free)
+   - [Paint.NET](https://www.getpaint.net/) (Windows)
+
+### Step 2: Project Structure
+
 ```
-public/
-├── assets/
-│   ├── tilemap/scenes/     # Level maps
-│   ├── player/             # Player sprites
-│   ├── enemy/              # Enemy sprites
-│   ├── collectible/        # Items
-│   ├── hazards/            # Dangers
-│   └── audio/              # Sounds & music
+your-game/
+├── 📁 public/assets/
+│   ├── 🎮 player/          → Character graphics
+│   ├── 👾 enemy/           → Enemy sprites
+│   ├── 🗺️ tilemap/         → Your levels
+│   ├── 💎 collectible/     → Items to collect
+│   ├── 🎵 audio/           → Music & sounds
+│   └── 🎨 ui/              → Interface graphics
+└── 📁 src/config/
+    └── gameConfig.ts       → Game settings
+```
+
+## 🎯 Game Configuration
+
+### Basic Settings
+
+Edit `src/config/gameConfig.ts` (just change the numbers!):
+
+```javascript
+export const gameConfig = {
+  // === DIFFICULTY ===
+  playerHealth: 3,        // Lives (1-10)
+  playerSpeed: 160,       // Movement (50-300)
+  jumpHeight: 330,        // Jump power (200-500)
+  
+  // === ENEMIES ===
+  enemySpeed: 50,         // Enemy speed (20-150)
+  enemyDamage: 1,         // Damage dealt (1-3)
+  
+  // === PHYSICS ===
+  gravity: 600,           // Fall speed (100-1000)
+  
+  // === FEATURES ===
+  doubleJump: true,       // Allow double jump
+  wallJump: true,         // Allow wall jumping
+  chargedJump: true,      // Hold to jump higher
+  superJump: true         // Special high jump
+};
+```
+
+### Difficulty Presets
+
+**Easy Mode:**
+```javascript
+playerHealth: 5,
+enemySpeed: 30,
+gravity: 400
+```
+
+**Normal Mode:**
+```javascript
+playerHealth: 3,
+enemySpeed: 50,
+gravity: 600
+```
+
+**Hard Mode:**
+```javascript
+playerHealth: 1,
+enemySpeed: 100,
+gravity: 800
 ```
 
 ## 🗺️ Level Design with Tiled
 
-### Opening a Level
-1. Install Tiled Map Editor
-2. Open `public/assets/tilemap/scenes/tilemap.json`
-3. Edit and save changes
-4. Refresh browser to see updates
+### Creating Your First Level
 
-### Layer Structure
-- **Level1**: Tile layer for terrain
-- **Objects**: Object layer for entities
+1. **Open Tiled**
+2. **File → Open** → `public/assets/tilemap/scenes/tilemap.json`
+3. **Edit your level**
+4. **Save (Ctrl+S)**
+5. **Refresh browser** to see changes!
 
-### Placing Tiles
-1. Select tile from tileset panel
-2. Use stamp tool to place tiles
-3. Hold shift to draw lines
-4. Use bucket fill for areas
+### Essential Layers
 
-### Adding Game Objects
-1. Switch to Objects layer
-2. Use Insert Rectangle tool
-3. Set object properties in Properties panel
-4. Add required properties based on type
+- **Terrain Layer**: Draw platforms and walls
+- **Objects Layer**: Place enemies, items, triggers
+- **Background Layer**: Decorative elements
 
-## 👤 Player Configuration
+### Drawing Platforms
 
-### Basic Properties
+1. Select **Terrain Layer**
+2. Pick tiles from **Tileset** panel
+3. Use tools:
+   - 🖌️ **Stamp** (B): Place single tiles
+   - ✏️ **Line** (L): Draw straight lines
+   - 🪣 **Fill** (F): Fill areas
+   - 🔲 **Rectangle** (R): Draw rectangles
+
+### Adding Game Elements
+
+1. Select **Objects Layer**
+2. Press **Insert Rectangle** (R)
+3. Draw object boundary
+4. Set properties in panel
+
+## 👤 Player Setup
+
+### Player Properties (in Tiled)
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| type | string | Must be "player" | "player" |
+| name | string | Sprite name | "character_purple" |
+| uuid | string | Unique ID | "player-001" |
+| max_health | int | Starting lives | 3 |
+| speed | float | Movement speed | 160 |
+| jump_velocity | float | Jump power | -330 |
+
+### Player Abilities
+
+Enable/disable features per level:
+
 ```json
 {
-  "type": "player",
-  "name": "character_purple",
-  "properties": [
-    {
-      "name": "uuid",
-      "type": "string",
-      "value": "player-001"
-    },
-    {
-      "name": "max_health",
-      "type": "int",
-      "value": 3
-    },
-    {
-      "name": "can_jump",
-      "type": "bool",
-      "value": true
-    },
-    {
-      "name": "can_double_jump",
-      "type": "bool",
-      "value": false
-    },
-    {
-      "name": "can_shoot",
-      "type": "bool",
-      "value": true
-    }
-  ]
+  "can_jump": true,
+  "can_double_jump": true,
+  "can_wall_jump": true,
+  "can_shoot": true,
+  "can_charged_jump": true,
+  "can_super_jump": true
 }
 ```
-
-### Ability Configuration
-Control which abilities the player has in each level:
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| can_jump | bool | true | Basic jumping ability |
-| can_double_jump | bool | true | Mid-air second jump |
-| can_wall_jump | bool | true | Jump off walls |
-| can_wall_slide | bool | true | Slide slowly down walls |
-| can_charge_jump | bool | true | Hold SPACE for super jump |
-| can_shoot | bool | true | X key shooting ability |
-| can_move | bool | true | Left/right movement |
-
-### Movement Parameters
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| uuid | string | auto | Unique identifier |
-| max_health | int | 3 | Maximum life points |
-| move_speed | float | 200 | Horizontal movement speed |
-| jump_speed | float | 500 | Jump velocity |
-| max_jumps | int | 2 | Total jumps allowed (1=no double jump) |
-
-### Level Design Examples
-
-#### Tutorial Level (Limited Abilities)
-```json
-{
-  "type": "player",
-  "name": "character_purple",
-  "properties": [
-    {"name": "can_jump", "value": true},
-    {"name": "can_double_jump", "value": false},
-    {"name": "can_wall_jump", "value": false},
-    {"name": "can_shoot", "value": false},
-    {"name": "can_charge_jump", "value": false}
-  ]
-}
-```
-
-#### Platforming Challenge (No Combat)
-```json
-{
-  "type": "player",
-  "name": "character_purple",
-  "properties": [
-    {"name": "can_jump", "value": true},
-    {"name": "can_double_jump", "value": true},
-    {"name": "can_wall_jump", "value": true},
-    {"name": "can_wall_slide", "value": true},
-    {"name": "can_shoot", "value": false}
-  ]
-}
-```
-
-#### Combat Arena (Full Abilities)
-```json
-{
-  "type": "player",
-  "name": "character_purple",
-  "properties": [
-    {"name": "can_jump", "value": true},
-    {"name": "can_double_jump", "value": true},
-    {"name": "can_wall_jump", "value": true},
-    {"name": "can_charge_jump", "value": true},
-    {"name": "can_shoot", "value": true},
-    {"name": "jump_speed", "value": 600},
-    {"name": "max_jumps", "value": 3}
-  ]
-}
-```
-
-### Player Sprite Requirements
-- Format: PNG with transparency
-- Recommended size: 84x102 pixels
-- Animation frames in atlas format
 
 ## 👾 Enemy Configuration
 
-### Enemy Types & Movement Methods
+### Enemy Types (AI Behaviors)
 
-#### Static Enemy
+1. **static**: Doesn't move
+2. **patrol**: Walks back and forth
+3. **jump**: Jumps in place
+4. **moveJump**: Walks and jumps
+5. **patrolJump**: Patrols with jumping
+6. **follow**: Chases player
+7. **followJump**: Chases and jumps
+8. **custom**: Special behavior
+
+### Enemy Properties (in Tiled)
+
+| Property | Type | Description | Range |
+|----------|------|-------------|--------|
+| type | string | Must be "enemy" | "enemy" |
+| name | string | Enemy sprite | "enemy_red" |
+| ai_type | string | Behavior type | See list above |
+| speed | float | Movement speed | 20-150 |
+| health | int | Hit points | 1-5 |
+| damage | int | Damage to player | 1-3 |
+| patrol_distance | float | Patrol range | 50-500 |
+| detection_range | float | Player detection | 100-300 |
+| jump_interval | int | Jump frequency (ms) | 1000-5000 |
+
+### Example: Patrolling Enemy
+
 ```json
 {
   "type": "enemy",
-  "name": "frog",
-  "properties": [
-    {"name": "uuid", "value": "enemy-001"},
-    {"name": "move_method", "value": "static"},
-    {"name": "damage", "value": 1}
-  ]
+  "name": "enemy_green",
+  "ai_type": "patrol",
+  "speed": 50,
+  "health": 2,
+  "damage": 1,
+  "patrol_distance": 200
 }
 ```
 
-#### Patrolling Enemy
-```json
-{
-  "type": "enemy",
-  "name": "frog",
-  "properties": [
-    {"name": "uuid", "value": "enemy-002"},
-    {"name": "move_method", "value": "patrol"},
-    {"name": "move_speed", "value": 100},
-    {"name": "patrol_distance", "value": 200},
-    {"name": "damage", "value": 1}
-  ]
-}
-```
-
-#### Following Enemy
-```json
-{
-  "type": "enemy",
-  "name": "frog",
-  "properties": [
-    {"name": "uuid", "value": "enemy-003"},
-    {"name": "move_method", "value": "follow"},
-    {"name": "move_speed", "value": 80},
-    {"name": "detection_range", "value": 300},
-    {"name": "damage", "value": 2}
-  ]
-}
-```
-
-### Movement Methods
-| Method | Description | Required Properties |
-|--------|-------------|-------------------|
-| static | Doesn't move | - |
-| patrol | Moves back and forth | patrol_distance |
-| jump | Jumps in place | jump_interval |
-| move_and_jump | Moves and jumps | patrol_distance, jump_interval |
-| patrol_jump | Patrols with jumping | patrol_distance, jump_interval |
-| follow | Follows player | detection_range |
-| follow_jump | Follows and jumps | detection_range, jump_interval |
-
-### Enemy Properties
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| uuid | string | auto | Unique identifier |
-| move_method | string | static | AI behavior type |
-| move_speed | float | 50 | Movement speed |
-| jump_force | float | 300 | Jump strength |
-| patrol_distance | float | 100 | Patrol range |
-| detection_range | float | 200 | Player detection distance |
-| jump_interval | int | 2000 | Time between jumps (ms) |
-| damage | int | 1 | Damage dealt |
-| death_particle_color | string | #00ff00 | Death effect color |
-
-## 💎 Collectibles Configuration
-
-### Coin Example
-```json
-{
-  "type": "collectible",
-  "name": "coin_gold",
-  "properties": [
-    {"name": "uuid", "value": "coin-001"},
-    {"name": "score", "value": 100},
-    {"name": "type", "value": "coin"},
-    {"name": "rotate", "value": true},
-    {"name": "particle_color", "value": "#FFD700"}
-  ]
-}
-```
-
-### Key Example (Required Item)
-```json
-{
-  "type": "collectible",
-  "name": "hud_key_green",
-  "properties": [
-    {"name": "uuid", "value": "key-001"},
-    {"name": "must_collect", "value": true},
-    {"name": "type", "value": "key"},
-    {"name": "rotate", "value": false},
-    {"name": "particle_color", "value": "#00FF00"}
-  ]
-}
-```
+## 💎 Collectibles
 
 ### Collectible Properties
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| uuid | string | auto | Unique identifier |
-| score | int | 0 | Points awarded |
-| type | string | item | Item category |
-| must_collect | bool | false | Required for level completion |
-| rotate | bool | true | Spinning animation |
-| particle_color | string | #FFFFFF | Collection effect color |
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| type | string | Must be "collectible" | "collectible" |
+| name | string | Item sprite | "gem_blue" |
+| uuid | string | Unique ID | "gem-001" |
+| points | int | Score value | 10 |
+| required | bool | Needed to win | false |
+| particle_color | string | Effect color | "#FFD700" |
+
+### Special Collectibles
+
+**Required Item** (must collect to win):
+```json
+{
+  "type": "collectible",
+  "name": "key_gold",
+  "required": true,
+  "points": 50
+}
+```
+
+**Bonus Item** (optional):
+```json
+{
+  "type": "collectible",
+  "name": "star",
+  "required": false,
+  "points": 100,
+  "particle_color": "#FFFF00"
+}
+```
 
 ## 🎯 Trigger System
 
-### Movement Trigger (Spike Trap)
-```json
-{
-  "type": "trigger",
-  "name": "spike_trap",
-  "width": 128,
-  "height": 64,
-  "properties": [
-    {"name": "uuid", "value": "trigger-001"},
-    {"name": "event_type", "value": "move"},
-    {"name": "target_uuid", "value": "spike-001"},
-    {"name": "velocity_x", "value": 0},
-    {"name": "velocity_y", "value": -1000},
-    {"name": "duration", "value": 1500},
-    {"name": "delay", "value": 200},
-    {"name": "repeat", "value": true},
-    {"name": "return_to_origin", "value": false}
-  ]
-}
-```
+Create interactive mechanics without coding!
 
-### Scale Trigger (Growing Enemy)
-```json
-{
-  "type": "trigger",
-  "name": "enemy_enlarger",
-  "properties": [
-    {"name": "uuid", "value": "trigger-002"},
-    {"name": "event_type", "value": "scale"},
-    {"name": "target_uuid", "value": "enemy-001"},
-    {"name": "scale_x", "value": 2.0},
-    {"name": "scale_y", "value": 2.0},
-    {"name": "duration", "value": 2000},
-    {"name": "repeat", "value": false},
-    {"name": "return_to_origin", "value": true}
-  ]
-}
-```
+### Trigger Types
+
+1. **move**: Move objects
+2. **scale**: Resize objects
+3. **rotate**: Spin objects
+4. **destroy**: Remove objects
+5. **spawn**: Create objects
+6. **teleport**: Instant move
 
 ### Trigger Properties
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| uuid | string | auto | Unique identifier |
-| event_type | string | - | "move" or "scale" |
-| target_uuid | string | - | UUID of target object |
-| velocity_x | float | 0 | Horizontal speed (pixels/sec) |
-| velocity_y | float | 0 | Vertical speed (pixels/sec) |
-| scale_x | float | 1 | Horizontal scale multiplier |
-| scale_y | float | 1 | Vertical scale multiplier |
-| duration | int | 1000 | Effect duration (ms) |
-| delay | int | 0 | Activation delay (ms) |
-| repeat | bool | false | Can trigger multiple times |
-| return_to_origin | bool | true | Return to original state |
-| texture_key | string | - | Sprite/image texture for visual trigger |
-| active_texture | string | - | Texture when trigger is activated |
-| inactive_texture | string | - | Texture when trigger is inactive |
-| use_sprite | bool | false | Use animated sprite instead of static image |
-| visual_scale | float | 1 | Scale of the visual representation |
 
-### Visual Trigger Example (Switch)
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| type | string | Must be "trigger" | "trigger" |
+| trigger_type | string | Action type | "move" |
+| target_uuids | string | Target IDs (comma-separated) | "platform-1,platform-2" |
+| move_x | float | Horizontal movement | 100 |
+| move_y | float | Vertical movement | -50 |
+| duration | int | Animation time (ms) | 2000 |
+| delay | int | Start delay (ms) | 500 |
+| repeat | int | Repeat count (-1 = infinite) | 3 |
+| return_to_origin | bool | Return after action | true |
+
+### Example: Moving Platform
+
 ```json
 {
   "type": "trigger",
-  "name": "switch",
-  "width": 64,
-  "height": 64,
-  "properties": [
-    {"name": "uuid", "value": "switch-001"},
-    {"name": "event_type", "value": "move"},
-    {"name": "target_uuid", "value": "door-001"},
-    {"name": "texture_key", "value": "switch_off"},
-    {"name": "active_texture", "value": "switch_on"},
-    {"name": "inactive_texture", "value": "switch_off"},
-    {"name": "use_sprite", "value": false},
-    {"name": "visual_scale", "value": 1.0},
-    {"name": "velocity_y", "value": -500},
-    {"name": "duration", "value": 3000},
-    {"name": "repeat", "value": true},
-    {"name": "return_to_origin", "value": true}
-  ]
+  "trigger_type": "move",
+  "target_uuids": "platform-001",
+  "move_x": 200,
+  "move_y": 0,
+  "duration": 3000,
+  "return_to_origin": true,
+  "repeat": -1
 }
 ```
-
-### Trigger Use Cases
-1. **Spike Traps**: Spikes that pop up when player approaches
-2. **Moving Platforms**: Platforms that move when stepped on
-3. **Boss Transformations**: Enemies that grow when player enters arena
-4. **Environmental Hazards**: Falling rocks, rising lava
-5. **Puzzle Elements**: Doors, switches, mechanisms
-6. **Visual Switches**: Interactive buttons that change appearance when pressed
-7. **Pressure Plates**: Floor tiles that depress when stepped on
-8. **Levers**: Toggle switches with on/off states
-9. **Interactive Decorations**: Objects that react to player presence
-
-## 🎬 Animation Configuration
-
-### Animation File Format
-Create `[sprite_name].json` next to sprite image:
-
-```json
-{
-  "anims": [
-    {
-      "key": "idle",
-      "frames": [0, 1, 2, 3],
-      "frameRate": 10,
-      "repeat": -1
-    },
-    {
-      "key": "walk",
-      "frames": [4, 5, 6, 7, 8, 9],
-      "frameRate": 15,
-      "repeat": -1
-    },
-    {
-      "key": "jump",
-      "frames": [10],
-      "frameRate": 1,
-      "repeat": 0
-    },
-    {
-      "key": "die",
-      "frames": [11, 12, 13],
-      "frameRate": 10,
-      "repeat": 0
-    }
-  ]
-}
-```
-
-### Animation Properties
-| Property | Type | Description |
-|----------|------|-------------|
-| key | string | Animation name |
-| frames | array | Frame indices from atlas |
-| frameRate | int | Frames per second |
-| repeat | int | -1 = loop, 0 = once, n = n times |
-
-### Standard Animation Names
-- **idle**: Standing still
-- **walk**: Moving horizontally
-- **jump**: In the air
-- **duck**: Crouching
-- **hit**: Taking damage
-- **die**: Death sequence
-- **charge**: Charging jump
-
-## 🔊 Audio Configuration
-
-### Background Music (`bgm-config.json`)
-```json
-{
-  "MainMenu": "Attic Secrets.mp3",
-  "Game": "Baltic Levity.mp3",
-  "GameOver": "sad-music.mp3",
-  "Victory": "Alls Fair In Love.mp3",
-  "volume": 0.5
-}
-```
-
-### Sound Effects (`config.json`)
-```json
-{
-  "player": {
-    "jump": ["sfx_jump.mp3", "sfx_jump-high.mp3"],
-    "hit": ["sfx_hurt.mp3"],
-    "shoot": ["sfx_throw.mp3"],
-    "die": ["sfx_disappear.mp3"]
-  },
-  "enemy": {
-    "hit": ["sfx_bump.mp3"],
-    "die": ["sfx_magic.mp3"]
-  },
-  "collectible": {
-    "collect": ["sfx_coin.mp3", "sfx_gem.mp3"]
-  }
-}
-```
-
-### Audio Guidelines
-- **Format**: MP3 or OGG
-- **BGM**: Loop seamlessly
-- **SFX**: Keep under 1 second
-- **Multiple sounds**: Random selection
-- **Volume**: Test at different levels
 
 ## 🎨 Visual Assets
 
 ### Sprite Requirements
 
-#### Player Sprites
-- **Size**: ~84x102 pixels
 - **Format**: PNG with transparency
-- **Atlas**: Multiple frames in one image
-- **Animations**: idle, walk, jump, hit, die
+- **Player Size**: 32x32 or 64x64 pixels
+- **Enemy Size**: 32x32 pixels
+- **Tile Size**: 32x32 pixels
 
-#### Enemy Sprites
-- **Size**: 64x64 pixels recommended
-- **Format**: PNG with transparency
-- **Atlas**: Animation frames
-- **Facing**: Include left/right versions
+### Animation Frames
 
-#### Tiles
-- **Size**: 64x64 pixels (standard)
-- **Format**: PNG
-- **Edges**: Seamless tiling
-- **Variants**: Create variety
+Create sprite sheets with frames:
 
-#### Collectibles
-- **Size**: 32x32 or 64x64 pixels
-- **Format**: PNG with transparency
-- **Effects**: Glow, sparkle optional
-- **Colors**: Distinct for each type
-
-### Asset Organization
 ```
-assets/
-├── player/
-│   ├── character_purple.png
-│   └── character_purple.json
-├── enemy/
-│   ├── frog.png
-│   └── frog.json
-├── collectible/
-│   ├── coin_gold.png
-│   └── gem_blue.png
-└── tilemap/
-    └── tiles/
-        ├── grass_top.png
-        └── grass_center.png
+player_idle: frames 0-3
+player_run: frames 4-11
+player_jump: frames 12-13
+player_fall: frames 14-15
 ```
 
-## 🔧 Advanced Techniques
+### Replacing Graphics
 
-### Creating Chain Reactions with Triggers
-1. Create multiple triggers with delays
-2. Have triggers target other triggers
-3. Use return_to_origin for repeating patterns
+1. Navigate to `public/assets/[type]/`
+2. Replace PNG files (keep same names)
+3. Update atlas JSON if needed
+4. Refresh browser
 
-### Complex Enemy Patterns
-Combine properties for unique behaviors:
+## 🎵 Audio Configuration
+
+### Audio Files
+
+Place in `public/assets/audio/`:
+
+- **BGM**: MP3 format, looping tracks
+- **SFX**: MP3/OGG, short sounds
+
+### BGM Configuration
+
+Edit `public/assets/audio/bgm/bgm-config.json`:
+
 ```json
 {
-  "move_method": "patrol_jump",
-  "patrol_distance": 300,
-  "jump_interval": 1000,
-  "move_speed": 150,
-  "jump_force": 500
+  "MainMenu": "menu-music",
+  "GameScene": "level1-music",
+  "BossLevel": "boss-music"
 }
 ```
 
-### Level Progression
-1. Use must_collect items as keys
-2. Place goal behind obstacles
-3. Create multiple paths with different difficulties
+### SFX Configuration
 
-### Environmental Storytelling
-- Place decorative objects (no collision)
-- Use background layers for depth
-- Create atmospheric lighting with colored tiles
+Edit `public/assets/audio/sfx/sfx-config.json`:
 
-### Performance Tips
-1. **Limit particles**: Use particle_color sparingly
-2. **Optimize sprites**: Keep sizes reasonable
-3. **Reuse assets**: Use same sprite for multiple enemies
-4. **Test frequently**: Check performance on target devices
+```json
+{
+  "player_jump": ["jump1", "jump2"],
+  "player_land": "land",
+  "enemy_death": "explosion",
+  "collect_coin": "coin"
+}
+```
 
-## 📝 Configuration Checklist
+## 📱 Mobile Support
 
-### Before Testing Your Level
-- [ ] All objects have UUIDs
-- [ ] Player has spawn point
-- [ ] Enemies have movement configured
-- [ ] Must-collect items placed
-- [ ] Goal is accessible
-- [ ] Triggers have valid targets
-- [ ] Audio files exist
-- [ ] Animation JSONs created
-- [ ] Tile collisions set
+Your game automatically works on mobile devices!
 
-### Common Issues & Solutions
+### Mobile Features
 
-**Problem**: Enemy not moving
-- Check move_method property
-- Verify patrol_distance is set
-- Ensure no collision blocking path
+- **Auto-detect**: Knows when on phone/tablet
+- **Virtual Joystick**: Touch movement control
+- **Action Buttons**: Jump and shoot buttons
+- **Fullscreen**: Automatic fullscreen support
+- **Responsive**: Adapts to any screen size
 
-**Problem**: Trigger not working
-- Verify target_uuid matches exactly
-- Check trigger size and position
-- Ensure target object exists
+### Mobile Testing
 
-**Problem**: Animation not playing
-- Check animation JSON syntax
-- Verify frame indices exist
-- Ensure animation key matches
+1. Start dev server: `npm run dev`
+2. Find your IP: shown in terminal
+3. Open on phone: `http://[your-ip]:5173`
 
-**Problem**: Collectible not working
-- Add type property
-- Set particle_color for feedback
-- Check collision bounds
+## 🎯 Goal & Victory
 
-## 🎯 Quick Reference
+### Goal Object Properties
 
-### Object Types
-- `player` - Player character
-- `enemy` - Hostile entity
-- `collectible` - Pickup item
-- `hazard` - Static danger
-- `goal` - Level endpoint
-- `trigger` - Event zone
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| type | string | Must be "goal" | "goal" |
+| name | string | Goal sprite | "door_exit" |
+| require_all_items | bool | Need all collectibles | true |
+| next_level | string | Next scene name | "Level2" |
 
-### Essential Properties
-- `uuid` - Unique identifier (all objects)
-- `type` - Object category (Tiled)
-- `name` - Sprite/asset name (Tiled)
-- `x, y` - Position (Tiled)
-- `width, height` - Size (Tiled)
+## ⚠️ Hazards
 
-### Color Format
-- Hex: `"#FF0000"` (red)
-- Hex: `"#00FF00"` (green)
-- Hex: `"#0000FF"` (blue)
-- Hex: `"#FFD700"` (gold)
+### Hazard Properties
 
----
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| type | string | Must be "hazard" | "hazard" |
+| name | string | Hazard sprite | "spikes" |
+| damage | int | Damage dealt | 1 |
+| kill_instantly | bool | One-hit kill | false |
 
-Happy creating! For technical questions, see the Developer Documentation.
+## 🚀 Advanced Techniques
+
+### Multi-Level Games
+
+1. Create multiple tilemap files
+2. Name them: `level1.json`, `level2.json`, etc.
+3. Set `next_level` property on goal objects
+
+### Custom Physics Areas
+
+Create invisible objects with properties:
+
+```json
+{
+  "type": "physics_zone",
+  "gravity_x": 0,
+  "gravity_y": -300,  // Reverse gravity!
+  "friction": 0.5
+}
+```
+
+### Checkpoints
+
+```json
+{
+  "type": "checkpoint",
+  "uuid": "checkpoint-1",
+  "activated_texture": "flag_green",
+  "inactive_texture": "flag_red"
+}
+```
+
+## 🐛 Testing Your Game
+
+### Quick Test Cycle
+
+1. **Edit** in Tiled
+2. **Save** (Ctrl+S)
+3. **Switch** to browser
+4. **Refresh** (F5)
+5. **Test** your changes
+
+### Debug Mode
+
+Add to URL: `?debug=true`
+
+Shows:
+- Collision boxes
+- Object IDs
+- Performance stats
+
+## 💡 Pro Tips
+
+### Performance
+
+- Keep enemy count under 20 per level
+- Use object pooling for projectiles
+- Limit particle effects
+
+### Level Design
+
+- Start levels easy, increase difficulty
+- Teach mechanics gradually
+- Place checkpoints before hard sections
+- Reward exploration with bonus items
+
+### Mobile Optimization
+
+- Test on real devices
+- Keep UI elements large
+- Avoid precise platforming on mobile
+- Use auto-run sections
+
+## 📚 Examples
+
+### Example 1: Elevator Platform
+
+```json
+{
+  "type": "trigger",
+  "trigger_type": "move",
+  "target_uuids": "elevator-1",
+  "move_y": -200,
+  "duration": 3000,
+  "delay": 1000,
+  "return_to_origin": true,
+  "repeat": -1
+}
+```
+
+### Example 2: Boss Enemy
+
+```json
+{
+  "type": "enemy",
+  "name": "boss_skull",
+  "ai_type": "follow",
+  "speed": 80,
+  "health": 10,
+  "damage": 2,
+  "detection_range": 400
+}
+```
+
+### Example 3: Secret Area
+
+```json
+{
+  "type": "trigger",
+  "trigger_type": "destroy",
+  "target_uuids": "secret_wall",
+  "delay": 0
+}
+```
+
+## 🆘 Troubleshooting
+
+### Game Won't Load
+- Check browser console (F12)
+- Verify JSON syntax
+- Ensure all file paths correct
+
+### Tiled Changes Don't Appear
+- Save the file in Tiled
+- Hard refresh browser (Ctrl+F5)
+- Check file path in game
+
+### Performance Issues
+- Reduce enemy count
+- Simplify particle effects
+- Use smaller textures
+
+## 🎉 You're Ready!
+
+Start creating your game:
+
+1. Open Tiled
+2. Design your level
+3. Test in browser
+4. Share with friends!
+
+**Remember**: No coding needed - everything is configuration!

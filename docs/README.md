@@ -1,28 +1,33 @@
 # Phaser 3 Platform Game Framework
 
-## Project Overview
+## 🎮 Overview
 
-A production-ready 2D platform game framework built with **Phaser 3** and **TypeScript**. This template provides a complete foundation for creating platform games, featuring advanced player controls, enemy AI, collectibles, trigger systems, and more. The modular architecture makes it easy to extend and customize for your specific needs.
+A **production-ready, mobile-first** 2D platform game framework built with Phaser 3, TypeScript, and Vite. Features comprehensive touch controls, advanced physics, intelligent AI, and a data-driven architecture that enables game creation without coding.
 
-### Core Features
+### ✨ Key Features
 
-- 🎮 **Complete Game Loop**: Main menu, gameplay, victory/game over scenes
-- 🏃 **Advanced Player Controls**: Jump, double jump, wall jump, charged jump, shooting
-- 🎯 **Intelligent Enemy System**: Multiple AI behaviors (patrol, follow, jump patterns)
-- 💎 **Collection System**: Required items, scoring, visual feedback
-- ⚡ **Trigger Mechanism**: Configurable event-based interactions
-- 🎵 **Audio Management**: Centralized BGM and sound effects system
-- 🎨 **Animation System**: Atlas-based sprite animations with fallback
-- 📦 **Tilemap Support**: Create levels using Tiled map editor
-- 🆔 **UUID Management**: Unique object identification and referencing
-- 📱 **Responsive UI System**: Automatic scaling and layout adaptation for all screen sizes
+- **📱 Mobile-First Design**: Advanced virtual joystick, touch controls, and responsive UI
+- **🎯 Zero-Code Game Creation**: Configure entire games through JSON and Tiled editor
+- **🤖 Intelligent AI System**: 8 pre-built enemy behaviors with extensible patterns
+- **⚡ Modern Tech Stack**: TypeScript 5.7, Phaser 3.90, Vite 6.3
+- **🎨 Visual Level Editor**: Full Tiled map editor integration
+- **🔊 Advanced Audio**: Scene-based BGM and synchronized SFX
+- **🏃 Advanced Movement**: Wall jump, double jump, charged jump, super jump
+- **📦 Optimized Builds**: Multiple build configurations for development and production
 
-## Quick Start
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js v16 or higher
+- npm or yarn
+- Modern web browser with ES6 support
 
 ### Installation
+
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone [your-repo-url]
 cd template-vite-ts
 
 # Install dependencies
@@ -30,246 +35,223 @@ npm install
 
 # Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-### Game Controls
+### Build Commands
 
-| Key | Action | Notes |
-|-----|--------|-------|
-| ← → | Move left/right | Configurable speed |
-| ↑ / SPACE | Jump | Normal jump when standing |
-| ↑ / SPACE | Double jump | Press again in air |
-| ↓ | Duck/Crouch | Hold to crouch |
-| ↓ + ↑/SPACE | Charged jump | Crouch first, then hold jump to charge |
-| X | Shoot | Has cooldown |
-| R | Restart level | Quick restart |
+```bash
+# Development
+npm run dev              # Development server with logging
+npm run dev-nolog        # Development without console logs
 
-## Project Structure
+# Production
+npm run build            # Optimized production build
+npm run build-nolog      # Production build without logs
+
+# Preview production build
+npm run preview          # Serve production build locally
+```
+
+## 📱 Mobile Features
+
+### Virtual Controls
+- **Smart Joystick**: Appears on touch with force-based input
+- **Action Buttons**: Jump (with charge indicator) and shoot controls
+- **Multi-Touch**: Supports up to 4 simultaneous touches
+- **Responsive Sizing**: Adapts to any screen size
+
+### Device Optimization
+- **Fullscreen Support**: Cross-platform with iOS-specific optimizations
+- **PWA Ready**: Installable as standalone app
+- **Performance**: 60 FPS on modern mobile devices
+- **Orientation**: Supports both portrait and landscape
+
+## 🏗️ Project Structure
 
 ```
 template-vite-ts/
 ├── src/
-│   ├── main.ts                 # Application entry point
-│   └── game/
-│       ├── main.ts             # Game configuration
-│       ├── scenes/             # Game scenes
-│       │   ├── Boot.ts         # Initial setup
-│       │   ├── Preloader.ts    # Asset loading
-│       │   ├── MainMenu.ts     # Main menu
-│       │   ├── Game.ts         # Core gameplay
-│       │   ├── GameOver.ts     # Game over screen
-│       │   └── Victory.ts      # Victory screen
-│       ├── sprites/            # Game objects
-│       │   ├── Player.ts       # Player character
-│       │   ├── Enemy.ts        # Enemy entities
-│       │   ├── Collectible.ts  # Collectible items
-│       │   ├── Trigger.ts      # Event triggers
-│       │   ├── Obstacle.ts     # Obstacles (static/movable/destructible)
-│       │   ├── Bullet.ts       # Projectiles
-│       │   ├── Goal.ts         # Level goals
-│       │   └── StaticHazard.ts # Hazards (spikes, etc.)
-│       ├── managers/           # System managers
-│       │   ├── AnimationManager.ts     # Animation handling
-│       │   ├── BGMPlayer.ts            # Background music
-│       │   ├── SoundEffectPlayer.ts    # Sound effects
-│       │   ├── GameObjectManager.ts    # Object registry
-│       │   ├── CollectedItemsManager.ts # Collection tracking
-│       │   └── UIManager.ts            # Responsive UI management
-│       ├── events/             # Event system
-│       │   └── EventBus.ts     # Global event bus
-│       ├── ui/                 # UI components
-│       │   └── HealthUI.ts     # Health display
-│       └── utils/              # Utilities
-│           ├── UUIDGenerator.ts        # UUID generation
-│           └── EventBusDebugger.ts     # Event debugging
+│   ├── components/         # Game entities (Player, Enemy, etc.)
+│   ├── managers/           # Global systems (Animation, Audio, etc.)
+│   ├── scenes/             # Phaser scenes
+│   ├── systems/            # Core systems (Events, Device, etc.)
+│   ├── ui/                 # UI components and mobile controls
+│   └── utils/              # Helper functions
 ├── public/
-│   └── assets/                # Game assets
-│       ├── player/            # Player sprites
-│       ├── enemy/             # Enemy sprites
-│       ├── collectible/       # Item sprites
-│       ├── obstacle/          # Obstacle sprites
-│       ├── tilemap/           # Level maps
-│       │   └── scenes/        # Tilemap JSON files
-│       └── audio/             # Audio files
-│           ├── bgm/           # Background music
-│           └── sound_effect/  # Sound effects
-└── docs/                      # Documentation
-    ├── README.md              # This file
-    ├── architecture.md        # System architecture
-    ├── components.md          # Component reference
-    ├── resources.md           # Asset configuration
-    ├── tilemap-guide.md       # Level editing guide
-    └── modification-guide.md  # Customization guide
+│   └── assets/
+│       ├── player/         # Character sprites and animations
+│       ├── enemy/          # Enemy sprites with AI configs
+│       ├── tilemap/        # Tiled levels and tilesets
+│       └── audio/          # BGM and sound effects
+├── docs/                   # Comprehensive documentation
+└── vite/                   # Build configurations
 ```
 
-## Core Concepts
+## 🎯 Core Systems
 
-### 1. Scene System
+### Player Abilities
+- **Movement**: Configurable speed and acceleration
+- **Jumping**: Normal, double, wall, charged, and super jumps
+- **Combat**: Projectile system with cooldown
+- **Health**: Damage system with invulnerability frames
 
-The game uses Phaser's scene system to manage different game states:
+### Enemy AI Behaviors
+1. **Static**: Stationary enemies
+2. **Patrol**: Back-and-forth movement
+3. **Jump**: Periodic jumping
+4. **Move & Jump**: Combined movement
+5. **Follow**: Player tracking
+6. **Follow & Jump**: Tracking with jumping
+7. **Patrol & Jump**: Patrol with jumping
+8. **Custom**: Extensible for complex patterns
 
-- **Boot**: Initialize core systems
-- **Preloader**: Load all game assets with progress display
-- **MainMenu**: Interactive main menu with options
-- **Game**: Core gameplay scene
-- **GameOver/Victory**: End game states with statistics
+### Event System
+- **50+ Event Types**: Comprehensive game events
+- **Decoupled Architecture**: Clean component communication
+- **Performance**: Optimized event bus with minimal overhead
 
-### 2. GameObject Management
+## 🛠️ Configuration
 
-All game objects are managed through a centralized **GameObjectManager** using UUIDs:
-
-```typescript
-// Register an object
-gameObjectManager.registerObject(uuid, object, type, name);
-
-// Retrieve an object
-const target = gameObjectManager.getObjectByUUID(uuid);
-```
-
-### 3. Event System
-
-Global event communication through **EventBus**:
-
-```typescript
-// Emit an event
-eventBus.emit(GameEvent.PLAYER_JUMP, { velocity: -500 });
-
-// Listen for events
-eventBus.on(GameEvent.PLAYER_JUMP, (data) => {
-    console.log('Player jumped with velocity:', data.velocity);
-});
-```
-
-### 4. Tilemap Integration
-
-Levels are created using Tiled editor with support for:
-
-- Multiple terrain layers
-- Object layers for entities
-- Custom properties per object
-- Collision configuration
-- Trigger zones
-
-## Key Systems
-
-### Player System
-
-The player supports multiple configurable abilities:
+### Game Configuration (`src/config/`)
 
 ```typescript
-// Configurable in tilemap
-{
-  "can_jump": true,
-  "can_double_jump": true,
-  "can_wall_jump": true,
-  "can_shoot": true,
-  "max_health": 3,
-  "move_speed": 200,
-  "jump_speed": 500
-}
-```
-
-### Enemy AI Patterns
-
-Enemies support 8 different movement patterns:
-
-- **static**: No movement
-- **patrol**: Back and forth movement
-- **jump**: Periodic jumping
-- **move_and_jump**: Frog-like movement
-- **patrol_jump**: Patrol with jumps
-- **follow**: Track player
-- **follow_jump**: Track and jump
-- **custom**: Combination patterns
-
-### Trigger System
-
-Create interactive events without code:
-
-```typescript
-// Example: Moving platform trigger
-{
-  "type": "trigger",
-  "event_type": "move",
-  "target_uuid": "platform-001",
-  "velocity_y": -200,
-  "duration": 1000,
-  "return_to_origin": true
-}
-```
-
-### Collection System
-
-Track and manage collectibles:
-
-- Required items for level completion
-- Score tracking
-- Visual feedback
-- Persistent between scenes
-
-### UI System
-
-Responsive UI management with **UIManager**:
-
-```typescript
-// Create responsive UI layout
-const uiConfig: UILayoutConfig = {
-  baseWidth: 1024,
-  baseHeight: 768,
-  scalingMode: 'fit',
-  elements: {
-    title: {
-      type: 'text',
-      text: 'Game Title',
-      position: { x: '50%', y: '30%' }
-    },
-    playButton: {
-      type: 'button',
-      text: 'PLAY',
-      position: { x: '50%', y: '60%' },
-      onClick: () => startGame()
-    }
-  }
+// gameConfig.ts - Core game settings
+export const gameConfig = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+  gravity: { x: 0, y: 600 },
+  playerSpeed: 160,
+  jumpVelocity: -330
 };
-
-const uiManager = new UIManager(scene, uiConfig);
-uiManager.createUI();
 ```
 
-Features:
-- Percentage-based positioning
-- Automatic scaling for different screen sizes
-- Built-in button interactions
-- Animation support
-- Multiple element types (text, image, button, container)
+### Level Design (Tiled Editor)
 
-## Documentation
+Create levels visually with custom properties:
+- **Enemies**: Set AI type, speed, health
+- **Triggers**: Configure interactions without code
+- **Collectibles**: Define scoring and effects
+- **Platforms**: Moving and interactive platforms
 
-- 🏗️ [Architecture](./architecture.md) - System design and patterns
-- 🧩 [Components](./components.md) - Detailed component API
-- 🎨 [Resources](./resources.md) - Asset configuration guide
-- 🗺️ [Tilemap Guide](./tilemap-guide.md) - Level creation tutorial
-- 🔧 [Modification Guide](./modification-guide.md) - Common customizations
-- 📱 [UI System Guide](./ui-system-guide.md) - Responsive UI development
+## 📚 Documentation
 
-## Technology Stack
+| Document | Description |
+|----------|-------------|
+| [Architecture](architecture.md) | Technical design and patterns |
+| [Developer Guide](DEVELOPER_DOCUMENTATION.md) | Complete API reference |
+| [User Guide](USER_CONFIGURATION_GUIDE.md) | Non-programmer customization |
+| [Level Design](tilemap-guide.md) | Tiled editor tutorial |
+| [Components](components.md) | Entity API reference |
+| [Customization](modification-guide.md) | Extension examples |
+| [UI System](ui-system-guide.md) | UI and mobile controls |
+| [Resources](resources.md) | Asset management |
 
-- **Phaser 3.86+** - Game engine
-- **TypeScript 5.6+** - Type-safe JavaScript
-- **Vite 6.0+** - Fast build tool
-- **Tiled** - Map editor (external)
+## 🔧 Development
 
-## Performance Considerations
+### Technology Stack
 
-- Object pooling for bullets and particles
-- Automatic off-screen culling
-- Texture atlases for batch rendering
-- Event delegation pattern
-- Lazy asset loading
+- **Framework**: Phaser 3.90.0
+- **Language**: TypeScript 5.7.2
+- **Build Tool**: Vite 6.3.1
+- **Physics**: Arcade Physics
+- **Module System**: ES Modules
 
-## License
+### Performance Optimizations
 
-MIT License - See LICENSE file for details
+- **Object Pooling**: Reusable game objects
+- **Texture Atlases**: Efficient sprite loading
+- **Tree Shaking**: Minimal bundle size
+- **Code Splitting**: Optimized loading
+
+### Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+- Mobile Chrome/Safari
+
+## 🎨 Asset Pipeline
+
+### Supported Formats
+- **Images**: PNG, JPG, WebP
+- **Audio**: MP3, OGG, WAV
+- **Tilemaps**: JSON (Tiled)
+- **Atlases**: JSON (TexturePacker)
+
+### Organization
+```
+assets/
+├── [entity]/
+│   ├── sprite.png
+│   ├── sprite.json      # Atlas definition
+│   └── config.json      # Entity configuration
+```
+
+## 🚢 Deployment
+
+### Production Build
+
+```bash
+# Create optimized build
+npm run build
+
+# Output in dist/ folder
+# - Minified JavaScript
+# - Optimized assets
+# - Source maps (optional)
+```
+
+### Hosting Options
+
+The `dist` folder can be deployed to:
+- **Static Hosting**: Netlify, Vercel, GitHub Pages
+- **CDN**: CloudFlare, AWS S3 + CloudFront
+- **Traditional**: Apache, Nginx
+
+### Environment Variables
+
+```bash
+# .env.production
+VITE_PUBLIC_PATH=/
+VITE_ENABLE_LOGS=false
+```
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+### Code Style
+
+- TypeScript strict mode
+- ESLint configuration
+- Prettier formatting
+- Conventional commits
+
+## 📄 License
+
+[Your License Here]
+
+## 🙏 Credits
+
+Built with:
+- [Phaser 3](https://phaser.io/) - Game framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Vite](https://vitejs.dev/) - Build tool
+- [Tiled](https://www.mapeditor.org/) - Level editor
+
+## 📞 Support
+
+- **Documentation**: See `/docs` folder
+- **Issues**: [GitHub Issues](your-repo-url/issues)
+- **Discord**: [Community Server](your-discord-url)
+
+---
+
+**Ready to create amazing platform games!** 🎮✨
